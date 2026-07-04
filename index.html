@@ -3,19 +3,43 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Memory Atlas — CXL · Photonics · the AI Hardware Supply Chain</title>
-<meta name="description" content="An interactive 3D map of the AI memory and interconnect supply chain — HBM, CXL and silicon photonics: who makes what, the bottlenecks, the geography, and the companies that matter." />
+<title>The Memory Atlas — an interactive 3D map of the AI memory supply chain</title>
+<meta name="description" content="An interactive 3D explorer of the AI memory and interconnect supply chain — HBM, CXL and silicon photonics. Who makes what, where the bottlenecks are (CoWoS, EUV, EML lasers, ABF), which countries control each step, and the metrics investors watch." />
+<meta name="keywords" content="AI memory supply chain, HBM, HBM4, CXL, silicon photonics, co-packaged optics, memory wall, KV cache, SK Hynix, TSMC CoWoS, ASML EUV, NVLink, UALink, semiconductor bottlenecks, AI hardware, interactive 3D explainer" />
+<meta name="author" content="Upamanyu Acharya" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<link rel="canonical" href="https://memory.upamanyuacharya.com/" />
 <meta name="theme-color" content="#060709" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="The Memory Atlas" />
-<meta property="og:description" content="Go from zero to expert on the AI memory supply chain — HBM, CXL, photonics: who makes what, the chokepoints, and who to watch. An interactive 3D explorer." />
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="The Memory Atlas" />
-<meta name="twitter:description" content="An interactive 3D guide to the AI memory supply chain — who makes what, the bottlenecks, and who to watch." />
-<meta property="og:image" content="assets/og.png" />
+<meta property="og:url" content="https://memory.upamanyuacharya.com/" />
+<meta property="og:site_name" content="The Memory Atlas" />
+<meta property="og:title" content="The Memory Atlas — the chips behind AI, made simple" />
+<meta property="og:description" content="Go from zero to expert on the AI memory supply chain — HBM, CXL, photonics: who makes what, the chokepoints, and who to watch. A free interactive 3D explorer." />
+<meta property="og:image" content="https://memory.upamanyuacharya.com/assets/og.png" />
 <meta property="og:image:width" content="1280" />
 <meta property="og:image:height" content="720" />
-<meta name="twitter:image" content="assets/og.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Memory Atlas — the chips behind AI, made simple" />
+<meta name="twitter:description" content="An interactive 3D guide to the AI memory supply chain — HBM, CXL, photonics: who makes what, the bottlenecks, and who to watch." />
+<meta name="twitter:image" content="https://memory.upamanyuacharya.com/assets/og.png" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": ["WebApplication", "LearningResource"],
+  "name": "The Memory Atlas",
+  "url": "https://memory.upamanyuacharya.com/",
+  "description": "An interactive 3D explorer of the AI memory and interconnect supply chain — HBM, CXL and silicon photonics: who makes what, where the bottlenecks are, which countries control each step, and the metrics that matter.",
+  "applicationCategory": "EducationalApplication",
+  "operatingSystem": "Any (web browser with WebGL)",
+  "isAccessibleForFree": true,
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
+  "image": "https://memory.upamanyuacharya.com/assets/og.png",
+  "author": {"@type": "Person", "name": "Upamanyu Acharya", "url": "https://upamanyuacharya.com"},
+  "educationalLevel": "Beginner to advanced",
+  "teaches": "The AI memory and interconnect supply chain: the memory hierarchy, HBM, CXL memory pooling, silicon photonics and co-packaged optics, the memory wall and KV-cache economics, and the companies, countries and chokepoints behind each layer.",
+  "keywords": "HBM, CXL, silicon photonics, memory wall, KV cache, AI supply chain, semiconductors"
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,30 +95,34 @@
   #brand h1 i{font-style:italic;font-weight:500;color:var(--accent)}
 
   #nav{pointer-events:auto;display:flex;gap:4px;background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
-  .navbtn{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:9px 15px;cursor:pointer;transition:all .4s var(--ease);white-space:nowrap;position:relative;display:flex;align-items:center;gap:7px}
+  .navbtn{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .4s var(--ease);white-space:nowrap;position:relative;display:flex;align-items:center;gap:7px}
   .navbtn .ico{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.6;transition:all .4s var(--ease)}
   .navbtn:hover{color:var(--ink);background:rgba(255,255,255,.04)}
-  .navbtn.active{color:#04110e;background:var(--accent);box-shadow:0 4px 22px rgba(94,234,212,.35)}
+  .navbtn[data-region="hierarchy"]{color:var(--accent)}
+  .navbtn[data-region="cxl"]{color:var(--violet)}
+  .navbtn[data-region="photonics"]{color:var(--spectrum)}
+  .navbtn[data-region="ai"]{color:var(--heat)}
+  .navbtn.active,.navbtn[data-region].active{color:#04110e;background:var(--accent);box-shadow:0 4px 22px rgba(94,234,212,.35)}
   .navbtn.active .ico{opacity:1;border-radius:50%}
   .navbtn[data-region="cxl"].active{background:var(--violet);color:#0a0820;box-shadow:0 4px 22px rgba(154,140,255,.35)}
   .navbtn[data-region="photonics"].active{background:var(--spectrum);color:#06140a;box-shadow:0 4px 22px rgba(126,231,135,.35)}
   .navbtn[data-region="ai"].active{background:var(--heat);color:#1a1102;box-shadow:0 4px 22px rgba(246,163,69,.35)}
 
   /* ---------------- LEFT RAIL (context / breadcrumb) ---------------- */
-  #rail{position:absolute;left:24px;top:96px;z-index:20;width:300px;pointer-events:auto;transition:opacity .4s var(--ease)}
+  #rail{position:absolute;left:24px;top:96px;z-index:20;width:336px;pointer-events:auto;transition:opacity .4s var(--ease)}
   .shell{background:var(--glass);border:1px solid var(--hair);border-radius:22px;padding:6px;backdrop-filter:blur(22px);box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
   .core{background:linear-gradient(180deg,rgba(20,24,33,.55),rgba(10,12,17,.55));border:1px solid var(--hair);border-radius:17px;padding:18px}
-  #rail .ksec{font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  #rail .ksec{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;margin-bottom:12px}
   #rail .ksec .ln{flex:1;height:1px;background:var(--hair)}
-  #rail h2{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;line-height:1.1;margin-bottom:7px}
-  #rail .lede{font-size:13.5px;color:var(--ink-dim);line-height:1.58;margin-bottom:15px}
+  #rail h2{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.01em;line-height:1.1;margin-bottom:8px}
+  #rail .lede{font-size:14.5px;color:var(--ink-dim);line-height:1.6;margin-bottom:15px}
   .toc{display:flex;flex-direction:column;gap:3px}
   .toc button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;border-radius:11px;padding:9px 10px;cursor:pointer;transition:all .3s var(--ease);color:var(--ink-dim)}
   .toc button:hover{background:rgba(255,255,255,.045);color:var(--ink);transform:translateX(2px)}
   .toc button.on{background:rgba(94,234,212,.08);color:var(--ink)}
   .toc .dot{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 10px currentColor}
-  .toc .nm{font-family:var(--mono);font-size:13px;letter-spacing:.01em;flex:1}
-  .toc .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .toc .nm{font-family:var(--mono);font-size:14px;letter-spacing:.01em;flex:1}
+  .toc .meta{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
   .rail-intel{width:100%;margin-top:15px;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;font-family:var(--sans);color:#0a0820;background:linear-gradient(120deg,var(--violet),#b7a8ff);border:0;border-radius:13px;padding:13px 15px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(154,140,255,.3);transition:all .3s var(--ease)}
   .rail-intel span{font-family:var(--mono);font-size:10px;font-weight:400;opacity:.8;letter-spacing:.02em}
   .rail-intel:hover{transform:translateY(-2px);box-shadow:0 13px 32px rgba(154,140,255,.48)}
@@ -107,18 +135,18 @@
   .toc button.seen{color:var(--ink)}
 
   /* ---------------- FRACTAL DETAIL PANEL (right) ---------------- */
-  #panel{position:absolute;right:24px;top:90px;z-index:25;width:472px;max-height:calc(100vh - 130px);
+  #panel{position:absolute;right:24px;top:90px;z-index:25;width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 130px);
     opacity:0;transform:translateX(24px) scale(.98);pointer-events:none;transition:all .55s var(--ease)}
   #panel.open{opacity:1;transform:none;pointer-events:auto;box-shadow:0 30px 90px rgba(0,0,0,.7)}
   /* dim the rest of the scene so the reading panel is the focus */
-  #panelScrim{position:fixed;inset:0;z-index:23;background:radial-gradient(60% 80% at 30% 50%,transparent,rgba(4,6,10,.55));opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+  #panelScrim{position:fixed;inset:0;z-index:23;background:radial-gradient(55% 80% at 28% 50%,rgba(4,6,10,.14),rgba(4,6,10,.68));opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
   #panelScrim.on{opacity:1}
   #panel .core{padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 162px)}
   #panel .phead{padding:20px 22px 16px;position:relative;flex:none;border-bottom:1px solid var(--hair)}
   #panel .phead .tier{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
   #panel .phead .tier .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 12px currentColor}
-  #panel .phead h2{font-family:var(--display);font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1.06;margin:11px 0 6px}
-  #panel .phead .tag{font-family:var(--mono);font-size:13.5px;color:var(--ink-dim)}
+  #panel .phead h2{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.06;margin:11px 0 6px}
+  #panel .phead .tag{font-family:var(--mono);font-size:14.5px;color:var(--ink-dim)}
   #panel .pclose{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.09);border:1px solid var(--hair-bright);color:var(--ink);cursor:pointer;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .3s var(--ease)}
   #panel .pclose:hover{background:rgba(255,255,255,.1);color:var(--ink);transform:rotate(90deg)}
   #panel .pbody{padding:18px 22px 22px;overflow-y:auto;flex:1}
@@ -126,18 +154,17 @@
   #panel .pbody::-webkit-scrollbar-thumb{background:rgba(150,170,200,.22);border-radius:4px}
 
   .ptabs{display:flex;gap:4px;padding:0 22px;margin:-2px 0 0;flex:none;border-bottom:1px solid var(--hair);background:rgba(0,0,0,.12)}
-  .ptab{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;border-bottom:2px solid transparent;padding:12px 10px;cursor:pointer;transition:all .3s var(--ease)}
+  .ptab{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;border-bottom:2px solid transparent;padding:13px 11px;cursor:pointer;transition:all .3s var(--ease)}
   .ptab:hover{color:var(--ink-dim)}
   .ptab.on{color:var(--ink);border-bottom-color:var(--accent)}
 
-  .pblk{margin-bottom:17px}
-  .pblk p{font-size:15.5px;line-height:1.66;color:#d2dcec;margin-bottom:12px}
-  .pblk.eli{background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:14px;padding:13px 15px;margin-bottom:16px}
+  .pblk{margin-bottom:18px}
+  .pblk p{font-size:16.5px;line-height:1.7;color:#d2dcec;margin-bottom:12px}
+  .pblk.eli{background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:14px;padding:14px 16px;margin-bottom:16px}
   .pblk.eli .kmini{color:var(--accent);margin-bottom:7px}
-  .pblk.eli p{margin-bottom:0;color:#d8e4f1;font-size:14px}
+  .pblk.eli p{margin-bottom:0;color:#d8e4f1;font-size:15.5px}
   .pblk.eli p em{color:var(--accent);font-style:normal;font-weight:500}
-  .share-bar{display:flex;height:26px;border-radius:9px;overflow:hidden;margin:5px 0 9px;border:1px solid var(--hair)}
-  .share-bar{height:30px!important}
+  .share-bar{display:flex;height:30px;border-radius:9px;overflow:hidden;margin:5px 0 9px;border:1px solid var(--hair)}
   .share-bar .sg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#04110e;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
   .share-leg{display:flex;flex-wrap:wrap;gap:13px}
   .share-leg span{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:7px}
@@ -148,9 +175,9 @@
 
   .statrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 12px}
   .stat{background:rgba(255,255,255,.025);border:1px solid var(--hair);border-radius:13px;padding:11px 12px}
-  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
-  .stat .v{font-family:var(--mono);font-size:16.5px;font-weight:600;margin-top:5px;color:var(--ink)}
-  .stat .v small{font-size:10px;color:var(--ink-dim);font-weight:400}
+  .stat .l{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .stat .v{font-family:var(--mono);font-size:17.5px;font-weight:600;margin-top:5px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:11px;color:var(--ink-dim);font-weight:400}
 
   /* company chips (fractal) */
   .chips{display:flex;flex-direction:column;gap:7px}
@@ -162,10 +189,10 @@
   .logo.photo{background:#070b12;padding:0}
   .logo.photo img{width:100%!important;height:100%!important;object-fit:cover;filter:none!important;opacity:1!important;border-radius:inherit}
   .chip .ct{flex:1;min-width:0}
-  .chip .cn{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
-  .chip .tk{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:5px;background:rgba(94,234,212,.12);color:var(--accent)}
+  .chip .cn{font-family:var(--display);font-size:16px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
+  .chip .tk{font-family:var(--mono);font-size:10.5px;padding:1px 6px;border-radius:5px;background:rgba(94,234,212,.12);color:var(--accent)}
   .chip .tk.priv{background:rgba(154,140,255,.14);color:var(--violet)}
-  .chip .cr{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip .cr{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .chip .sev{width:8px;height:8px;border-radius:50%;flex:none}
   .chip .arr{color:var(--ink-faint);font-size:13px;transition:transform .3s var(--ease)}
   .chip:hover .arr{transform:translateX(3px);color:var(--accent)}
@@ -176,28 +203,28 @@
   .cocard .ch{display:flex;align-items:center;gap:11px;margin-bottom:10px}
   .cocard .ch .logo{width:40px;height:40px;border-radius:11px}
   .cocard .ch .logo img{width:24px;height:24px}
-  .cocard . chn{flex:1}
-  .cocard h3{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em}
-  .cocard .csub{font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+  .cocard .chn{flex:1;min-width:0}
+  .cocard h3{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .cocard .csub{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
   .cocard .csub span{display:inline-flex;align-items:center;gap:4px}
-  .cocard p{font-size:12.5px;line-height:1.6;color:#c2cee0;margin:8px 0}
-  .cocard .crole{font-size:12px;color:var(--ink-dim);line-height:1.55}
+  .cocard p{font-size:14.5px;line-height:1.62;color:#c2cee0;margin:8px 0}
+  .cocard .crole{font-size:14px;color:#c2cee0;line-height:1.6}
   .cocard .cmetrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-  .cocard .cmetrics .m{font-family:var(--mono);font-size:9.5px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:7px;padding:4px 8px}
-  .cocard .back{font-family:var(--mono);font-size:10px;color:var(--accent);background:none;border:0;cursor:pointer;margin-top:10px;padding:0;display:flex;align-items:center;gap:5px}
+  .cocard .cmetrics .m{font-family:var(--mono);font-size:11px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:7px;padding:5px 9px}
+  .cocard .back{font-family:var(--mono);font-size:11px;color:var(--accent);background:none;border:0;cursor:pointer;margin-top:10px;padding:0;display:flex;align-items:center;gap:5px}
 
   /* metric list */
   .mlist{display:flex;flex-direction:column;gap:8px}
   .mitem{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
   .mitem:last-child{border:0}
-  .mitem .mk{font-family:var(--mono);font-size:13.5px;color:var(--accent);font-weight:500;flex:none;width:40%}
-  .mitem .mv{font-size:13.5px;color:var(--ink-dim);line-height:1.55}
+  .mitem .mk{font-family:var(--mono);font-size:14.5px;color:var(--accent);font-weight:500;flex:none;width:40%}
+  .mitem .mv{font-size:14.5px;color:var(--ink-dim);line-height:1.58}
 
   /* geography */
   .geo{display:flex;flex-direction:column;gap:8px}
   .georow{display:flex;align-items:center;gap:11px}
-  .georow .gflag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hair);border-radius:7px;padding:4px 8px;flex:none;min-width:44px;text-align:center}
-  .georow .gt{font-size:13.5px;color:var(--ink-dim);line-height:1.5}
+  .georow .gflag{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.05em;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hair);border-radius:7px;padding:4px 8px;flex:none;min-width:46px;text-align:center}
+  .georow .gt{font-size:14.5px;color:var(--ink-dim);line-height:1.55}
 
   /* bottleneck meter */
   .sevmeter{display:flex;align-items:center;gap:11px;margin:6px 0 12px}
@@ -206,28 +233,28 @@
   .sevmeter .lbl{font-family:var(--mono);font-size:11px;font-weight:600}
 
   .related{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-  .related button{font-family:var(--mono);font-size:10px;color:var(--ink-dim);background:rgba(255,255,255,.035);border:1px solid var(--hair);border-radius:999px;padding:6px 11px;cursor:pointer;transition:all .3s var(--ease);display:flex;align-items:center;gap:6px}
+  .related button{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);background:rgba(255,255,255,.035);border:1px solid var(--hair);border-radius:999px;padding:7px 12px;cursor:pointer;transition:all .3s var(--ease);display:flex;align-items:center;gap:6px}
   .related button:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.07)}
   .related button .d{width:7px;height:7px;border-radius:50%}
   .srclist{display:flex;flex-direction:column;gap:1px}
-  .srclink{font-size:12.5px;color:var(--accent-2);text-decoration:none;display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.045);line-height:1.4;transition:color .2s}
+  .srclink{font-size:14px;color:var(--accent-2);text-decoration:none;display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.045);line-height:1.45;transition:color .2s}
   .srclink::before{content:"↗";opacity:.55;font-size:11px;margin-top:1px}
   .srclink:hover{color:var(--accent)}
-  .cosrc{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11.5px;color:var(--accent-2);text-decoration:none;margin-top:11px;padding:7px 12px;border:1px solid var(--hair);border-radius:9px;transition:all .25s var(--ease)}
+  .cosrc{display:inline-flex;align-items:center;font-family:var(--mono);font-size:12.5px;color:var(--accent-2);text-decoration:none;margin-top:11px;padding:8px 13px;border:1px solid var(--hair);border-radius:9px;transition:all .25s var(--ease)}
   .cosrc:hover{color:var(--accent);border-color:var(--hair-bright);background:rgba(94,234,212,.06)}
 
   /* ---------------- BOTTOM CONTROL DOCK ---------------- */
   #dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:25;pointer-events:auto;transition:opacity .4s var(--ease)}
   #dock .core{display:flex;gap:14px;align-items:center;padding:13px 18px;flex-wrap:wrap;justify-content:center;max-width:min(92vw,840px)}
-  .dlabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+  .dlabel{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
   .seg{display:flex;background:rgba(255,255,255,.04);border-radius:11px;padding:3px;gap:2px}
-  .seg button{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);background:transparent;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;transition:all .3s var(--ease)}
+  .seg button{font-family:var(--mono);font-size:13.5px;color:var(--ink-dim);background:transparent;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;transition:all .3s var(--ease)}
   .seg button:hover{color:var(--ink)}
   .seg button.on{background:var(--ink);color:#0a0e14;font-weight:600}
   .slider-wrap{display:flex;align-items:center;gap:11px;min-width:210px}
   .slider-wrap input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--violet));outline:none;flex:1;min-width:110px}
   .slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 0 0 4px rgba(94,234,212,.22),0 2px 8px rgba(0,0,0,.4)}
-  .slider-wrap .sv{font-family:var(--mono);font-size:12px;color:var(--heat);min-width:78px;text-align:right;font-weight:500}
+  .slider-wrap .sv{font-family:var(--mono);font-size:13px;color:var(--heat);min-width:78px;text-align:right;font-weight:500;font-variant-numeric:tabular-nums}
   .toggle{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);cursor:pointer;user-select:none}
   .toggle .sw{width:34px;height:19px;border-radius:11px;background:rgba(255,255,255,.1);position:relative;transition:.3s var(--ease)}
   .toggle .sw::after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:var(--ink-dim);top:2px;left:2px;transition:.3s var(--ease)}
@@ -235,9 +262,9 @@
   .toggle.on .sw::after{left:17px;background:#06120f}
   .kvo-cluster{display:flex;gap:15px;border-left:1px solid var(--hair);padding-left:16px}
   .kvo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:48px}
-  .kvo .kvo-v{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);line-height:1}
-  .kvo .kvo-l{font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
-  #kvNote{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:26;font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 17px;backdrop-filter:blur(14px);max-width:88vw;text-align:center;transition:opacity .4s,color .4s;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .kvo .kvo-v{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
+  .kvo .kvo-l{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
+  #kvNote{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:26;font-family:var(--mono);font-size:13.5px;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 17px;backdrop-filter:blur(14px);max-width:88vw;text-align:center;transition:opacity .4s,color .4s;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
   #kvNote b{color:var(--heat)}
   #kvNote.ok b{color:var(--accent)}
 
@@ -253,7 +280,7 @@
   .weyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
   .wtitle{font-family:var(--display);font-size:38px;font-weight:600;letter-spacing:-.025em;line-height:1.04;margin:16px 0 16px}
   .wtitle i{font-style:italic;font-weight:500;color:var(--accent)}
-  .wlede{font-size:16px;line-height:1.6;color:#cdd8e8;margin-bottom:13px}
+  .wlede{font-size:17px;line-height:1.62;color:#cdd8e8;margin-bottom:13px}
   .wlede b{color:var(--ink);font-weight:600}
   .wreassure{font-family:var(--display);font-size:16.5px;font-style:italic;color:var(--ink-dim);margin-bottom:24px}
   .wcta{display:flex;gap:11px;flex-wrap:wrap;align-items:stretch}
@@ -263,23 +290,26 @@
   .wbtn.primary:hover{transform:translateY(-2px);box-shadow:0 16px 44px rgba(94,234,212,.5)}
   .wbtn.ghost{background:rgba(255,255,255,.04);border-color:var(--hair-bright);color:var(--ink-dim);font-size:14.5px;font-weight:500;justify-content:center;align-items:center}
   .wbtn.ghost:hover{background:rgba(255,255,255,.09);color:var(--ink);transform:translateY(-2px)}
-  .wfoot{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin-top:22px;line-height:1.6}
+  .wfoot{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);margin-top:22px;line-height:1.65}
+  .wfoot a{color:var(--ink-dim);text-decoration:none;border-bottom:1px solid var(--hair-bright)}
+  .wfoot a:hover{color:var(--accent)}
   .wfoot b{color:var(--ink-dim)}
   /* a small persistent "intro" reopener */
   #introBtn{position:absolute;top:0;right:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
   @media (max-width:560px){.wtitle{font-size:30px}#welcome .core{padding:26px 24px}}
-  #introReopen{position:fixed;left:24px;bottom:24px;z-index:30;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;backdrop-filter:blur(14px);transition:all .3s var(--ease)}
-  #introReopen:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
-  @media (max-width:980px){#introReopen{left:20px;bottom:74px}}
+  #footlinks{position:fixed;left:24px;bottom:24px;z-index:30;display:flex;gap:8px;align-items:center}
+  #introReopen,#ghLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;backdrop-filter:blur(14px);transition:all .3s var(--ease);text-decoration:none}
+  #introReopen:hover,#ghLink:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
+  @media (max-width:980px){#footlinks{left:16px;bottom:16px}#ghLink{display:none}}
 
   /* ---------------- 3D LABELS ---------------- */
-  .lbl3d{font-family:var(--mono);font-size:13px;letter-spacing:.01em;color:var(--ink);background:rgba(8,11,17,.74);border:1px solid var(--hair);border-radius:9px;padding:5px 11px;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.45);transition:opacity .3s}
-  .lbl3d.title{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em;padding:7px 14px}
-  .lbl3d.faint{color:var(--ink-dim);background:rgba(8,11,17,.5);border-color:transparent;font-size:12px;box-shadow:none}
+  .lbl3d{font-family:var(--mono);font-size:14.5px;letter-spacing:.01em;color:var(--ink);background:rgba(8,11,17,.74);border:1px solid var(--hair);border-radius:9px;padding:6px 12px;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.45);transition:opacity .3s}
+  .lbl3d.title{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-.01em;padding:8px 15px}
+  .lbl3d.faint{color:var(--ink-dim);background:rgba(8,11,17,.5);border-color:transparent;font-size:13.5px;box-shadow:none}
   .lbl3d.heat{color:var(--heat);border-color:rgba(246,163,69,.45);font-weight:600}
-  .lbl3d.node{cursor:pointer;pointer-events:auto;font-family:var(--display);font-size:17px;font-weight:600;padding:10px 19px;border-radius:999px;background:rgba(10,13,19,.82)}
+  .lbl3d.node{cursor:pointer;pointer-events:auto;font-family:var(--display);font-size:18px;font-weight:600;padding:11px 20px;border-radius:999px;background:rgba(10,13,19,.82)}
   .lbl3d.node:hover{border-color:var(--hair-bright);transform:scale(1.06)}
-  .lbl3d.edge{font-size:11.5px;color:var(--ink-dim);background:rgba(8,11,17,.62);border:0;letter-spacing:.03em}
+  .lbl3d.edge{font-size:13px;color:var(--ink-dim);background:rgba(8,11,17,.62);border:0;letter-spacing:.03em}
 
   /* ---------------- GUIDED TOUR + CTAs ---------------- */
   .cta-row{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;pointer-events:auto}
@@ -298,7 +328,7 @@
   .wm-card .core{padding:0;display:flex;flex-direction:column;max-height:85vh;overflow:hidden}
   .wm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 26px;border-bottom:1px solid var(--hair);flex:none}
   .wm-head h2{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-.01em}
-  .wm-head .wm-sub{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:5px;line-height:1.4;max-width:520px}
+  .wm-head .wm-sub{font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:5px;line-height:1.45;max-width:560px}
   .wmclose{flex:none;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .3s var(--ease)}
   .wmclose:hover{background:rgba(255,255,255,.1);color:var(--ink);transform:rotate(90deg)}
   .wm-tabs{display:flex;gap:3px;padding:0 26px;border-bottom:1px solid var(--hair);flex:none;background:rgba(0,0,0,.12)}
@@ -314,18 +344,18 @@
   .geo-card .gn{font-family:var(--display);font-size:19px;font-weight:600;flex:1}
   .geo-card .gsev{display:flex;gap:3px}
   .geo-card .gsev i{width:16px;height:6px;border-radius:3px}
-  .geo-card .gr{font-size:13px;line-height:1.55;color:var(--ink-dim);margin-bottom:11px}
+  .geo-card .gr{font-size:14.5px;line-height:1.6;color:var(--ink-dim);margin-bottom:11px}
   .geo-card .spof{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--crit);border:1px solid rgba(255,107,94,.4);border-radius:5px;padding:2px 7px;margin-left:8px}
   /* shortlist */
-  .sl-d{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin:-3px 0 11px}
+  .sl-d{font-size:14px;color:var(--ink-dim);line-height:1.55;margin:-3px 0 11px}
   .sl-list{display:flex;flex-direction:column;gap:8px}
   .sl-row{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:15px;padding:12px 14px;cursor:pointer;text-align:left;transition:all .3s var(--ease);width:100%}
   .sl-row:hover{background:rgba(255,255,255,.07);border-color:var(--hair-bright);transform:translateY(-1px)}
   .sl-row .logo{width:38px;height:38px;border-radius:11px;font-size:13px}
   .sl-row .logo img{width:22px;height:22px}
   .sl-ct{flex:1;min-width:0}
-  .sl-ct .cn{font-family:var(--display);font-size:15.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
-  .sl-why{display:block;font-size:12.5px;color:var(--ink-dim);line-height:1.45;margin-top:4px}
+  .sl-ct .cn{font-family:var(--display);font-size:16.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .sl-why{display:block;font-size:13.5px;color:var(--ink-dim);line-height:1.5;margin-top:4px}
   .wm-body::-webkit-scrollbar{width:8px}.wm-body::-webkit-scrollbar-thumb{background:rgba(150,170,200,.22);border-radius:4px}
   .wm-group{margin-bottom:22px}
   .wm-gt{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:10px}
@@ -340,10 +370,10 @@
   .tl-item::before{content:"";position:absolute;left:-27px;top:3px;width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--dotc,var(--accent));box-shadow:0 0 12px var(--dotc,var(--accent))}
   .tl-date{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--dotc,var(--accent));display:flex;align-items:center;gap:9px}
   .tl-kind{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid currentColor;opacity:.85}
-  .tl-t{font-family:var(--display);font-size:18.5px;font-weight:600;margin:5px 0 6px;letter-spacing:-.01em;line-height:1.2}
-  .tl-d{font-size:14px;line-height:1.58;color:var(--ink-dim);margin-bottom:11px}
+  .tl-t{font-family:var(--display);font-size:20px;font-weight:600;margin:5px 0 6px;letter-spacing:-.01em;line-height:1.2}
+  .tl-d{font-size:15px;line-height:1.6;color:var(--ink-dim);margin-bottom:11px}
   .tl-cos{display:flex;flex-wrap:wrap;gap:6px}
-  .tl-co{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:999px;padding:4px 11px 4px 5px;cursor:pointer;transition:all .3s var(--ease);font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .tl-co{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:999px;padding:4px 11px 4px 5px;cursor:pointer;transition:all .3s var(--ease);font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
   .tl-co:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.08);transform:translateY(-1px)}
   .tl-co .logo{width:22px;height:22px;border-radius:6px;font-size:9px}
   .tl-co .logo img{width:13px;height:13px}
@@ -356,8 +386,8 @@
   #tour .tprog{display:flex;gap:5px}
   #tour .tprog i{width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s var(--ease)}
   #tour .tprog i.on{background:var(--accent)}
-  #tour h3{font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:7px;letter-spacing:-.01em}
-  #tour p{font-size:14px;line-height:1.62;color:#cdd8e8;margin-bottom:15px}
+  #tour h3{font-family:var(--display);font-size:21px;font-weight:600;margin-bottom:7px;letter-spacing:-.01em}
+  #tour p{font-size:15px;line-height:1.65;color:#cdd8e8;margin-bottom:15px}
   #tour .tnav{display:flex;gap:8px;align-items:center}
   #tour .tnav button{font-family:var(--mono);font-size:12px;border-radius:999px;padding:9px 16px;cursor:pointer;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--ink-dim);transition:all .3s var(--ease)}
   #tour .tnav button:hover{color:var(--ink);border-color:var(--hair-bright)}
@@ -365,16 +395,16 @@
   #tour .tnav .next:hover{color:#04110e;transform:translateY(-1px)}
   #tour .tnav .next:disabled{opacity:.38;cursor:not-allowed;transform:none}
   .tq{margin:2px 0 15px;background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:13px;padding:14px 15px}
-  .tq-ask{font-size:13.5px;color:var(--ink);font-weight:500;margin-bottom:11px;line-height:1.45}
-  .tq-opt{display:block;width:100%;text-align:left;font-family:var(--sans);font-size:13px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:all .25s var(--ease)}
+  .tq-ask{font-size:14.5px;color:var(--ink);font-weight:500;margin-bottom:11px;line-height:1.5}
+  .tq-opt{display:block;width:100%;text-align:left;font-family:var(--sans);font-size:14.5px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:all .25s var(--ease)}
   .tq-opt:last-child{margin-bottom:0}
   .tq-opt:hover{background:rgba(255,255,255,.09);color:var(--ink);border-color:var(--hair-bright);transform:translateX(2px)}
-  .tq-fb{font-size:13.5px;line-height:1.55}
+  .tq-fb{font-size:14.5px;line-height:1.58}
   .tq-fb.right{color:var(--accent)}
   .tq-fb.wrong{color:#cdd8e8}
 
   /* ---------------- HINT ---------------- */
-  #hint{position:absolute;right:24px;bottom:24px;z-index:20;font-family:var(--mono);font-size:10px;color:var(--ink-faint);text-align:right;line-height:1.8;pointer-events:none;transition:opacity .4s}
+  #hint{position:absolute;right:24px;bottom:24px;z-index:20;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);text-align:right;line-height:1.8;pointer-events:none;transition:opacity .4s}
   #hint b{color:var(--ink-dim)}
 
   /* ---------------- LOADER ---------------- */
@@ -389,12 +419,37 @@
 
   @media (max-width:980px){
     #rail{display:none}
-    #panel{width:min(392px,calc(100vw - 40px));right:20px}
     #brand h1{font-size:19px}
+    #topwrap{padding:14px 16px;flex-wrap:wrap;gap:10px}
+    #nav{order:3;width:100%;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #nav::-webkit-scrollbar{display:none}
+    /* reading panel becomes a bottom sheet on small screens */
+    #panel{left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:72vh;transform:translateY(24px) scale(.99)}
+    #panel .core{max-height:calc(72vh - 12px)}
+    #panel .phead h2{font-size:26px}
+    #hint{display:none}
+    #kvNote{font-size:12px;max-width:94vw}
+    #tour{bottom:12px;width:calc(100vw - 24px)}
+    .statrow{grid-template-columns:1fr 1fr}
+    .mitem .mk{width:46%}
+  }
+  @media (max-width:560px){
+    #brand .badge{display:none}
+    .cta-row .tb-sub{display:none}
+    #panel .phead h2{font-size:23px}
+    .pblk p{font-size:15px}
   }
 </style>
 </head>
 <body>
+<noscript>
+  <main style="max-width:680px;margin:60px auto;padding:0 24px;font-family:system-ui,sans-serif;color:#eef2f8;line-height:1.6">
+    <h1>The Memory Atlas</h1>
+    <p>An interactive 3D map of the AI memory and interconnect supply chain — the memory hierarchy (registers to network), HBM, CXL memory pooling, silicon photonics and the memory wall — through a business lens: who makes what, where the bottlenecks are (TSMC CoWoS, ASML EUV, EML lasers, Ajinomoto ABF), which countries control each step, and the metrics investors watch.</p>
+    <p>This explorer needs JavaScript and WebGL to run. Please enable JavaScript, or read the project overview on <a href="https://github.com/upamanyuacharya/memory-atlas" style="color:#5eead4">GitHub</a>.</p>
+    <p>Built by <a href="https://upamanyuacharya.com" style="color:#5eead4">Upamanyu Acharya</a>. Educational structural analysis, not investment advice.</p>
+  </main>
+</noscript>
 <div id="ambient"></div>
 <div id="app"></div>
 <div id="grain"></div>
@@ -416,7 +471,8 @@
       <button id="wTour" class="wbtn primary">▶&nbsp; Take the 3-minute tour<span class="wsub">recommended — we'll walk you through it</span></button>
       <button id="wExplore" class="wbtn ghost">I'll explore on my own&nbsp;→</button>
     </div>
-    <div class="wfoot">No sign-up. <b>Drag</b> to look around · <b>click</b> any glowing node to dig in · everything links out to real sources.</div>
+    <div class="wfoot">No sign-up. <b>Drag</b> to look around · <b>click</b> any glowing node to dig in · everything links out to real sources.<br>
+    Educational structural analysis, not investment advice. Built by <a href="https://upamanyuacharya.com" target="_blank" rel="noopener">Upamanyu Acharya</a> · <a href="https://github.com/upamanyuacharya/memory-atlas" target="_blank" rel="noopener">open source on GitHub</a>.</div>
   </div></div>
 </div>
 
@@ -432,10 +488,10 @@
   </div>
   <div id="nav">
     <button class="navbtn active" data-region="map"><span class="ico"></span>Map</button>
-    <button class="navbtn" data-region="hierarchy" style="color:var(--accent)"><span class="ico"></span>Stack</button>
-    <button class="navbtn" data-region="cxl" style="color:var(--violet)"><span class="ico"></span>CXL</button>
-    <button class="navbtn" data-region="photonics" style="color:var(--spectrum)"><span class="ico"></span>Photonics</button>
-    <button class="navbtn" data-region="ai" style="color:var(--heat)"><span class="ico"></span>The Wall</button>
+    <button class="navbtn" data-region="hierarchy"><span class="ico"></span>Stack</button>
+    <button class="navbtn" data-region="cxl"><span class="ico"></span>CXL</button>
+    <button class="navbtn" data-region="photonics"><span class="ico"></span>Photonics</button>
+    <button class="navbtn" data-region="ai"><span class="ico"></span>The Wall</button>
   </div>
 </div>
 
@@ -515,7 +571,6 @@ const CO = {
   amat:{n:'Applied Materials',tk:'AMAT',ctry:'USA',slug:'',role:'Deposition/etch + packaging tools used across HBM TSV and advanced packaging.',makes:'Wafer-fab & packaging equipment',mx:['packaging tool orders','DRAM capex']},
   // materials
   shinetsu:{n:'Shin-Etsu',tk:'4063.T',ctry:'Japan',slug:'',role:'World #1 silicon wafers + photoresist. Japan\'s quiet grip on materials.',makes:'Silicon wafers, photoresist',mx:['wafer pricing','resist share']},
-  ibiden:{n:'Ibiden',tk:'4062.T',ctry:'Japan',slug:'',role:'ABF substrate leader — the package substrate every high-end CPU/GPU rides on.',makes:'ABF / IC substrates',mx:['substrate capacity','AI substrate mix']},
   // consumers
   nvidia:{n:'NVIDIA',tk:'NVDA',ctry:'USA (fab TSMC)',slug:'nvidia',role:'Buys the most HBM, NVLink, and optics on earth. Sets the roadmap; locks up supply (lasers, CoWoS, HBM).',makes:'GPUs, NVLink, NVSwitch, photonic switches',mx:['data-center revenue','supply lockups','NVLink roadmap']},
   amd:{n:'AMD',tk:'AMD',ctry:'USA (fab TSMC)',slug:'amd',role:'MI-series GPUs with leading HBM capacity; backs UALink to break NVLink lock-in.',makes:'MI GPUs, UALink',mx:['MI ramp','HBM capacity lead','UALink traction']},
@@ -1059,7 +1114,7 @@ window.addEventListener('keydown',e=>{
 });
 
 // small helper css class injected
-const st=document.createElement('style');st.textContent='.kmini{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}';document.head.appendChild(st);
+const st=document.createElement('style');st.textContent='.kmini{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}';document.head.appendChild(st);
 
 /* =========================================================================
    LEFT RAIL renderer (context per region)
@@ -1087,7 +1142,9 @@ function renderRail(region){
   }else if(r.toc){
     html+=`<div class="toc">`+r.toc.map(t=>`<button data-go="${t[0]}"><span class="dot" style="background:${t[3]}"></span><span class="nm">${t[1]}</span><span class="meta">${t[2]}</span></button>`).join('')+`</div>`;
   }
+  html+=`<button class="rail-intel" id="railIntel">◎ Investor Intelligence<span>the shortlist · by layer · by country · roadmap</span></button>`;
   railcore.innerHTML=html;
+  const ri=railcore.querySelector('#railIntel');if(ri)ri.addEventListener('click',()=>openIntel('short'));
   railcore.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.layer);focusLayer(b.dataset.layer);railcore.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-node]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.node);railcore.querySelectorAll('[data-node]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>enterRegion(b.dataset.go)));
@@ -1114,19 +1171,19 @@ const MAPEDGES=[
   ['hierarchy','cxl','overflow spills to CXL'],
   ['hierarchy','photonics','memory disaggregation',0.6],
   ['cxl','photonics','optical CXL'],
-  ['ai','cxl','KV offload',4.2],
+  ['ai','cxl','KV offload',4.2,0.24],
   ['ai','photonics','rack-scale fabric'],
 ];
 function buildMap(){
   const g=new THREE.Group();groups.map=g;
   const pos={};MAPNODES.forEach(n=>pos[n.id]=new THREE.Vector3(...n.pos));
   // edges (curved tubes)
-  MAPEDGES.forEach(([a,b,lab,bump])=>{
+  MAPEDGES.forEach(([a,b,lab,bump,tPos])=>{
     const va=pos[a],vb=pos[b];const mid=va.clone().add(vb).multiplyScalar(0.5);mid.y+=(bump||2.2);
     const curve=new THREE.QuadraticBezierCurve3(va,mid,vb);
     const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,40,0.035,8,false),new THREE.MeshBasicMaterial({color:0x3a4a66,transparent:true,opacity:0.5}));
     g.add(tube);
-    const el=label(lab,'edge');el.position.copy(curve.getPoint(0.5));g.add(el);
+    const el=label(lab,'edge');el.position.copy(curve.getPoint(tPos||0.5));g.add(el);
     // travelling pulse
     const pulse=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshBasicMaterial({color:0x9fb6d8}));
     g.add(pulse);g.userData.pulses=g.userData.pulses||[];g.userData.pulses.push({mesh:pulse,curve,t:Math.random(),sp:0.18+Math.random()*0.12});
@@ -1150,7 +1207,7 @@ function buildMap(){
     g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
   });
   scene.add(g);
-  flyTo(0,0.5,37, 0,-1.2,0, 1.2);
+  flyTo(-2.2,0.5,37, -2.2,-1.2,0, 1.2); // panned left so the graph sits clear of the rail
 }
 
 /* ---------- HIERARCHY (premium glass spine) ---------- */
@@ -1220,7 +1277,7 @@ function buildCXL(){
   // ---- compute hosts on top (the machines that need memory) ----
   const hosts=[['GPU server','#7ee787'],['CPU server','#5aa9ff'],['GPU server','#7ee787'],['CPU server','#5aa9ff']];
   const htitle=label('SERVERS — each runs short of its own memory','faint');htitle.position.set(0,6.7,0);htitle.element.style.transform='translate(-50%,-50%)';htitle.element.style.letterSpacing='1.5px';g.add(htitle);
-  hosts.forEach((h,i)=>{const ang=Math.PI*(0.16+0.68*(i/(hosts.length-1)));const R=9.5;const x=Math.cos(ang)*R,z=-Math.sin(ang)*R*0.55,y=5.0;
+  hosts.forEach((h,i)=>{const ang=Math.PI*(0.18+0.64*(i/(hosts.length-1)));const R=8.6;const x=Math.cos(ang)*R,z=-Math.sin(ang)*R*0.55,y=5.0;
     const node=new THREE.Mesh(new RoundedBoxGeometry(2.2,1.4,2.2,4,0.2),solidMat(h[1],0.08));node.position.set(x,y,z);g.add(node);
     node.add(new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(h[1]),transparent:true,opacity:0.45})));
     pick(node,'host',()=>openNode('cxl_host'));
@@ -1228,15 +1285,15 @@ function buildCXL(){
     g.userData.hosts.push(node);addCXLLink(g,sw.position,node.position,h[1]);}); // memory flows switch → host (arriving)
   // ---- shared memory pool on the bottom (real RAM sticks) ----
   const mods=[['Samsung','CMM-D','256 GB'],['Micron','CXL module','256 GB'],['Shared','big pool','512 GB'],['SK Hynix','CXL module','256 GB']];
-  const ptitle=label('SHARED MEMORY POOL — CXL memory modules any server can draw from','faint');ptitle.position.set(0,-8.0,0);ptitle.element.style.transform='translate(-50%,-50%)';ptitle.element.style.letterSpacing='1.5px';g.add(ptitle);
-  mods.forEach((m,i)=>{const ang=Math.PI*(0.16+0.68*(i/(mods.length-1)));const R=9.5;const x=Math.cos(ang)*R,z=Math.sin(ang)*R*0.55,y=-5.0;
+  const ptitle=label('SHARED MEMORY POOL — CXL memory modules any server can draw from','faint');ptitle.position.set(0,-3.4,0);ptitle.element.style.transform='translate(-50%,-50%)';ptitle.element.style.letterSpacing='1.5px';g.add(ptitle);
+  mods.forEach((m,i)=>{const ang=Math.PI*(0.18+0.64*(i/(mods.length-1)));const R=8.6;const x=Math.cos(ang)*R,z=Math.sin(ang)*R*0.55,y=-5.0;
     const stick=dimmStick();stick.position.set(x,y,z);stick.rotation.y=-0.35+ (i/(mods.length-1))*0.7;g.add(stick);
     pick(stick.userData.hit,'mod',()=>openNode('cxl_module'));
     const ml=label(`<b style="color:#cfe6ff">${m[0]}</b> · ${m[2]}<br><span style="opacity:.6;font-size:.82em">${m[1]}</span>`,'faint');ml.position.set(0,-1.5,0);ml.element.style.transform='translate(-50%,-50%)';ml.element.style.textAlign='center';stick.add(ml);
     g.userData.mods.push(stick);addCXLLink(g,stick.position,sw.position,'#9a8cff');}); // memory flows module → switch (rising)
   scene.add(g);
   setCXL('pooling');
-  flyTo(0,1,25, 0,-0.4,0, 1.2);
+  flyTo(-1.2,1.2,28.5, -1.2,0.9,0, 1.2); // pulled back + panned so the headline clears the nav and hosts clear the rail
 }
 function addCXLLink(g,a,b,color){const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.clone(),b.clone()]),new THREE.LineBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:0.3}));g.add(ln);g.userData.links.push(ln);
   const p=memBlock(color);g.add(p);g.userData.pulses.push({mesh:p,a:a.clone(),b:b.clone(),t:Math.random(),sp:0.4+Math.random()*0.3});}
@@ -1252,13 +1309,13 @@ function setCXL(v){cxlState=v;const g=groups.cxl;if(!g)return;
 const WDM=[0xff5d6c,0xff9f45,0xffe14d,0x7ee787,0x46c8e0,0x5aa9ff,0x9a8cff,0xff7ad9];
 let photWDM=true;
 const texLoader=new THREE.TextureLoader();
-function addBackdrop(group,url,w,h,pos,opacity){
+function addBackdrop(group,url,w,h,pos,opacity,scrimOp=0.34){
   const tex=texLoader.load(url);tex.colorSpace=THREE.SRGBColorSpace;
   const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
     new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity,depthWrite:false,fog:false}));
   m.position.set(pos[0],pos[1],pos[2]);m.renderOrder=-10;group.add(m);
   // soft dark scrim in front so 3D objects read clearly over it
-  const scrim=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:0x06070d,transparent:true,opacity:0.34,depthWrite:false,fog:false}));
+  const scrim=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:0x06070d,transparent:true,opacity:scrimOp,depthWrite:false,fog:false}));
   scrim.position.set(pos[0],pos[1],pos[2]+0.1);scrim.renderOrder=-9;group.add(scrim);
   return m;
 }
@@ -1295,7 +1352,7 @@ function buildPhotonics(){
     g.userData.flows.push({pts,count,wi,zoff,y:oY,sp:1.6+wi*0.05,seeds:Array.from({length:count},()=>({t:Math.random()}))});});
   const wdmLab=label('each colour of light = another data stream at once (WDM)','faint');wdmLab.position.set(4,oY-0.95,0);wdmLab.element.style.transform='translate(-50%,-50%)';g.add(wdmLab);
   scene.add(g);
-  flyTo(0,1,31, 0,-0.2,0, 1.2);
+  flyTo(-1.4,1,31, -1.4,-0.2,0, 1.2); // panned so the GPU chip + copper label clear the rail
 }
 
 /* ---------- AI / MEMORY WALL ---------- */
@@ -1304,7 +1361,7 @@ const MODELS=[{n:'Llama-3 8B',L:32,kvh:8,hd:128,W:16},{n:'Llama-3.1 70B',L:80,kv
 function kvGB(m,ctxK,b){return (2*m.L*m.kvh*m.hd*ctxK*1024*b*2)/1e9;}
 function buildAI(){
   const g=new THREE.Group();groups.ai=g;
-  addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4);
+  addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.58);
   // subtle data-ocean atmosphere (the flood of context the GPU's memory must hold)
   {const n=300;const pg=new THREE.BufferGeometry();const pp=new Float32Array(n*3);const seeds=[];
     for(let i=0;i<n;i++){const x=(Math.random()-0.5)*46,y=1+(Math.random()-0.5)*12,z=-15+Math.random()*6;
@@ -1316,9 +1373,9 @@ function buildAI(){
   // === THE MEMORY TANK — one GPU's HBM (192 GB). Weights fill the bottom, KV cache fills the top. ===
   const TANKH=13,capGB=192,scale=TANKH/capGB,baseY=-6.5,ceilY=baseY+TANKH;
   const shellGeo=new RoundedBoxGeometry(3.8,TANKH,3.8,4,0.24);
-  const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x16243c,metalness:0.1,roughness:0.3,transparent:true,opacity:0.09,clearcoat:1,envMapIntensity:1.2}));
+  const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x1a2c4a,metalness:0.1,roughness:0.25,transparent:true,opacity:0.26,clearcoat:1,envMapIntensity:1.4,emissive:0x5eead4,emissiveIntensity:0.03}));
   shell.position.set(0,baseY+TANKH/2,0);g.add(shell);
-  shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x5eead4,transparent:true,opacity:0.34})));
+  shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x5eead4,transparent:true,opacity:0.9})));
   pick(shell,'kv',()=>openNode('kv_econ'));
   const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4}));rim.position.set(0,ceilY,0);g.add(rim);
   const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);g.add(base);
@@ -1327,7 +1384,7 @@ function buildAI(){
   const tSub=label('Weights fill the bottom. The KV cache — the AI\'s memory of the conversation — fills the top.','faint');tSub.position.set(0,ceilY+2.4,0);tSub.element.style.transform='translate(-50%,-50%)';g.add(tSub);
   const tSub2=label('Drag the sliders below ↓','faint');tSub2.position.set(0,ceilY+1.7,0);tSub2.element.style.transform='translate(-50%,-50%)';tSub2.element.style.color='#5eead4';g.add(tSub2);
   const ceilLab=label('one B200 = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
-  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(0,baseY-1.7,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
+  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(5.2,baseY+2.2,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
   groups.ai.userData.tank={baseY,ceilY,scale,capGB,TANKH};
   scene.add(g);
   updateKV();
@@ -1380,7 +1437,7 @@ function setDock(region){
     dockcore.innerHTML=`<span class="dlabel">Capability</span><div class="seg" id="cxlSeg">
       <button data-v="expansion">Expansion</button><button data-v="pooling" class="on">Pooling</button><button data-v="sharing">Sharing</button></div>
       <span class="dlabel" id="cxlCap" style="margin-left:6px;text-transform:none;letter-spacing:0"><b style="color:var(--violet)">Pooling:</b> every server draws from the shared pool — no memory sits stranded.</span>`;
-    const CXLCAP={expansion:'<b style="color:var(--gold)">Expansion:</b> one server bolts on one extra memory module to grow past its own limit.',pooling:'<b style="color:var(--violet)">Pooling:</b> every server draws from the shared pool — no memory sits stranded.',sharing:'<b style="color:var(--accent-2)">Sharing:</b> several servers read the <i>same</i> block of memory at once, kept consistent.'};
+    const CXLCAP={expansion:'<b style="color:var(--heat)">Expansion:</b> one server bolts on one extra memory module to grow past its own limit.',pooling:'<b style="color:var(--violet)">Pooling:</b> every server draws from the shared pool — no memory sits stranded.',sharing:'<b style="color:var(--accent-2)">Sharing:</b> several servers read the <i>same</i> block of memory at once, kept consistent.'};
     dockcore.querySelector('#cxlSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#cxlSeg button').forEach(x=>x.classList.toggle('on',x===b));setCXL(b.dataset.v);const cap=document.getElementById('cxlCap');if(cap)cap.innerHTML=CXLCAP[b.dataset.v];});
   }else if(region==='ai'){
     dock.style.display='';
@@ -1547,7 +1604,9 @@ function hideWelcome(){welcome.classList.remove('show');try{localStorage.setItem
 document.getElementById('wTour').addEventListener('click',()=>{hideWelcome();setTimeout(()=>{if(typeof startTour==='function')startTour();},260);});
 document.getElementById('wExplore').addEventListener('click',hideWelcome);
 welcome.addEventListener('click',e=>{if(e.target===welcome)hideWelcome();});
-const introBtn=document.createElement('button');introBtn.id='introReopen';introBtn.innerHTML='?&nbsp; What is this';introBtn.addEventListener('click',showWelcome);document.body.appendChild(introBtn);
+const footlinks=document.createElement('div');footlinks.id='footlinks';document.body.appendChild(footlinks);
+const introBtn=document.createElement('button');introBtn.id='introReopen';introBtn.innerHTML='?&nbsp; What is this';introBtn.addEventListener('click',showWelcome);footlinks.appendChild(introBtn);
+const ghLink=document.createElement('a');ghLink.id='ghLink';ghLink.href='https://github.com/upamanyuacharya/memory-atlas';ghLink.target='_blank';ghLink.rel='noopener';ghLink.textContent='GitHub';footlinks.appendChild(ghLink);
 
 setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);
   let seen=false;try{seen=localStorage.getItem('atlas_seen')==='1';}catch(e){}
