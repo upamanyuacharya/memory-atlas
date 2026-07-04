@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Memory Atlas — CXL · Photonics · the AI Hardware Supply Chain</title>
+<meta name="description" content="An interactive 3D map of the AI memory and interconnect supply chain — HBM, CXL and silicon photonics: who makes what, the bottlenecks, the geography, and the companies that matter." />
+<meta name="theme-color" content="#060709" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="The Memory Atlas" />
+<meta property="og:description" content="Go from zero to expert on the AI memory supply chain — HBM, CXL, photonics: who makes what, the chokepoints, and who to watch. An interactive 3D explorer." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Memory Atlas" />
+<meta name="twitter:description" content="An interactive 3D guide to the AI memory supply chain — who makes what, the bottlenecks, and who to watch." />
+<meta property="og:image" content="assets/og.png" />
+<meta property="og:image:width" content="1280" />
+<meta property="og:image:height" content="720" />
+<meta name="twitter:image" content="assets/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060709;
+    --bg2:#0a0c11;
+    --glass:rgba(14,17,24,0.62);
+    --glass-solid:#0c0f15;
+    --hair:rgba(255,255,255,0.08);
+    --hair-bright:rgba(255,255,255,0.14);
+    --ink:#eef2f8;
+    --ink-dim:#97a3b8;
+    --ink-faint:#5d6a80;
+    --accent:#5eead4;     /* primary teal */
+    --accent-2:#46c8e0;   /* cyan */
+    --heat:#f6a345;       /* amber = bottleneck/heat */
+    --crit:#ff6b5e;       /* red = critical */
+    --violet:#9a8cff;     /* cxl */
+    --spectrum:#7ee787;   /* photonics */
+    --display:"Space Grotesk",system-ui,sans-serif;
+    --sans:"Geist","Space Grotesk",system-ui,sans-serif;
+    --mono:"Geist Mono",ui-monospace,"SF Mono",Consolas,monospace;
+    --ease:cubic-bezier(0.32,0.72,0,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  #app{position:fixed;inset:0}
+  canvas{display:block;touch-action:none}
+  ::selection{background:rgba(94,234,212,0.25)}
+
+  /* mesh-gradient ambient backdrop behind the canvas */
+  #ambient{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(70% 55% at 18% 12%, rgba(70,200,224,0.10), transparent 60%),
+      radial-gradient(60% 50% at 85% 20%, rgba(154,140,255,0.09), transparent 60%),
+      radial-gradient(80% 60% at 70% 95%, rgba(94,234,212,0.07), transparent 60%),
+      radial-gradient(50% 40% at 12% 85%, rgba(246,163,69,0.05), transparent 60%);
+    filter:saturate(1.05)}
+  /* fixed film grain */
+  #grain{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ---------------- TOP NAV (floating glass pill) ---------------- */
+  #topwrap{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;pointer-events:none}
+  #brand{pointer-events:auto;display:flex;flex-direction:column;gap:3px}
+  #brand .badge{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
+    background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px 11px;backdrop-filter:blur(16px);width:max-content}
+  #brand .badge .pulse{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2.4s var(--ease) infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.7)}}
+  #brand h1{font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:-0.02em;margin-top:7px;line-height:1}
+  #brand h1 i{font-style:italic;font-weight:500;color:var(--accent)}
+
+  #nav{pointer-events:auto;display:flex;gap:4px;background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+  .navbtn{font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:9px 15px;cursor:pointer;transition:all .4s var(--ease);white-space:nowrap;position:relative;display:flex;align-items:center;gap:7px}
+  .navbtn .ico{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.6;transition:all .4s var(--ease)}
+  .navbtn:hover{color:var(--ink);background:rgba(255,255,255,.04)}
+  .navbtn.active{color:#04110e;background:var(--accent);box-shadow:0 4px 22px rgba(94,234,212,.35)}
+  .navbtn.active .ico{opacity:1;border-radius:50%}
+  .navbtn[data-region="cxl"].active{background:var(--violet);color:#0a0820;box-shadow:0 4px 22px rgba(154,140,255,.35)}
+  .navbtn[data-region="photonics"].active{background:var(--spectrum);color:#06140a;box-shadow:0 4px 22px rgba(126,231,135,.35)}
+  .navbtn[data-region="ai"].active{background:var(--heat);color:#1a1102;box-shadow:0 4px 22px rgba(246,163,69,.35)}
+
+  /* ---------------- LEFT RAIL (context / breadcrumb) ---------------- */
+  #rail{position:absolute;left:24px;top:96px;z-index:20;width:300px;pointer-events:auto;transition:opacity .4s var(--ease)}
+  .shell{background:var(--glass);border:1px solid var(--hair);border-radius:22px;padding:6px;backdrop-filter:blur(22px);box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+  .core{background:linear-gradient(180deg,rgba(20,24,33,.55),rgba(10,12,17,.55));border:1px solid var(--hair);border-radius:17px;padding:18px}
+  #rail .ksec{font-family:var(--mono);font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;margin-bottom:12px}
+  #rail .ksec .ln{flex:1;height:1px;background:var(--hair)}
+  #rail h2{font-family:var(--display);font-size:21px;font-weight:600;letter-spacing:-.01em;line-height:1.1;margin-bottom:7px}
+  #rail .lede{font-size:13.5px;color:var(--ink-dim);line-height:1.58;margin-bottom:15px}
+  .toc{display:flex;flex-direction:column;gap:3px}
+  .toc button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;border-radius:11px;padding:9px 10px;cursor:pointer;transition:all .3s var(--ease);color:var(--ink-dim)}
+  .toc button:hover{background:rgba(255,255,255,.045);color:var(--ink);transform:translateX(2px)}
+  .toc button.on{background:rgba(94,234,212,.08);color:var(--ink)}
+  .toc .dot{width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 10px currentColor}
+  .toc .nm{font-family:var(--mono);font-size:13px;letter-spacing:.01em;flex:1}
+  .toc .meta{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)}
+  .rail-intel{width:100%;margin-top:15px;display:flex;flex-direction:column;gap:3px;align-items:flex-start;text-align:left;font-family:var(--sans);color:#0a0820;background:linear-gradient(120deg,var(--violet),#b7a8ff);border:0;border-radius:13px;padding:13px 15px;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 8px 24px rgba(154,140,255,.3);transition:all .3s var(--ease)}
+  .rail-intel span{font-family:var(--mono);font-size:10px;font-weight:400;opacity:.8;letter-spacing:.02em}
+  .rail-intel:hover{transform:translateY(-2px);box-shadow:0 13px 32px rgba(154,140,255,.48)}
+  #railprog{margin:0 0 14px}
+  #railprog .rp-top{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px}
+  #railprog .rp-n{color:var(--accent)}
+  #railprog .rp-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);overflow:hidden}
+  #railprog .rp-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),#7fe9c0);transition:width .5s var(--ease);box-shadow:0 0 10px rgba(94,234,212,.5)}
+  .toc button.seen .nm::after{content:" ✓";color:var(--accent);font-size:11px}
+  .toc button.seen{color:var(--ink)}
+
+  /* ---------------- FRACTAL DETAIL PANEL (right) ---------------- */
+  #panel{position:absolute;right:24px;top:90px;z-index:25;width:472px;max-height:calc(100vh - 130px);
+    opacity:0;transform:translateX(24px) scale(.98);pointer-events:none;transition:all .55s var(--ease)}
+  #panel.open{opacity:1;transform:none;pointer-events:auto;box-shadow:0 30px 90px rgba(0,0,0,.7)}
+  /* dim the rest of the scene so the reading panel is the focus */
+  #panelScrim{position:fixed;inset:0;z-index:23;background:radial-gradient(60% 80% at 30% 50%,transparent,rgba(4,6,10,.55));opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+  #panelScrim.on{opacity:1}
+  #panel .core{padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 162px)}
+  #panel .phead{padding:20px 22px 16px;position:relative;flex:none;border-bottom:1px solid var(--hair)}
+  #panel .phead .tier{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+  #panel .phead .tier .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 12px currentColor}
+  #panel .phead h2{font-family:var(--display);font-size:31px;font-weight:600;letter-spacing:-.02em;line-height:1.06;margin:11px 0 6px}
+  #panel .phead .tag{font-family:var(--mono);font-size:13.5px;color:var(--ink-dim)}
+  #panel .pclose{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.09);border:1px solid var(--hair-bright);color:var(--ink);cursor:pointer;font-size:19px;line-height:1;display:flex;align-items:center;justify-content:center;transition:all .3s var(--ease)}
+  #panel .pclose:hover{background:rgba(255,255,255,.1);color:var(--ink);transform:rotate(90deg)}
+  #panel .pbody{padding:18px 22px 22px;overflow-y:auto;flex:1}
+  #panel .pbody::-webkit-scrollbar{width:7px}
+  #panel .pbody::-webkit-scrollbar-thumb{background:rgba(150,170,200,.22);border-radius:4px}
+
+  .ptabs{display:flex;gap:4px;padding:0 22px;margin:-2px 0 0;flex:none;border-bottom:1px solid var(--hair);background:rgba(0,0,0,.12)}
+  .ptab{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;border-bottom:2px solid transparent;padding:12px 10px;cursor:pointer;transition:all .3s var(--ease)}
+  .ptab:hover{color:var(--ink-dim)}
+  .ptab.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+  .pblk{margin-bottom:17px}
+  .pblk p{font-size:15.5px;line-height:1.66;color:#d2dcec;margin-bottom:12px}
+  .pblk.eli{background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:14px;padding:13px 15px;margin-bottom:16px}
+  .pblk.eli .kmini{color:var(--accent);margin-bottom:7px}
+  .pblk.eli p{margin-bottom:0;color:#d8e4f1;font-size:14px}
+  .pblk.eli p em{color:var(--accent);font-style:normal;font-weight:500}
+  .share-bar{display:flex;height:26px;border-radius:9px;overflow:hidden;margin:5px 0 9px;border:1px solid var(--hair)}
+  .share-bar{height:30px!important}
+  .share-bar .sg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#04110e;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
+  .share-leg{display:flex;flex-wrap:wrap;gap:13px}
+  .share-leg span{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:7px}
+  .share-leg i{width:9px;height:9px;border-radius:2px;flex:none}
+  .pblk p strong{color:var(--ink);font-weight:600}
+  .pblk p .hl{color:var(--heat);font-weight:600}
+  .pblk p .hl2{color:var(--accent);font-weight:600}
+
+  .statrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 12px}
+  .stat{background:rgba(255,255,255,.025);border:1px solid var(--hair);border-radius:13px;padding:11px 12px}
+  .stat .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+  .stat .v{font-family:var(--mono);font-size:16.5px;font-weight:600;margin-top:5px;color:var(--ink)}
+  .stat .v small{font-size:10px;color:var(--ink-dim);font-weight:400}
+
+  /* company chips (fractal) */
+  .chips{display:flex;flex-direction:column;gap:7px}
+  .chip{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:14px;padding:10px 12px;cursor:pointer;transition:all .35s var(--ease);text-align:left;width:100%}
+  .chip:hover{background:rgba(255,255,255,.06);border-color:var(--hair-bright);transform:translateY(-1px)}
+  .chip .logo{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);overflow:hidden;font-family:var(--display);font-weight:600;font-size:13px;color:var(--ink)}
+  .logo.mono{font-weight:700;letter-spacing:.01em;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),inset 0 -8px 14px rgba(0,0,0,.25)}
+  .chip .logo img{width:20px;height:20px;object-fit:contain;filter:brightness(0) invert(1);opacity:.92}
+  .logo.photo{background:#070b12;padding:0}
+  .logo.photo img{width:100%!important;height:100%!important;object-fit:cover;filter:none!important;opacity:1!important;border-radius:inherit}
+  .chip .ct{flex:1;min-width:0}
+  .chip .cn{font-family:var(--display);font-size:15px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:7px}
+  .chip .tk{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:5px;background:rgba(94,234,212,.12);color:var(--accent)}
+  .chip .tk.priv{background:rgba(154,140,255,.14);color:var(--violet)}
+  .chip .cr{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chip .sev{width:8px;height:8px;border-radius:50%;flex:none}
+  .chip .arr{color:var(--ink-faint);font-size:13px;transition:transform .3s var(--ease)}
+  .chip:hover .arr{transform:translateX(3px);color:var(--accent)}
+
+  /* expanded company card */
+  .cocard{background:rgba(8,11,16,.6);border:1px solid var(--hair-bright);border-radius:16px;padding:15px;margin:7px 0;animation:slidein .45s var(--ease)}
+  @keyframes slidein{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+  .cocard .ch{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+  .cocard .ch .logo{width:40px;height:40px;border-radius:11px}
+  .cocard .ch .logo img{width:24px;height:24px}
+  .cocard . chn{flex:1}
+  .cocard h3{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .cocard .csub{font-family:var(--mono);font-size:10px;color:var(--ink-dim);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+  .cocard .csub span{display:inline-flex;align-items:center;gap:4px}
+  .cocard p{font-size:12.5px;line-height:1.6;color:#c2cee0;margin:8px 0}
+  .cocard .crole{font-size:12px;color:var(--ink-dim);line-height:1.55}
+  .cocard .cmetrics{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .cocard .cmetrics .m{font-family:var(--mono);font-size:9.5px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:7px;padding:4px 8px}
+  .cocard .back{font-family:var(--mono);font-size:10px;color:var(--accent);background:none;border:0;cursor:pointer;margin-top:10px;padding:0;display:flex;align-items:center;gap:5px}
+
+  /* metric list */
+  .mlist{display:flex;flex-direction:column;gap:8px}
+  .mitem{display:flex;gap:11px;align-items:flex-start;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+  .mitem:last-child{border:0}
+  .mitem .mk{font-family:var(--mono);font-size:13.5px;color:var(--accent);font-weight:500;flex:none;width:40%}
+  .mitem .mv{font-size:13.5px;color:var(--ink-dim);line-height:1.55}
+
+  /* geography */
+  .geo{display:flex;flex-direction:column;gap:8px}
+  .georow{display:flex;align-items:center;gap:11px}
+  .georow .gflag{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--ink);background:rgba(255,255,255,.06);border:1px solid var(--hair);border-radius:7px;padding:4px 8px;flex:none;min-width:44px;text-align:center}
+  .georow .gt{font-size:13.5px;color:var(--ink-dim);line-height:1.5}
+
+  /* bottleneck meter */
+  .sevmeter{display:flex;align-items:center;gap:11px;margin:6px 0 12px}
+  .sevmeter .bars{display:flex;gap:4px}
+  .sevmeter .bars i{width:22px;height:7px;border-radius:3px;background:rgba(255,255,255,.08)}
+  .sevmeter .lbl{font-family:var(--mono);font-size:11px;font-weight:600}
+
+  .related{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .related button{font-family:var(--mono);font-size:10px;color:var(--ink-dim);background:rgba(255,255,255,.035);border:1px solid var(--hair);border-radius:999px;padding:6px 11px;cursor:pointer;transition:all .3s var(--ease);display:flex;align-items:center;gap:6px}
+  .related button:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.07)}
+  .related button .d{width:7px;height:7px;border-radius:50%}
+  .srclist{display:flex;flex-direction:column;gap:1px}
+  .srclink{font-size:12.5px;color:var(--accent-2);text-decoration:none;display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.045);line-height:1.4;transition:color .2s}
+  .srclink::before{content:"↗";opacity:.55;font-size:11px;margin-top:1px}
+  .srclink:hover{color:var(--accent)}
+  .cosrc{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11.5px;color:var(--accent-2);text-decoration:none;margin-top:11px;padding:7px 12px;border:1px solid var(--hair);border-radius:9px;transition:all .25s var(--ease)}
+  .cosrc:hover{color:var(--accent);border-color:var(--hair-bright);background:rgba(94,234,212,.06)}
+
+  /* ---------------- BOTTOM CONTROL DOCK ---------------- */
+  #dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:25;pointer-events:auto;transition:opacity .4s var(--ease)}
+  #dock .core{display:flex;gap:14px;align-items:center;padding:13px 18px;flex-wrap:wrap;justify-content:center;max-width:min(92vw,840px)}
+  .dlabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+  .seg{display:flex;background:rgba(255,255,255,.04);border-radius:11px;padding:3px;gap:2px}
+  .seg button{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);background:transparent;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;transition:all .3s var(--ease)}
+  .seg button:hover{color:var(--ink)}
+  .seg button.on{background:var(--ink);color:#0a0e14;font-weight:600}
+  .slider-wrap{display:flex;align-items:center;gap:11px;min-width:210px}
+  .slider-wrap input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--violet));outline:none;flex:1;min-width:110px}
+  .slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 0 0 4px rgba(94,234,212,.22),0 2px 8px rgba(0,0,0,.4)}
+  .slider-wrap .sv{font-family:var(--mono);font-size:12px;color:var(--heat);min-width:78px;text-align:right;font-weight:500}
+  .toggle{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);cursor:pointer;user-select:none}
+  .toggle .sw{width:34px;height:19px;border-radius:11px;background:rgba(255,255,255,.1);position:relative;transition:.3s var(--ease)}
+  .toggle .sw::after{content:"";position:absolute;width:15px;height:15px;border-radius:50%;background:var(--ink-dim);top:2px;left:2px;transition:.3s var(--ease)}
+  .toggle.on .sw{background:var(--accent)}
+  .toggle.on .sw::after{left:17px;background:#06120f}
+  .kvo-cluster{display:flex;gap:15px;border-left:1px solid var(--hair);padding-left:16px}
+  .kvo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:48px}
+  .kvo .kvo-v{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--ink);line-height:1}
+  .kvo .kvo-l{font-family:var(--mono);font-size:8.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
+  #kvNote{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:26;font-family:var(--mono);font-size:12px;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 17px;backdrop-filter:blur(14px);max-width:88vw;text-align:center;transition:opacity .4s,color .4s;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #kvNote b{color:var(--heat)}
+  #kvNote.ok b{color:var(--accent)}
+
+  /* ---------------- WELCOME / ONBOARDING ---------------- */
+  #welcome{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(80% 70% at 50% 30%,rgba(10,14,22,.66),rgba(4,6,10,.9));backdrop-filter:blur(7px);
+    opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
+  #welcome.show{opacity:1;pointer-events:auto}
+  #welcome .wcard{width:min(620px,94vw);transform:translateY(14px) scale(.98);transition:transform .6s var(--ease)}
+  #welcome.show .wcard{transform:none}
+  #welcome .core{padding:34px 38px 28px}
+  .weyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:9px}
+  .weyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  .wtitle{font-family:var(--display);font-size:38px;font-weight:600;letter-spacing:-.025em;line-height:1.04;margin:16px 0 16px}
+  .wtitle i{font-style:italic;font-weight:500;color:var(--accent)}
+  .wlede{font-size:16px;line-height:1.6;color:#cdd8e8;margin-bottom:13px}
+  .wlede b{color:var(--ink);font-weight:600}
+  .wreassure{font-family:var(--display);font-size:16.5px;font-style:italic;color:var(--ink-dim);margin-bottom:24px}
+  .wcta{display:flex;gap:11px;flex-wrap:wrap;align-items:stretch}
+  .wbtn{font-family:var(--sans);cursor:pointer;border-radius:15px;padding:15px 22px;transition:all .3s var(--ease);text-align:left;border:1px solid transparent;display:flex;flex-direction:column;gap:3px}
+  .wbtn.primary{background:linear-gradient(120deg,var(--accent),#7fe9c0);color:#04110e;font-size:16px;font-weight:600;box-shadow:0 10px 34px rgba(94,234,212,.34);flex:1;min-width:230px}
+  .wbtn.primary .wsub{font-size:11.5px;font-weight:400;opacity:.78}
+  .wbtn.primary:hover{transform:translateY(-2px);box-shadow:0 16px 44px rgba(94,234,212,.5)}
+  .wbtn.ghost{background:rgba(255,255,255,.04);border-color:var(--hair-bright);color:var(--ink-dim);font-size:14.5px;font-weight:500;justify-content:center;align-items:center}
+  .wbtn.ghost:hover{background:rgba(255,255,255,.09);color:var(--ink);transform:translateY(-2px)}
+  .wfoot{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin-top:22px;line-height:1.6}
+  .wfoot b{color:var(--ink-dim)}
+  /* a small persistent "intro" reopener */
+  #introBtn{position:absolute;top:0;right:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
+  @media (max-width:560px){.wtitle{font-size:30px}#welcome .core{padding:26px 24px}}
+  #introReopen{position:fixed;left:24px;bottom:24px;z-index:30;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;backdrop-filter:blur(14px);transition:all .3s var(--ease)}
+  #introReopen:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
+  @media (max-width:980px){#introReopen{left:20px;bottom:74px}}
+
+  /* ---------------- 3D LABELS ---------------- */
+  .lbl3d{font-family:var(--mono);font-size:13px;letter-spacing:.01em;color:var(--ink);background:rgba(8,11,17,.74);border:1px solid var(--hair);border-radius:9px;padding:5px 11px;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.45);transition:opacity .3s}
+  .lbl3d.title{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em;padding:7px 14px}
+  .lbl3d.faint{color:var(--ink-dim);background:rgba(8,11,17,.5);border-color:transparent;font-size:12px;box-shadow:none}
+  .lbl3d.heat{color:var(--heat);border-color:rgba(246,163,69,.45);font-weight:600}
+  .lbl3d.node{cursor:pointer;pointer-events:auto;font-family:var(--display);font-size:17px;font-weight:600;padding:10px 19px;border-radius:999px;background:rgba(10,13,19,.82)}
+  .lbl3d.node:hover{border-color:var(--hair-bright);transform:scale(1.06)}
+  .lbl3d.edge{font-size:11.5px;color:var(--ink-dim);background:rgba(8,11,17,.62);border:0;letter-spacing:.03em}
+
+  /* ---------------- GUIDED TOUR + CTAs ---------------- */
+  .cta-row{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;pointer-events:auto}
+  .tourBtn{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(94,234,212,.32);transition:all .35s var(--ease)}
+  .tourBtn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(94,234,212,.45)}
+  .tourBtn .tb-sub{font-size:10px;opacity:.7;border-left:1px solid rgba(4,17,14,.3);padding-left:9px}
+  .watchBtn{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:#0a0820;background:linear-gradient(120deg,var(--violet),#b7a8ff);border:0;border-radius:999px;padding:10px 18px;cursor:pointer;font-weight:600;box-shadow:0 8px 26px rgba(154,140,255,.32);transition:all .35s var(--ease)}
+  .watchBtn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(154,140,255,.5)}
+
+  /* ---------------- WATCHLIST MODAL ---------------- */
+  #watchModal,#roadModal{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+  #watchModal.on,#roadModal.on{opacity:1;pointer-events:auto}
+  .wm-backdrop{position:absolute;inset:0;background:rgba(4,6,10,.74);backdrop-filter:blur(9px)}
+  .wm-card{position:relative;width:min(900px,95vw);max-height:86vh;transform:scale(.97);transition:transform .45s var(--ease)}
+  #watchModal.on .wm-card,#roadModal.on .wm-card{transform:scale(1)}
+  .wm-card .core{padding:0;display:flex;flex-direction:column;max-height:85vh;overflow:hidden}
+  .wm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:22px 26px;border-bottom:1px solid var(--hair);flex:none}
+  .wm-head h2{font-family:var(--display);font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .wm-head .wm-sub{font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:5px;line-height:1.4;max-width:520px}
+  .wmclose{flex:none;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .3s var(--ease)}
+  .wmclose:hover{background:rgba(255,255,255,.1);color:var(--ink);transform:rotate(90deg)}
+  .wm-tabs{display:flex;gap:3px;padding:0 26px;border-bottom:1px solid var(--hair);flex:none;background:rgba(0,0,0,.12)}
+  .wm-tabs button{font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);background:transparent;border:0;border-bottom:2px solid transparent;padding:15px 15px;cursor:pointer;transition:all .3s var(--ease);white-space:nowrap}
+  .wm-tabs button:hover{color:var(--ink-dim)}
+  .wm-tabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+  @media(max-width:560px){.wm-tabs button{font-size:10px;padding:11px 8px}}
+  .wm-body{padding:20px 26px 26px;overflow-y:auto}
+  /* country (geography) cards */
+  .geo-card{background:rgba(255,255,255,.025);border:1px solid var(--hair);border-radius:15px;padding:15px 16px;margin-bottom:11px}
+  .geo-card .gh{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+  .geo-card .gcc{font-family:var(--mono);font-weight:700;font-size:12px;letter-spacing:.06em;color:var(--ink);background:rgba(255,255,255,.07);border:1px solid var(--hair);border-radius:8px;padding:5px 9px;flex:none}
+  .geo-card .gn{font-family:var(--display);font-size:19px;font-weight:600;flex:1}
+  .geo-card .gsev{display:flex;gap:3px}
+  .geo-card .gsev i{width:16px;height:6px;border-radius:3px}
+  .geo-card .gr{font-size:13px;line-height:1.55;color:var(--ink-dim);margin-bottom:11px}
+  .geo-card .spof{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--crit);border:1px solid rgba(255,107,94,.4);border-radius:5px;padding:2px 7px;margin-left:8px}
+  /* shortlist */
+  .sl-d{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin:-3px 0 11px}
+  .sl-list{display:flex;flex-direction:column;gap:8px}
+  .sl-row{display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:15px;padding:12px 14px;cursor:pointer;text-align:left;transition:all .3s var(--ease);width:100%}
+  .sl-row:hover{background:rgba(255,255,255,.07);border-color:var(--hair-bright);transform:translateY(-1px)}
+  .sl-row .logo{width:38px;height:38px;border-radius:11px;font-size:13px}
+  .sl-row .logo img{width:22px;height:22px}
+  .sl-ct{flex:1;min-width:0}
+  .sl-ct .cn{font-family:var(--display);font-size:15.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px}
+  .sl-why{display:block;font-size:12.5px;color:var(--ink-dim);line-height:1.45;margin-top:4px}
+  .wm-body::-webkit-scrollbar{width:8px}.wm-body::-webkit-scrollbar-thumb{background:rgba(150,170,200,.22);border-radius:4px}
+  .wm-group{margin-bottom:22px}
+  .wm-gt{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .wm-gt::after{content:"";flex:1;height:1px;background:var(--hair)}
+  .wm-body .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media(max-width:640px){.wm-body .chips{grid-template-columns:1fr}}
+  /* timeline */
+  .tl{position:relative;padding-left:30px}
+  .tl::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:linear-gradient(180deg,var(--accent),var(--violet),var(--heat));opacity:.32}
+  .tl-item{position:relative;margin-bottom:24px}
+  .tl-item:last-child{margin-bottom:6px}
+  .tl-item::before{content:"";position:absolute;left:-27px;top:3px;width:13px;height:13px;border-radius:50%;background:var(--bg);border:2px solid var(--dotc,var(--accent));box-shadow:0 0 12px var(--dotc,var(--accent))}
+  .tl-date{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--dotc,var(--accent));display:flex;align-items:center;gap:9px}
+  .tl-kind{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;padding:2px 7px;border-radius:5px;border:1px solid currentColor;opacity:.85}
+  .tl-t{font-family:var(--display);font-size:18.5px;font-weight:600;margin:5px 0 6px;letter-spacing:-.01em;line-height:1.2}
+  .tl-d{font-size:14px;line-height:1.58;color:var(--ink-dim);margin-bottom:11px}
+  .tl-cos{display:flex;flex-wrap:wrap;gap:6px}
+  .tl-co{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:999px;padding:4px 11px 4px 5px;cursor:pointer;transition:all .3s var(--ease);font-family:var(--mono);font-size:11px;color:var(--ink-dim)}
+  .tl-co:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.08);transform:translateY(-1px)}
+  .tl-co .logo{width:22px;height:22px;border-radius:6px;font-size:9px}
+  .tl-co .logo img{width:13px;height:13px}
+  .tl-co .tk{font-size:9.5px;color:var(--accent)}
+  #tour{position:absolute;left:50%;bottom:104px;transform:translateX(-50%) translateY(14px);z-index:28;width:min(580px,92vw);opacity:0;pointer-events:none;transition:all .55s var(--ease)}
+  #tour.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+  #tour .core{padding:19px 22px}
+  #tour .trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+  #tour .tstep{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent)}
+  #tour .tprog{display:flex;gap:5px}
+  #tour .tprog i{width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s var(--ease)}
+  #tour .tprog i.on{background:var(--accent)}
+  #tour h3{font-family:var(--display);font-size:20px;font-weight:600;margin-bottom:7px;letter-spacing:-.01em}
+  #tour p{font-size:14px;line-height:1.62;color:#cdd8e8;margin-bottom:15px}
+  #tour .tnav{display:flex;gap:8px;align-items:center}
+  #tour .tnav button{font-family:var(--mono);font-size:12px;border-radius:999px;padding:9px 16px;cursor:pointer;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--ink-dim);transition:all .3s var(--ease)}
+  #tour .tnav button:hover{color:var(--ink);border-color:var(--hair-bright)}
+  #tour .tnav .next{background:var(--accent);color:#04110e;border-color:transparent;font-weight:600;margin-left:auto}
+  #tour .tnav .next:hover{color:#04110e;transform:translateY(-1px)}
+  #tour .tnav .next:disabled{opacity:.38;cursor:not-allowed;transform:none}
+  .tq{margin:2px 0 15px;background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:13px;padding:14px 15px}
+  .tq-ask{font-size:13.5px;color:var(--ink);font-weight:500;margin-bottom:11px;line-height:1.45}
+  .tq-opt{display:block;width:100%;text-align:left;font-family:var(--sans);font-size:13px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:all .25s var(--ease)}
+  .tq-opt:last-child{margin-bottom:0}
+  .tq-opt:hover{background:rgba(255,255,255,.09);color:var(--ink);border-color:var(--hair-bright);transform:translateX(2px)}
+  .tq-fb{font-size:13.5px;line-height:1.55}
+  .tq-fb.right{color:var(--accent)}
+  .tq-fb.wrong{color:#cdd8e8}
+
+  /* ---------------- HINT ---------------- */
+  #hint{position:absolute;right:24px;bottom:24px;z-index:20;font-family:var(--mono);font-size:10px;color:var(--ink-faint);text-align:right;line-height:1.8;pointer-events:none;transition:opacity .4s}
+  #hint b{color:var(--ink-dim)}
+
+  /* ---------------- LOADER ---------------- */
+  #loader{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;background:var(--bg);transition:opacity .7s var(--ease)}
+  #loader.gone{opacity:0;pointer-events:none}
+  #loader .mark{font-family:var(--display);font-size:30px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
+  #loader .mark i{font-style:italic;color:var(--accent)}
+  #loader .track{width:200px;height:2px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+  #loader .track .fill{height:100%;width:30%;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:load 1.1s var(--ease) infinite}
+  @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}
+  #loader .lt{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint)}
+
+  @media (max-width:980px){
+    #rail{display:none}
+    #panel{width:min(392px,calc(100vw - 40px));right:20px}
+    #brand h1{font-size:19px}
+  }
+</style>
+</head>
+<body>
+<div id="ambient"></div>
+<div id="app"></div>
+<div id="grain"></div>
+
+<div id="loader">
+  <div class="mark">The Memory <i>Atlas</i></div>
+  <div class="track"><div class="fill"></div></div>
+  <div class="lt" id="lt">Mapping the supply chain…</div>
+</div>
+
+<!-- WELCOME / ONBOARDING (Khan-style: stakes first, zero jargon, one clear action) -->
+<div id="welcome">
+  <div class="wcard shell"><div class="core">
+    <div class="weyebrow"><span class="pulse"></span>The Memory Atlas</div>
+    <h1 class="wtitle">The chips behind AI, <i>made simple.</i></h1>
+    <p class="wlede">Every AI you use — ChatGPT, Gemini, Grok — runs on a stack of hardware controlled by a handful of companies. This is a living 3D map of that stack: <b>who makes what, where the bottlenecks are, and which companies actually matter.</b></p>
+    <p class="wreassure">It looks complicated. It isn't. Give it three minutes.</p>
+    <div class="wcta">
+      <button id="wTour" class="wbtn primary">▶&nbsp; Take the 3-minute tour<span class="wsub">recommended — we'll walk you through it</span></button>
+      <button id="wExplore" class="wbtn ghost">I'll explore on my own&nbsp;→</button>
+    </div>
+    <div class="wfoot">No sign-up. <b>Drag</b> to look around · <b>click</b> any glowing node to dig in · everything links out to real sources.</div>
+  </div></div>
+</div>
+
+<!-- TOP -->
+<div id="topwrap">
+  <div id="brand">
+    <span class="badge"><span class="pulse"></span>Interactive Atlas · AI Hardware Supply Chain</span>
+    <h1>The Memory <i>Atlas</i></h1>
+    <div class="cta-row">
+      <button id="tourBtn" class="tourBtn">▶&nbsp; Take the guided tour <span class="tb-sub">zero → expert</span></button>
+      <button id="intelBtn" class="watchBtn">◎&nbsp; Investor intelligence</button>
+    </div>
+  </div>
+  <div id="nav">
+    <button class="navbtn active" data-region="map"><span class="ico"></span>Map</button>
+    <button class="navbtn" data-region="hierarchy" style="color:var(--accent)"><span class="ico"></span>Stack</button>
+    <button class="navbtn" data-region="cxl" style="color:var(--violet)"><span class="ico"></span>CXL</button>
+    <button class="navbtn" data-region="photonics" style="color:var(--spectrum)"><span class="ico"></span>Photonics</button>
+    <button class="navbtn" data-region="ai" style="color:var(--heat)"><span class="ico"></span>The Wall</button>
+  </div>
+</div>
+
+<!-- LEFT RAIL -->
+<div id="rail"><div class="shell"><div class="core" id="railcore"></div></div></div>
+
+<!-- RIGHT PANEL -->
+<div id="panel"><div class="shell"><div class="core">
+  <div class="phead" id="phead"></div>
+  <div class="ptabs" id="ptabs"></div>
+  <div class="pbody" id="pbody"></div>
+</div></div></div>
+
+<!-- BOTTOM DOCK -->
+<div id="dock" style="display:none"><div class="shell"><div class="core" id="dockcore"></div></div></div>
+
+<div id="hint"><b>drag</b> to orbit · <b>scroll</b> to zoom · <b>click</b> any node to open its file</div>
+
+<!-- GUIDED TOUR CARD -->
+<div id="tour"><div class="shell"><div class="core"></div></div></div>
+
+<!-- KV live takeaway (AI region) -->
+<div id="kvNote" style="display:none"></div>
+
+<!-- INVESTOR INTELLIGENCE MODAL (tabs: by layer · by country · roadmap) -->
+<div id="watchModal">
+  <div class="wm-backdrop"></div>
+  <div class="wm-card shell"><div class="core">
+    <div class="wm-head">
+      <div><h2>Investor Intelligence</h2><div class="wm-sub" id="wmSub"></div></div>
+      <button class="wmclose">✕</button>
+    </div>
+    <div class="wm-tabs" id="wmTabs">
+      <button data-it="short" class="on">The shortlist</button>
+      <button data-it="watch">By layer</button>
+      <button data-it="geo">By country</button>
+      <button data-it="road">Roadmap</button>
+    </div>
+    <div class="wm-body" id="wmBody"></div>
+  </div></div>
+</div>
+
+<script type="importmap">
+{
+  "imports":{
+    "three":"https://unpkg.com/three@0.161.0/build/three.module.js",
+    "three/addons/":"https://unpkg.com/three@0.161.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {CSS2DRenderer,CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* =========================================================================
+   CONTENT MODEL  — the "second brain". Nodes + companies + relationships.
+   Business lens: who makes what · bottleneck · geography · metrics.
+   ========================================================================= */
+
+// ---- COMPANIES (keyed) ----
+const CO = {
+  // memory makers
+  skhynix:{n:'SK Hynix',tk:'000660.KS',ctry:'South Korea',slug:'',ic:'assets/skhynix.png',role:'#1 HBM maker (~50–62% share). First to qualify each generation at NVIDIA; HBM more than doubled YoY. The bellwether of the whole cycle.',makes:'HBM3E / HBM4 stacks',mx:['HBM bit-share','NVIDIA qualification','HBM4 ramp']},
+  samsung:{n:'Samsung',tk:'005930.KS',ctry:'South Korea',slug:'samsung',role:'#2 in HBM, racing to qualify HBM4 at NVIDIA. Huge DRAM + foundry + packaging base.',makes:'HBM, DRAM, foundry',mx:['HBM qual status','DRAM ASP','foundry ramp']},
+  micron:{n:'Micron',tk:'MU',ctry:'USA (fab Japan/Taiwan)',slug:'',role:'#3 HBM, the only US-HQ DRAM maker. HBM sold out through FY2026; 12-Hi HBM3E runs ~30% lower power — its edge in winning NVIDIA allocation.',makes:'HBM3E, DDR5, CXL modules',mx:['HBM bit-share','sold-out status','HBM gross margin']},
+  // packaging / equipment
+  tsmc:{n:'TSMC',tk:'TSM',ctry:'Taiwan',slug:'',ic:'assets/tsmc.png',role:'Makes the GPU die AND the CoWoS packaging that bonds HBM to it. CoWoS is booked through 2027 (52–78 wk lead times) — the single tightest link in AI. A Taiwan disruption stops the whole stack.',makes:'Logic + CoWoS packaging + Si photonics',mx:['CoWoS wafers/month','advanced-node share','packaging lead time']},
+  besi:{n:'BE Semiconductor',tk:'BESI',ctry:'Netherlands',slug:'',role:'Hybrid-bonding tool leader — the technique HBM4 / future stacking needs. Tiny float, huge optionality.',makes:'Hybrid-bonding die attach',mx:['hybrid-bond orders','HBM4 adoption']},
+  asml:{n:'ASML',tk:'ASML',ctry:'Netherlands',slug:'',ic:'assets/asml.png',role:'Monopoly on EUV lithography — every leading-edge logic + DRAM die needs it. Ultimate chokepoint.',makes:'EUV / DUV litho systems',mx:['EUV bookings','China export rules','High-NA ramp']},
+  amat:{n:'Applied Materials',tk:'AMAT',ctry:'USA',slug:'',role:'Deposition/etch + packaging tools used across HBM TSV and advanced packaging.',makes:'Wafer-fab & packaging equipment',mx:['packaging tool orders','DRAM capex']},
+  // materials
+  shinetsu:{n:'Shin-Etsu',tk:'4063.T',ctry:'Japan',slug:'',role:'World #1 silicon wafers + photoresist. Japan\'s quiet grip on materials.',makes:'Silicon wafers, photoresist',mx:['wafer pricing','resist share']},
+  ibiden:{n:'Ibiden',tk:'4062.T',ctry:'Japan',slug:'',role:'ABF substrate leader — the package substrate every high-end CPU/GPU rides on.',makes:'ABF / IC substrates',mx:['substrate capacity','AI substrate mix']},
+  // consumers
+  nvidia:{n:'NVIDIA',tk:'NVDA',ctry:'USA (fab TSMC)',slug:'nvidia',role:'Buys the most HBM, NVLink, and optics on earth. Sets the roadmap; locks up supply (lasers, CoWoS, HBM).',makes:'GPUs, NVLink, NVSwitch, photonic switches',mx:['data-center revenue','supply lockups','NVLink roadmap']},
+  amd:{n:'AMD',tk:'AMD',ctry:'USA (fab TSMC)',slug:'amd',role:'MI-series GPUs with leading HBM capacity; backs UALink to break NVLink lock-in.',makes:'MI GPUs, UALink',mx:['MI ramp','HBM capacity lead','UALink traction']},
+  // interconnect / CXL
+  astera:{n:'Astera Labs',tk:'ALAB',ctry:'USA (fab TSMC)',slug:'',ic:'assets/astera.png',role:'The only large-cap pure-play on AI connectivity — Aries retimers, Leo CXL controllers, Scorpio fabric switches. FY25 revenue $852M (+115%), ~76% gross margin. Risk: one customer is >70% of revenue.',makes:'Retimers, CXL controllers, fabric switches',mx:['Scorpio switch design wins','customer concentration','revenue growth']},
+  marvell:{n:'Marvell',tk:'MRVL',ctry:'USA (fab TSMC)',slug:'',role:'~70% optical-DSP share + custom AI silicon + Celestial AI photonic memory fabric ($3.25B). Most complete optical stack in public equities.',makes:'Optical DSP, custom XPU, Photonic Fabric',mx:['DSP share','custom-silicon wins','Celestial run-rate']},
+  broadcom:{n:'Broadcom',tk:'AVGO',ctry:'USA (fab TSMC)',slug:'broadcom',role:'Tomahawk switching + CPO (Davisson 102.4 Tbps) + custom XPUs for hyperscalers. Anchor of the UALink/merchant-silicon camp.',makes:'Ethernet switches, CPO, custom AI ASICs',mx:['custom-ASIC ramp','CPO attach','switch share']},
+  montage:{n:'Montage Tech',tk:'688008.SH',ctry:'China',slug:'',role:'CXL memory controllers + DDR5 RCD/MRDIMM buffers. China\'s CXL silicon play.',makes:'CXL controllers, memory interface',mx:['CXL revenue','MRDIMM ramp']},
+  rambus:{n:'Rambus',tk:'RMBS',ctry:'USA',slug:'',role:'Memory-interface IP + chips (CXL, MRDIMM, PCIe). Licensing royalties scale with every DDR5/CXL device.',makes:'Memory IP, buffer chips',mx:['royalty growth','CXL IP wins']},
+  intel:{n:'Intel',tk:'INTC',ctry:'USA',slug:'intel',role:'Originated CXL; Xeon is the CPU host for CXL memory. Foundry + photonics IP.',makes:'Xeon CPUs, CXL host, Si photonics',mx:['Xeon CXL support','foundry progress']},
+  // photonics
+  coherent:{n:'Coherent',tk:'COHR',ctry:'USA',slug:'',role:'~25% transceiver share + vertically integrated InP lasers (sold out to 2027). NVIDIA put $2B in to lock laser supply.',makes:'InP lasers, 800G/1.6T transceivers',mx:['datacenter mix >50%','InP lead times','book-to-bill']},
+  lumentum:{n:'Lumentum',tk:'LITE',ctry:'USA',slug:'',role:'Laser specialist — only volume supplier of 200G/lane EML lasers (needed for 1.6T). Purest laser-chokepoint play.',makes:'EML / CW lasers',mx:['EML ASP','laser bookings','CPO laser POs']},
+  fabrinet:{n:'Fabrinet',tk:'FN',ctry:'Thailand',slug:'',role:'Contract assembler for Coherent, Lumentum, Ciena. The cleanest pluggable-demand barometer.',makes:'Precision optical assembly',mx:['quarterly revenue','utilization','Bldg-10 ramp']},
+  innolight:{n:'InnoLight',tk:'688161.SH',ctry:'China',slug:'',role:'>50% of 800G modules in GB200; ~60% of NVIDIA volume with Eoptolink. Depends on US DSPs + JP/US lasers.',makes:'800G / 1.6T transceivers',mx:['module units','1.6T share','DSP dependency']},
+  ayar:{n:'Ayar Labs',tk:'PRIVATE',ctry:'USA',slug:'',role:'In-package optical I/O chiplets (TeraPHY). $3.75B Series E; NVIDIA/AMD/Intel backed. IPO signaled.',makes:'Optical I/O chiplets',mx:['volume-production','design wins','IPO timing']},
+  lightmatter:{n:'Lightmatter',tk:'PRIVATE',ctry:'USA',slug:'',role:'Passage photonic interposer (114 Tbps). $4.4B valuation; T. Rowe / Google / HPE backed.',makes:'Photonic interposer / CPO',mx:['valuation','customer pilots']},
+  celestial:{n:'Celestial AI',tk:'→ MRVL',ctry:'USA',slug:'',role:'Photonic Fabric for optical memory disaggregation. Acquired by Marvell for $3.25B — the valuation anchor.',makes:'Photonic memory fabric',mx:['Marvell run-rate','disaggregation wins']},
+  corning:{n:'Corning',tk:'GLW',ctry:'USA',slug:'',role:'Optical fiber + connectors for the AI backbone and CPO fiber arrays.',makes:'Fiber, FAUs, connectors',mx:['optical-fiber demand','CPO content']},
+  sumitomo:{n:'Sumitomo Electric',tk:'5802.T',ctry:'Japan',slug:'',role:'InP/CW lasers, fiber, connectors. Stock +85% in 2025 on laser tightness. Japan\'s component grip.',makes:'Lasers, fiber, FAUs',mx:['laser supply','AI optics mix']},
+  // --- chokepoint deep-cuts (packaging, materials, equipment, optics) ---
+  ajinomoto:{n:'Ajinomoto',tk:'2802.T',ctry:'Japan',slug:'',ic:'assets/ajinomoto.png',role:'Yes — the food company. Invented ABF, the insulating film inside every high-end chip substrate. Controls ~95% of the ABF market and hiked prices 30%. The quietest monopoly in AI.',makes:'ABF build-up film',mx:['ABF price','95% monopoly','AI substrate demand']},
+  ibiden:{n:'Ibiden',tk:'4062.T',ctry:'Japan',slug:'',role:'~35% of high-end FC-BGA substrates — the board every GPU/CPU package rides on. ¥500B expansion; substrates back in shortage H1 2026.',makes:'FC-BGA / IC substrates',mx:['FC-BGA utilization','substrate lead time','shortage status']},
+  ase:{n:'ASE Technology',tk:'ASX',ctry:'Taiwan',slug:'',role:'World\'s largest OSAT. Takes TSMC\'s CoWoS overflow — a relief valve for the packaging bottleneck, not a substitute at the leading edge.',makes:'Assembly, test, CoWoS overflow',mx:['CoWoS sub-contract volume','OSAT utilization']},
+  amkor:{n:'Amkor',tk:'AMKR',ctry:'USA',slug:'',role:'#2 OSAT (ops in Korea, Vietnam, Arizona). Licensed Intel EMIB; the US-footprint packaging hedge.',makes:'Advanced packaging, test',mx:['CoWoS overflow','Arizona ramp']},
+  lam:{n:'Lam Research',tk:'LRCX',ctry:'USA',slug:'',role:'Etch & deposition tools for HBM\'s through-silicon vias. HBM tool revenue +50% YoY — equipment ordered today = chips in 12–24 months.',makes:'TSV etch / deposition',mx:['HBM tool orders','memory WFE split']},
+  disco:{n:'Disco',tk:'6146.T',ctry:'Japan',slug:'',role:'Near-monopoly on wafer dicing & grinding — every advanced chip is thinned and cut on Disco tools. A quiet utilization barometer.',makes:'Dicing / grinding tools',mx:['utilization','advanced-packaging activity']},
+  kla:{n:'KLA',tk:'KLAC',ctry:'USA',slug:'',role:'Process control & inspection — finds defects in HBM stacks and advanced packages. Yield gating as stacks go 12-Hi+.',makes:'Inspection / metrology',mx:['packaging inspection orders','yield ramp']},
+  lumentum2:{n:'Lumentum',tk:'LITE',ctry:'USA',slug:'',role:'Only volume supplier of 200G/lane EML lasers — the exact part 1.6T optics needs. NVIDIA put ~$2B in to lock supply. Purest laser-chokepoint play.',makes:'EML / CW lasers',mx:['EML ASP','laser bookings','CPO POs']},
+  ciena:{n:'Ciena',tk:'CIEN',ctry:'USA',slug:'',role:'Coherent long-haul transport (WaveLogic) — the pipes between data centers. Indirect AI beneficiary via data-center interconnect, not intra-cluster optics.',makes:'Coherent DWDM transport',mx:['DCI demand','WaveLogic wins']},
+  microchip:{n:'Microchip',tk:'MCHP',ctry:'USA',slug:'',role:'Broad-line PCIe/CXL retimers — lower ASP, broader base than Astera. A diversified way to play connectivity content growth.',makes:'PCIe/CXL retimers',mx:['retimer attach','PCIe gen transition']},
+};
+// ---- company investor-relations / news pages ----
+const COURL={
+  nvidia:'https://investor.nvidia.com/',amd:'https://ir.amd.com/',intel:'https://www.intc.com/',
+  skhynix:'https://news.skhynix.com/',samsung:'https://semiconductor.samsung.com/news-events/news/',micron:'https://investors.micron.com/',
+  tsmc:'https://investor.tsmc.com/english',asml:'https://www.asml.com/en/investors',besi:'https://www.besi.com/investor-relations/',
+  ajinomoto:'https://www.ajinomoto.co.jp/company/en/ir/',ibiden:'https://www.ibiden.com/ir/',shinetsu:'https://www.shinetsu.co.jp/en/ir/',
+  lam:'https://investor.lamresearch.com/',kla:'https://ir.kla.com/',disco:'https://www.disco.co.jp/eg/ir/',ase:'https://www.aseglobal.com/en/investors/',amkor:'https://ir.amkor.com/',
+  astera:'https://www.asteralabs.com/news/',marvell:'https://investor.marvell.com/',broadcom:'https://investors.broadcom.com/',rambus:'https://investors.rambus.com/',montage:'https://www.montage-tech.com/',microchip:'https://www.microchip.com/en-us/about/investor-relations',
+  coherent:'https://investors.coherent.com/',lumentum2:'https://investor.lumentum.com/',fabrinet:'https://investor.fabrinet.com/',innolight:'https://www.innolight.com/',ciena:'https://investor.ciena.com/',corning:'https://www.corning.com/worldwide/en/about-us/investor-relations.html',sumitomo:'https://sumitomoelectric.com/ir',
+  ayar:'https://ayarlabs.com/news/',lightmatter:'https://lightmatter.co/',celestial:'https://www.marvell.com/company/newsroom.html',
+};
+
+// ---- HIERARCHY LAYERS (the central spine) ----
+const HIER=[
+  {id:'reg',name:'Registers',kind:'On-chip SRAM',col:'#d7e3f2',cap:'~32 MB',bw:'>20 TB/s',lat:'~0.5 ns',en:'~0.1 pJ/b',sev:1,
+   blurb:'The fastest memory that exists. Each GPU Streaming Multiprocessor holds ~256 KB of register file — the operands of instructions in flight. ~32 MB aggregate on an H100.',
+   biz:'Not separately investable — it ships inside the GPU. The economics flow to whoever designs the GPU (<b>NVIDIA</b>, <b>AMD</b>) and the foundry that prints it (<b>TSMC</b>).',
+   cos:['nvidia','amd','tsmc'],geo:[['KOR/USA','GPU design — NVIDIA, AMD']],
+   mx:[['On-die SRAM','grows slowly per node — SRAM scaling has stalled, a quiet driver of HBM reliance']],related:['hbm','wall']},
+  {id:'sram',name:'L1 / L2 SRAM',kind:'On-chip cache',col:'#bff7ef',cap:'256 KB–50 MB',bw:'12–33 TB/s',lat:'5–100 ns',en:'~10 pJ/b',sev:1,
+   blurb:'L1/shared (256 KB/SM) and a 50 MB L2 shared across the die. FlashAttention exists entirely to keep data here and avoid touching HBM.',
+   biz:'SRAM does not scale with Moore\'s law anymore — the reason designers lean ever harder on HBM bandwidth. Again captured by <b>TSMC</b> + the GPU designers.',
+   cos:['tsmc','nvidia','amd'],geo:[['TWN','TSMC fabrication'],['USA','design']],
+   mx:[['SRAM density','flat across nodes → bandwidth pressure pushed onto HBM']],related:['reg','hbm']},
+  {id:'hbm',name:'HBM3E / HBM4',kind:'On-package DRAM · the prize',col:'#5eead4',cap:'80–288 GB',bw:'3.35–8 TB/s',lat:'150–220 ns',en:'~4 pJ/b',sev:5,
+   blurb:'High Bandwidth Memory — DRAM dies stacked 8–12 high with through-silicon vias, bonded to the GPU package via a silicon interposer. A single stack runs a 1,024-bit bus. The single most fought-over component in AI.',
+   biz:'<span class="hl">The center of gravity.</span> A 3-way oligopoly (<b>SK Hynix</b>, <b>Samsung</b>, <b>Micron</b>) makes the stacks; <b>TSMC</b> CoWoS packaging is the real ceiling on supply; <b>Besi</b>/<b>ASML</b>/Japan materials gate it from below. HBM is ~5–10× the cost/GB of DDR and sells out a year ahead.',
+   cos:['skhynix','samsung','micron','tsmc','besi','asml','lam','disco','ase','ajinomoto','ibiden','shinetsu'],
+   geo:[['KOR','HBM stacks — SK Hynix, Samsung (95%+ in 2 cities)'],['TWN','CoWoS packaging — TSMC (sold out to 2027)'],['NLD','EUV litho — ASML (100% monopoly); bonding — Besi'],['JPN','wafers/resist/ABF — Shin-Etsu, Ajinomoto, Ibiden'],['USA','Micron HBM, Lam tools, GPU design']],
+   share:{title:'HBM market share (≈ 2025)',seg:[['SK Hynix',62,'#5eead4'],['Micron',21,'#46c8e0'],['Samsung',17,'#5aa9ff']]},
+   mx:[['HBM bit-growth','industry HBM bit supply YoY — the core volume signal'],['CoWoS capacity','TSMC packaging adds gate every GPU shipped'],['HBM ASP / margin','memory-maker gross margin = cycle health'],['NVIDIA allocation','who gets qualified at NVIDIA = who wins']],
+   related:['sram','ddr','cxl','wall','photonics']},
+  {id:'ddr',name:'Host DDR5',kind:'CPU-attached DRAM',col:'#5aa9ff',cap:'0.5–8 TB',bw:'50–410 GB/s',lat:'80–100 ns',en:'~15 pJ/b',sev:2,
+   blurb:'The CPU\'s main memory. 8–20× less bandwidth than HBM but 10–40× the capacity at a fraction of the cost. The GPU reaches it only across PCIe.',
+   biz:'Same three DRAM makers, plus the interface layer: <b>Rambus</b> and <b>Montage</b> sell the RCD/MRDIMM buffer chips that scale with every server. A commodity-cycle business with an AI-content kicker.',
+   cos:['skhynix','samsung','micron','rambus','montage'],
+   geo:[['KOR','DRAM — Hynix, Samsung'],['USA','Micron, Rambus IP'],['CHN','Montage buffers']],
+   mx:[['DDR5 ASP / spot','the classic memory cycle indicator'],['MRDIMM attach','buffer content per server rising'],['server DRAM content','GB per AI server']],related:['hbm','cxl']},
+  {id:'cxl',name:'CXL Memory',kind:'Coherent · poolable',col:'#9a8cff',cap:'TB → tens of TB',bw:'64–256 GB/s',lat:'170–270 ns',en:'~15 pJ/b',sev:3,
+   blurb:'Compute Express Link memory expanders attach over the PCIe physical layer with cache coherence — and can be pooled and shared across many hosts. The escape valve when HBM + DDR run out.',
+   biz:'The connectivity layer is where merchant silicon makes real money: <b>Astera Labs</b> (controllers, switches), <b>Marvell</b>, <b>Rambus</b> + <b>Montage</b> (controllers), <b>Microchip</b>. Adoption is early but Azure shipped the first production cloud CXL in 2025. <span class="hl2">Open the CXL region for the full fabric.</span>',
+   cos:['astera','marvell','rambus','montage','microchip','micron'],
+   geo:[['USA','controllers/switches — Astera, Marvell, Rambus'],['CHN','Montage'],['KOR','CXL modules — Samsung/Hynix']],
+   mx:[['Connectivity $/GPU','content per accelerator rising with PCIe gen'],['CXL design wins','controller sockets at hyperscalers'],['Astera revenue','the pure-play tape on AI connectivity']],
+   related:['ddr','hbm','region_cxl','photonics']},
+  {id:'ssd',name:'NVMe SSD',kind:'Local flash',col:'#3f6fb0',cap:'4–30 TB',bw:'7–14 GB/s',lat:'20–100 µs',en:'—',sev:2,
+   blurb:'PCIe Gen5 flash — ~14 GB/s but microsecond latency, 3–5 orders slower than DRAM. Holds weights at rest, checkpoints, last-ditch KV overflow.',
+   biz:'NAND oligopoly: <b>Samsung</b>, SK Hynix (Solidigm), <b>Micron</b>, Kioxia, plus controllers. AI lifts enterprise SSD demand but it is a separate cycle from HBM.',
+   cos:['samsung','skhynix','micron'],
+   geo:[['KOR','NAND — Samsung, Hynix'],['USA/JPN','Micron, Kioxia']],
+   mx:[['NAND ASP','flash cycle'],['enterprise SSD bit-growth','AI checkpoint/storage demand']],related:['ddr','net']},
+  {id:'net',name:'Network / Fabric',kind:'Scale-out + remote',col:'#27406a',cap:'~unlimited',bw:'25 GB/s → 130 TB/s',lat:'µs → s',en:'—',sev:4,
+   blurb:'From 400/800G InfiniBand & Ethernet to the NVLink switch fabric inside a GB200 NVL72 rack (130 TB/s). The point where "the rack" becomes the unit of compute — and where optics takes over from copper.',
+   biz:'The interconnect battleground: <b>NVIDIA</b> (NVLink moat) vs the merchant camp <b>Broadcom</b> + <b>Marvell</b> + <b>Astera</b> (UALink/Ethernet). Optics is the fastest-growing slice. <span class="hl2">Open the Photonics region.</span>',
+   cos:['nvidia','broadcom','marvell','astera','coherent','lumentum2','fabrinet','innolight','ciena'],
+   geo:[['USA','switch/DSP/laser silicon — Broadcom, Marvell, Coherent, Lumentum'],['CHN','optical modules — InnoLight, Eoptolink (~60% volume)'],['THA','assembly — Fabrinet'],['JPN','laser components — Sumitomo']],
+   mx:[['Optical content $/GPU','rising every generation'],['NVLink vs UALink','the standards war decides the TAM split'],['switch share','Broadcom vs NVIDIA vs Marvell']],
+   related:['cxl','region_photonics','wall']},
+];
+
+// region "super-nodes" for the map + their deep scenes
+const REGIONS={
+  region_cxl:{name:'CXL Fabric',col:'#9a8cff',into:'cxl'},
+  region_photonics:{name:'Photonics',col:'#7ee787',into:'photonics'},
+  wall:{name:'The Memory Wall',col:'#f6a345',into:'ai'},
+};
+
+// ---- EXTRA NODES: deep fractal content for the CXL / Photonics / AI regions ----
+const EXTRA={
+  cxl_switch:{id:'cxl_switch',name:'The Interconnect War',kind:'CXL · NVLink · UALink',col:'#9a8cff',sev:4,
+    stats:[['Scale-up','NVLink 1.8 TB/s'],['Open rival','UALink 1.0'],['Memory','CXL 3.x'],['Switch backlog','AVGO $10B+']],
+    blurb:'Inside a rack, GPUs must talk to each other and to pooled memory at terabytes per second. Three standards fight for it: NVIDIA\'s proprietary <b>NVLink</b> (shipping, 1.8 TB/s — the moat), the open <b>UALink</b> consortium (AMD, Broadcom, Intel, Google, Meta — spec done, silicon ~2027), and <b>CXL</b> for coherent memory pooling.',
+    biz:'The highest-stakes battleground in AI hardware. <b>NVLink wins</b> → NVIDIA\'s lock-in holds. <b>UALink wins</b> → <b>Astera</b> (switches), <b>Broadcom</b> (silicon), <b>AMD</b> (competitive GPUs at scale) all benefit. Most likely they coexist — and <span class="hl2">Astera wins either way</span> as a multi-standard chip house. NVIDIA put ~$2B into Marvell to keep it inside the NVLink camp.',
+    cos:['astera','broadcom','marvell','nvidia','amd','montage','rambus'],
+    geo:[['USA','switch/retimer silicon — Astera, Broadcom, Marvell'],['CHN','domestic CXL — Montage'],['—','standards bodies: UALink · CXL · Ultra Ethernet']],
+    mx:[['UALink tape-outs','first production silicon = 2027 on track?'],['Astera Scorpio wins','switch TAM ~10× retimers'],['NVLink Fusion breadth','who joins NVIDIA\'s camp'],['CXL attach rate','<5% of servers today → ~30% by 2028']],
+    related:['cxl','net','cxl_module','wall']},
+  cxl_module:{id:'cxl_module',name:'CXL Memory Module',kind:'Type 3 expander',col:'#9a8cff',sev:3,
+    stats:[['Bandwidth','36–256 GB/s'],['Added latency','~70–90 ns'],['Capacity','128–512 GB'],['First cloud','Azure M-series']],
+    blurb:'A box of DDR5 behind a CXL controller that the CPU sees as a slower, poolable tier of memory. Samsung CMM-D, Micron and SK Hynix ship the modules; the controller silicon is where the value sits.',
+    biz:'For the memory makers this is an <b>ASP premium</b> on the same DRAM die. The real margin is the controller: <b>Astera</b> (Leo), <b>Montage</b>, and <b>Rambus</b> IP underneath. Adoption is early — Azure shipped the first production cloud CXL in 2025; the pooling revolution is ~12–18 months ahead of deployments.',
+    cos:['samsung','micron','skhynix','astera','montage','rambus'],
+    geo:[['KOR','modules — Samsung, SK Hynix'],['USA','controllers/IP — Astera, Rambus, Micron'],['CHN','controllers — Montage']],
+    mx:[['CXL design wins','controller sockets at hyperscalers'],['MRDIMM vs CXL','competing expansion paths'],['Rambus royalties','every DDR5/CXL module pays IP']],
+    related:['cxl','ddr','cxl_switch']},
+  cxl_host:{id:'cxl_host',name:'A Compute Host',kind:'GPU / CPU server',col:'#7ee787',sev:3,
+    stats:[['GPU box','8× GPU + HBM'],['Memory','fixed & stranded'],['Borrows via','CXL switch'],['Pays for','more HBM + pooling']],
+    blurb:'A <b>host</b> is one server doing the work — either a <b>GPU box</b> (8 accelerators, fast but memory-starved) or a <b>CPU box</b> (lots of slow DRAM). The problem: each one\'s memory is <b>locked inside its own chassis</b>. A GPU server can run out of HBM mid-job while the CPU box next to it has hundreds of idle gigabytes — <span class="hl">stranded</span> and unreachable.',
+    biz:'Every memory-starved host is a <b>customer</b> for this whole atlas. It buys more <b>HBM</b> (SK Hynix/Micron) when it can, and reaches through a <b>CXL switch</b> (Astera) to borrow from a shared pool when it can\'t. The demand signal that pulls the entire supply chain starts <em>here</em> — at the box that needs more memory than it owns.',
+    cos:['nvidia','amd','astera','skhynix','micron'],
+    geo:[['USA','GPU/CPU silicon — NVIDIA, AMD'],['—','deployed in every hyperscaler rack']],
+    mx:[['memory per GPU','HBM4 = 288 GB, still not enough'],['pooling attach','% of racks wired for CXL'],['stranded DRAM','the waste CXL recovers']],
+    related:['cxl_switch','cxl_module','hbm','wall']},
+  phot_laser:{id:'phot_laser',name:'The Laser Bottleneck',kind:'EML / InP lasers',col:'#f6a345',sev:5,
+    stats:[['Suppliers','<5 globally'],['Lead time','past 2027'],['NVIDIA lockup','~$4B'],['EML price','double-digit ↑']],
+    blurb:'Every optical link begins with a laser — and silicon cannot make light. EML/CW lasers are grown on indium-phosphide (InP), not silicon, at 15–50% yields. Fewer than five firms make them at volume.',
+    biz:'<span class="hl">The single tightest link in optics.</span> <b>Lumentum</b> is the only volume supplier of 200G/lane EML lasers (needed for 1.6T). NVIDIA committed ~$2B each to <b>Lumentum</b> and <b>Coherent</b> to lock supply through 2027 — capacity capture disguised as investment. Everyone else gets rationed.',
+    cos:['lumentum2','coherent','sumitomo'],
+    geo:[['USA','InP lasers — Lumentum, Coherent'],['JPN','lasers/components — Sumitomo, Mitsubishi, Furukawa']],
+    mx:[['EML laser ASP','rising = supply still tight'],['InP lead times','past 2027 = severe'],['CPO laser POs','the NVIDIA lockup orders']],
+    related:['phot_cpo','phot_transceiver','net']},
+  phot_cpo:{id:'phot_cpo',name:'Co-Packaged Optics',kind:'CPO + optical I/O',col:'#7ee787',sev:3,
+    stats:[['Broadcom TH6','102.4 Tb/s'],['NVIDIA','Spectrum-X'],['Power','~70% less'],['At scale','2028–30']],
+    blurb:'Move the optics into the switch/GPU package — millimetres of silicon instead of centimetres of lossy copper. Broadcom\'s Davisson (102.4 Tb/s) and NVIDIA\'s Spectrum-X are sampling; Ayar and Lightmatter push optics right beside the compute die.',
+    biz:'CPO <b>helps</b> Broadcom, NVIDIA, the laser makers, <b>TSMC</b> (Si-photonics foundry) and pure-plays <b>Ayar</b>/<b>Lightmatter</b>. It <b>threatens</b> pluggable-module volume (InnoLight, Fabrinet) — but only from ~2028. Marvell paid <b>$3.25B for Celestial AI</b>, the valuation anchor for the whole theme.',
+    cos:['broadcom','nvidia','marvell','ayar','lightmatter','celestial','tsmc'],
+    geo:[['USA','CPO + pure-plays — Broadcom, NVIDIA, Ayar, Lightmatter'],['TWN','Si-photonics foundry — TSMC'],['—','no interoperable CPO standard yet']],
+    mx:[['CPO attach rate','hyperscaler deployments'],['Ayar/Lightmatter IPO','private-market temperature'],['yield / fiber-attach','the manufacturing gate']],
+    related:['phot_laser','phot_transceiver','net','hbm']},
+  phot_transceiver:{id:'phot_transceiver',name:'Optical Transceivers',kind:'800G / 1.6T modules',col:'#7ee787',sev:3,
+    stats:[['China share','~60% volume'],['Marvell DSP','~70% share'],['2026 800G','~33M units'],['Assembler','Fabrinet']],
+    share:{title:'800G module volume (est.)',seg:[['InnoLight',38,'#7ee787'],['Eoptolink',22,'#46c8e0'],['Coherent / others',40,'#3a4a66']]},
+    blurb:'The pluggable modules that light up every switch port. InnoLight + Eoptolink dominate volume, Coherent is vertically integrated, Fabrinet assembles for everyone — and every module needs a Marvell or Broadcom DSP inside.',
+    biz:'The photon moves through <b>Chinese</b> hardware but the brains are <b>US-designed</b> — a Marvell/Broadcom DSP sits in every 800G+ module. That makes a US DSP export control more disruptive than any tariff. <b>Fabrinet</b> is the cleanest pluggable-demand barometer.',
+    cos:['innolight','coherent','fabrinet','marvell','ciena'],
+    geo:[['CHN','modules — InnoLight, Eoptolink (~60%)'],['USA','DSP + integrated — Marvell, Coherent'],['THA','assembly — Fabrinet']],
+    mx:[['800G→1.6T units','the transition pace'],['Fabrinet utilization','pluggable demand'],['DSP export policy','the China risk']],
+    related:['phot_laser','phot_cpo','net']},
+  kv_econ:{id:'kv_econ',name:'KV-Cache Economics',kind:'why memory is the wall',col:'#f6a345',sev:4,
+    stats:[['Decode','memory-bound'],['H100 starve','~1,200× wait'],['Fix #1','more HBM'],['Fix #2','CXL + photonics']],
+    blurb:'LLM decode reads every weight plus the entire KV cache from HBM for each token. The GPU computes ~1,200× faster than it can fetch — so it idles on memory. Longer context and bigger batches explode the cache (drag the sliders).',
+    biz:'This is <span class="hl">why the whole supply chain exists</span>. It converts straight into demand for <b>HBM</b> (SK Hynix/Micron), <b>CoWoS</b> (TSMC), pooled <b>CXL</b> (Astera) and optical <b>disaggregation</b> (Marvell/Celestial). Every doubling of context is a doubling of memory demand.',
+    cos:['nvidia','skhynix','micron','astera','marvell'],
+    geo:[['—','a demand signal, not a place — but it pulls Korea HBM + Taiwan CoWoS']],
+    mx:[['context-length trend','1M-token models = more KV'],['HBM bit-growth','the volume tape'],['inference cost/token','what KV pressure sets']],
+    related:['hbm','cxl','net','wall']},
+};
+function findNode(id){return HIER.find(h=>h.id===id)||EXTRA[id]||null;}
+function allNodes(){return HIER.concat(Object.values(EXTRA));}
+
+// ---- PLAIN-ENGLISH layer (zero-knowledge on-ramp per node) ----
+const ELI={
+  reg:'The handful of numbers the GPU is touching this exact instant — like the figures lit up on a calculator\'s screen. Far too tiny to invest in on its own; the value sits with whoever <em>designs</em> the chip (NVIDIA, AMD) and whoever <em>prints</em> it (TSMC).',
+  sram:'On-chip scratch paper the GPU scribbles on so it can avoid the slow trip out to main memory. Crucially, it has almost stopped getting cheaper each generation — which is a big reason the industry leans so hard on HBM instead.',
+  hbm:'Picture bolting a stack of ultra-fast memory chips <em>directly onto</em> the GPU so data barely has to travel. That\'s HBM. It is the scarcest, most fought-over part in all of AI: only three companies can make it, it costs 5–10× normal memory, and it sells out a year ahead. If you remember one thing from this whole map, make it this.',
+  ddr:'Ordinary server memory — slower than HBM but far bigger and much cheaper. Made by the same three giants, plus a few firms (Rambus, Montage) that sell the little buffer chips every memory stick needs.',
+  cxl:'A newer kind of plumbing that lets many servers share one big pool of memory instead of each hoarding its own. Still early, but it\'s where merchant chip firms like Astera Labs are starting to make real money.',
+  ssd:'Flash storage — vast and cheap, but thousands of times slower than memory. It holds models and data <em>at rest</em>, never the live work. Runs on its own boom-bust cycle, separate from HBM.',
+  net:'How racks of GPUs actually talk to each other. Inside a rack that\'s NVIDIA\'s NVLink today; the rest of the industry is pushing open alternatives. This is also where optics (light) is taking over from copper — the fastest-growing slice of the whole build-out.',
+  cxl_switch:'The fight over how GPUs are wired together inside a rack. NVIDIA\'s NVLink is the locked-in champion; a coalition called UALink wants to pry it open. Whoever wins decides which chipmakers get the design wins for years — and Astera Labs sells the connecting silicon <em>either way</em>, which is why it\'s the cleanest bet.',
+  cxl_module:'A plug-in box of memory the computer treats as extra (slightly slower) RAM that machines can share. For memory makers it\'s just a higher-margin version of the same chips; the real brains — and the real margin — is the little controller, made by Astera, Montage, and Rambus.',
+  cxl_host:'One server doing the actual work — a GPU box or a CPU box. The catch: the memory inside it is bolted in and can\'t be shared, so one machine starves while its neighbour wastes hundreds of idle gigabytes. CXL is the plumbing that lets the starving one borrow. Every box that runs short of memory is, ultimately, a customer for everything else on this map.',
+  phot_laser:'To send data as light you first need a laser — and lasers can\'t be made from ordinary silicon, so they come from a tiny club of specialists. Demand is running so far ahead of supply that NVIDIA pre-paid ~$4B just to lock it up. When something is this scarce, the few suppliers get real pricing power.',
+  phot_cpo:'Instead of plugging fibre-optic cables into the edge of a switch, you build the light engine <em>right into</em> the chip package — less power, far more bandwidth. Broadcom and NVIDIA are first out; startups Ayar and Lightmatter push it even closer to the GPU. Real technology, but mostly a 2028-and-beyond story at scale.',
+  phot_transceiver:'The little modules that convert electrical signals into light at every switch port. China\'s InnoLight and Eoptolink build most of them — but the critical brain inside each one is a US-made chip (Marvell). That dependency is the real point of leverage in the whole optics story.',
+  kv_econ:'Here\'s why everything else on this map exists: when an AI writes an answer, it has to re-read its entire memory of the conversation for <em>every single word</em> it produces. That memory (the "KV cache") balloons with longer chats and more users, and it has to live in expensive HBM. More memory pressure → more demand for every company in this atlas.',
+};
+function companyBacklinks(cid){return allNodes().filter(n=>n.cos&&n.cos.includes(cid)).map(n=>({id:n.id,name:n.name,col:n.col}));}
+
+// ---- external sources / further reading, per node (real URLs) ----
+const SRC={
+  hbm:[['Counterpoint — DRAM & HBM market share','https://counterpointresearch.com/en/insights/global-dram-and-hbm-market-share'],['Astute — SK Hynix 62% / Micron overtakes Samsung','https://www.astutegroup.com/news/general/sk-hynix-holds-62-of-hbm-micron-overtakes-samsung-2026-battle-pivots-to-hbm4/'],['Epoch AI — HBM & packaging were the 2025 bottleneck','https://epoch.ai/data-insights/ai-chip-supply-chain-constraints']],
+  ddr:[['Micron Q2 FY26 results','https://investors.micron.com/news-releases/news-release-details/micron-technology-inc-reports-results-second-quarter-fiscal-2026'],['Rambus FY25 results','https://www.rambus.com/fourth-quarter-and-fiscal-year-2025-financial-results/']],
+  cxl:[['CXL Consortium','https://computeexpresslink.org/'],['Astera Labs — Leo CXL on Azure','https://www.asteralabs.com/news/astera-labs-leo-cxl-smart-memory-controllers-on-microsoft-azure-m-series-virtual-machines-overcome-the-memory-wall/']],
+  net:[['UALink 1.0 final spec — Tom’s Hardware','https://www.tomshardware.com/tech-industry/ualink-has-nvidias-nvlink-in-the-crosshairs-final-specs-support-up-to-1-024-gpus-with-200-gt-s-bandwidth'],['Ultra Ethernet 1.0 — HPCwire','https://www.hpcwire.com/2025/09/09/ultra-ethernet-has-arrived-one-network-to-rule-them-all/']],
+  cxl_switch:[['NVLink Fusion: embrace, extend, extinguish','https://www.fabricatedknowledge.com/p/nvlink-fusion-embrace-extend-extinguish'],['NVIDIA invests $2B in Marvell / NVLink Fusion','https://techfundingnews.com/nvidia-2-billion-marvell-nvlink-fusion-ai-ecosystem/'],['Astera Scorpio X-Series switch','https://www.asteralabs.com/news/astera-labs-extends-leadership-in-open-ai-scale-up-networking-with-new-320-lane-scorpio-x-series-smart-fabric-switch/']],
+  cxl_module:[['Astera Labs Q1 2026 results','https://www.asteralabs.com/news/astera-labs-reports-first-quarter-2026-financial-results/'],['Introl — CXL 4.0 / UALink guide','https://introl.com/blog/ualink-cxl-4-gpu-interconnect-memory-pooling-guide-2025']],
+  cxl_host:[['Astera Labs — beating the memory wall on Azure','https://www.asteralabs.com/news/astera-labs-leo-cxl-smart-memory-controllers-on-microsoft-azure-m-series-virtual-machines-overcome-the-memory-wall/'],['Introl — CXL memory pooling guide','https://introl.com/blog/ualink-cxl-4-gpu-interconnect-memory-pooling-guide-2025']],
+  phot_laser:[['Indium phosphide — the quiet bottleneck','https://yianisz.substack.com/p/indium-phosphide-inp-the-quiet-bottleneck'],['NVIDIA’s $4B laser lockup — TechTimes','https://www.techtimes.com/articles/317281/20260527/ai-data-center-optical-component-shortage-nvidias-4b-laser-lockup-pushes-rivals-past-2027.htm'],['NVIDIA $4B optical strategy — IO Fund','https://io-fund.com/ai-stocks/nvidia-4b-optical-strategy-cpo-ai-data-centers']],
+  phot_cpo:[['Broadcom Tomahawk-6 Davisson (102.4 Tb/s CPO)','https://www.broadcom.com/company/news/product-releases/63626'],['NVIDIA Spectrum-X Photonics','https://nvidianews.nvidia.com/news/nvidia-spectrum-x-co-packaged-optics-networking-switches-ai-factories'],['Marvell completes Celestial AI acquisition','https://www.marvell.com/company/newsroom/marvell-completes-acquisition-of-celestial-ai.html']],
+  phot_transceiver:[['InnoLight & Eoptolink dominate 60% of 800G','https://ip-fiber.com/blogs/news/nvidia-orders-surge-innolight-and-eoptolink-dominate-60-of-800g-sfp-optical-modules-supply'],['Marvell optical DSP','https://www.marvell.com/solutions/data-center/optical-dsp.html'],['Fabrinet at OFC 2026','https://www.investing.com/news/transcripts/fabrinet-at-2026-optical-fiber-conference-sustained-growth-amid-challenges-93CH-4567256']],
+  kv_econ:[['Epoch AI — AI chip supply-chain constraints','https://epoch.ai/data-insights/ai-chip-supply-chain-constraints'],['SemiAnalysis — Co-Packaged Optics','https://newsletter.semianalysis.com/p/co-packaged-optics-cpo-book-scaling']],
+};
+
+/* =========================================================================
+   THREE.JS CORE
+   ========================================================================= */
+const appEl=document.getElementById('app');
+const W=()=>window.innerWidth,H=()=>window.innerHeight;
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x060709,0.0075);
+
+const camera=new THREE.PerspectiveCamera(44,W()/H(),0.1,500);
+camera.position.set(17,11,26);
+
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setSize(W(),H());
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.4));
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.0;
+appEl.appendChild(renderer.domElement);
+
+// env map for premium PBR reflections
+const pmrem=new THREE.PMREMGenerator(renderer);
+scene.environment=pmrem.fromScene(new RoomEnvironment(),0.04).texture;
+
+const labelRenderer=new CSS2DRenderer();
+labelRenderer.setSize(W(),H());
+const lr=labelRenderer.domElement;
+lr.style.position='absolute';lr.style.top='0';lr.style.left='0';lr.style.pointerEvents='none';
+appEl.appendChild(lr);
+
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(W(),H()),0.26,0.75,0.5);
+composer.addPass(bloom);
+
+// IMPORTANT: controls + raycasting bound to the CANVAS (works on file://)
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=0.06;
+controls.minDistance=7;controls.maxDistance=80;controls.maxPolarAngle=Math.PI*0.93;
+controls.rotateSpeed=0.85;
+
+// lighting
+scene.add(new THREE.AmbientLight(0x3a4660,0.6));
+const key=new THREE.DirectionalLight(0xbcd6ff,1.05);key.position.set(12,20,14);scene.add(key);
+const rim=new THREE.DirectionalLight(0x5eead4,0.4);rim.position.set(-14,8,-12);scene.add(rim);
+const fillL=new THREE.PointLight(0x9a8cff,0.45,90);fillL.position.set(0,-8,10);scene.add(fillL);
+
+// reflective floor (subtle)
+const floor=new THREE.Mesh(new THREE.CircleGeometry(60,64),
+  new THREE.MeshStandardMaterial({color:0x070a10,metalness:0.85,roughness:0.5,transparent:true,opacity:0.5}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-11;scene.add(floor);
+const grid=new THREE.GridHelper(120,60,0x16223a,0x0d1626);grid.position.y=-10.98;
+grid.material.opacity=0.4;grid.material.transparent=true;scene.add(grid);
+
+// drifting motes
+(function(){const g=new THREE.BufferGeometry();const n=500;const p=new Float32Array(n*3);
+for(let i=0;i<n;i++){p[i*3]=(Math.random()-0.5)*180;p[i*3+1]=(Math.random()-0.5)*110;p[i*3+2]=(Math.random()-0.5)*180;}
+g.setAttribute('position',new THREE.BufferAttribute(p,3));
+scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x2a3a55,size:0.11,transparent:true,opacity:0.55})));})();
+
+const clock=new THREE.Clock();
+const raycaster=new THREE.Raycaster();
+const pointer=new THREE.Vector2();
+
+/* helpers */
+function disposeGroup(grp){if(!grp)return;grp.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)o.element.parentNode.removeChild(o.element);if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});scene.remove(grp);}
+function label(text,cls='',onClick=null){const d=document.createElement('div');d.className='lbl3d '+cls;d.innerHTML=text;if(onClick){d.addEventListener('pointerdown',e=>{e.stopPropagation();onClick();});}const o=new CSS2DObject(d);o.element=d;return o;}
+function glassMat(color,emi=0.05,opacity=0.9){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.15,roughness:0.22,clearcoat:1.0,clearcoatRoughness:0.18,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.25,transparent:true,opacity:Math.min(opacity+0.06,0.97)});}
+function solidMat(color,emi=0.1){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.4,roughness:0.3,clearcoat:1,clearcoatRoughness:0.16,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.3});}
+function logPct(v,min,max){const lv=Math.log10(Math.max(v,min)),a=Math.log10(min),b=Math.log10(max);return Math.max(5,Math.min(100,((lv-a)/(b-a))*100));}
+
+/* camera tween */
+const camT={active:false};const tweens=[];
+function flyTo(px,py,pz,tx,ty,tz,dur=1.1){camT.fp=camera.position.clone();camT.tp=new THREE.Vector3(px,py,pz);camT.ft=controls.target.clone();camT.tt=new THREE.Vector3(tx,ty,tz);camT.t=0;camT.dur=dur;camT.active=true;}
+function tweenObj(obj,to,dur){const from={};for(const k in to)from[k]=obj[k];tweens.push({obj,from,to,dur,t:0});}
+function stepTweens(dt){
+  if(camT.active){camT.t=Math.min(1,camT.t+dt/camT.dur);const e=1-Math.pow(1-camT.t,3);camera.position.lerpVectors(camT.fp,camT.tp,e);controls.target.lerpVectors(camT.ft,camT.tt,e);if(camT.t>=1)camT.active=false;}
+  for(let i=tweens.length-1;i>=0;i--){const tw=tweens[i];tw.t=Math.min(1,tw.t+dt/tw.dur);const e=1-Math.pow(1-tw.t,3);for(const k in tw.to)tw.obj[k]=tw.from[k]+(tw.to[k]-tw.from[k])*e;if(tw.t>=1)tweens.splice(i,1);}
+}
+
+/* =========================================================================
+   PICKABLE REGISTRY — every clickable mesh registers an id + handler
+   ========================================================================= */
+let pickables=[];
+function pick(mesh,id,onClick){mesh.userData.pickId=id;mesh.userData.onClick=onClick;pickables.push(mesh);return mesh;}
+
+renderer.domElement.style.cursor='grab';
+renderer.domElement.addEventListener('pointerdown',onDown);
+let downXY=null;
+function onDown(e){downXY={x:e.clientX,y:e.clientY};renderer.domElement.style.cursor='grabbing';}
+// hover affordance — pointer cursor + gentle lift on anything clickable
+let hovered=null;
+function setHover(obj){if(obj===hovered)return;if(hovered)tweenObj(hovered.scale,{x:1,y:1,z:1},0.18);hovered=obj;if(hovered)tweenObj(hovered.scale,{x:1.07,y:1.07,z:1.07},0.18);}
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(downXY){renderer.domElement.style.cursor='grabbing';return;}
+  pointer.x=(e.clientX/W())*2-1;pointer.y=-(e.clientY/H())*2+1;
+  camera.updateMatrixWorld();raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects(pickables,false);
+  const obj=hits.length?hits[0].object:null;
+  renderer.domElement.style.cursor=obj?'pointer':'grab';
+  setHover(obj);
+  if(document.hidden)renderOnce();
+});
+renderer.domElement.addEventListener('pointerleave',()=>{setHover(null);renderer.domElement.style.cursor='grab';});
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downXY)return;
+  const moved=Math.hypot(e.clientX-downXY.x,e.clientY-downXY.y);downXY=null;
+  renderer.domElement.style.cursor='grab';
+  if(moved>6)return; // it was a drag, not a click
+  pointer.x=(e.clientX/W())*2-1;pointer.y=-(e.clientY/H())*2+1;
+  camera.updateMatrixWorld();raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects(pickables,false);
+  if(hits.length&&hits[0].object.userData.onClick){hits[0].object.userData.onClick();}
+});
+
+/* =========================================================================
+   PANEL (fractal drill-down)
+   ========================================================================= */
+const panel=document.getElementById('panel');
+const phead=document.getElementById('phead');
+const ptabs=document.getElementById('ptabs');
+const pbody=document.getElementById('pbody');
+const panelScrim=document.createElement('div');panelScrim.id='panelScrim';document.body.appendChild(panelScrim);
+panelScrim.addEventListener('click',()=>closePanel());
+let panelTab='overview',panelNode=null;
+document.addEventListener('click',e=>{if(e.target.closest('.pclose'))closePanel();});
+function closePanel(){panel.classList.remove('open');panelScrim.classList.remove('on');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);}
+
+function hueFromName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return h;}
+function monoStyle(n){const h=hueFromName(n);return `background:linear-gradient(140deg,hsl(${h},44%,24%),hsl(${(h+24)%360},40%,17%));color:hsl(${h},78%,80%)`;}
+function logoHTML(co){
+  const init=co.n.replace(/[^A-Za-z0-9 ]/g,'').split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  if(co.ic){return `<span class="logo photo"><img src="${co.ic}" loading="lazy" alt=""></span>`;}
+  if(co.slug){return `<span class="logo"><img src="https://cdn.simpleicons.org/${co.slug}" onerror="this.parentNode.classList.add('mono');this.parentNode.setAttribute('style','${monoStyle(co.n)}');this.replaceWith('${init}')" alt=""></span>`;}
+  return `<span class="logo mono" style="${monoStyle(co.n)}">${init}</span>`;
+}
+function sevColor(s){return s>=5?'var(--crit)':s>=4?'var(--heat)':s>=3?'#f5d76e':s>=2?'var(--accent)':'var(--ink-faint)';}
+function sevWord(s){return ['—','Low','Moderate','High','Severe','Critical'][s];}
+
+const visited=new Set();
+function updateExplored(){
+  const rp=document.getElementById('railprog');
+  if(rp)rp.innerHTML=`<div class="rp-top"><span>Your progress</span><span class="rp-n">${visited.size} / 8 layers</span></div>
+    <div class="rp-bar"><div class="rp-fill" style="width:${Math.round(visited.size/8*100)}%"></div></div>`;
+  document.querySelectorAll('#railcore [data-layer]').forEach(b=>b.classList.toggle('seen',visited.has(b.dataset.layer)));
+}
+function openNode(id){
+  const node=findNode(id);
+  if(!node){ // region / wall node
+    if(REGIONS[id]){enterRegion(REGIONS[id].into);return;}
+    return;
+  }
+  if(HIER.some(h=>h.id===id)){visited.add(id);updateExplored();}
+  panelNode=node;panelTab='overview';
+  const c=node.col;
+  const tagLine=node.cap?`${node.cap} · ${node.bw} · ${node.lat}`:node.kind;
+  phead.innerHTML=`
+    <button class="pclose">✕</button>
+    <div class="tier" style="color:${c}"><span class="dot" style="background:${c}"></span>${node.kind}</div>
+    <h2>${node.name}</h2>
+    <div class="tag">${tagLine}</div>`;
+  ptabs.innerHTML=['overview','players','metrics','geography'].map(t=>
+    `<button class="ptab ${t==='overview'?'on':''}" data-tab="${t}">${t==='players'?'Who makes it':t}</button>`).join('');
+  ptabs.querySelectorAll('.ptab').forEach(b=>b.addEventListener('click',()=>{panelTab=b.dataset.tab;ptabs.querySelectorAll('.ptab').forEach(x=>x.classList.toggle('on',x===b));renderPanelBody();}));
+  renderPanelBody();
+  panel.classList.add('open');panelScrim.classList.add('on');
+}
+function renderPanelBody(){
+  const node=panelNode;if(!node)return;
+  let html='';
+  if(panelTab==='overview'){
+    if(node.stats){
+      html+=`<div class="statrow">`+node.stats.map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v" style="font-size:13.5px">${s[1]}</div></div>`).join('')+`</div>`;
+    }else{
+      html+=`<div class="statrow">
+        <div class="stat"><div class="l">Capacity</div><div class="v">${node.cap}</div></div>
+        <div class="stat"><div class="l">Bandwidth</div><div class="v">${node.bw}</div></div>
+        <div class="stat"><div class="l">Latency</div><div class="v">${node.lat}</div></div>
+        <div class="stat"><div class="l">Energy</div><div class="v">${node.en}</div></div>
+      </div>`;
+    }
+    if(ELI[node.id])html+=`<div class="pblk eli"><div class="kmini">IN PLAIN ENGLISH</div><p>${ELI[node.id]}</p></div>`;
+    html+=`<div class="pblk"><div class="kmini">WHAT IT IS</div><p>${node.blurb}</p></div>`;
+    html+=`<div class="pblk"><div class="kmini">THE BUSINESS</div><p>${node.biz}</p></div>`;
+    if(node.share)html+=`<div class="pblk"><div class="kmini" style="margin-bottom:7px">${node.share.title}</div>
+      <div class="share-bar">${node.share.seg.map(s=>`<div class="sg" style="flex:${s[1]};background:${s[2]}">${s[1]>=12?s[1]+'%':''}</div>`).join('')}</div>
+      <div class="share-leg">${node.share.seg.map(s=>`<span><i style="background:${s[2]}"></i>${s[0]} ${s[1]}%</span>`).join('')}</div></div>`;
+    html+=`<div class="pblk"><div class="kmini" style="margin-bottom:8px">BOTTLENECK SEVERITY</div>
+      <div class="sevmeter"><div class="bars">${[1,2,3,4,5].map(i=>`<i style="background:${i<=node.sev?sevColor(node.sev):'rgba(255,255,255,.08)'}"></i>`).join('')}</div>
+      <span class="lbl" style="color:${sevColor(node.sev)}">${sevWord(node.sev)}</span></div></div>`;
+    if(node.related&&node.related.length){
+      html+=`<div class="pblk"><div class="kmini" style="margin-bottom:8px">CONNECTED TO</div><div class="related">`+
+        node.related.map(r=>{const t=findNode(r);const reg=REGIONS[r];const nm=t?t.name:(reg?reg.name:r);const cc=t?t.col:(reg?reg.col:'#888');
+          return `<button data-rel="${r}"><span class="d" style="background:${cc}"></span>${nm}</button>`;}).join('')+`</div></div>`;
+    }
+    if(SRC[node.id])html+=`<div class="pblk"><div class="kmini" style="margin-bottom:9px">FURTHER READING</div><div class="srclist">`+
+      SRC[node.id].map(s=>`<a class="srclink" href="${s[1]}" target="_blank" rel="noopener noreferrer">${s[0]}</a>`).join('')+`</div></div>`;
+  }
+  else if(panelTab==='players'){
+    html+=`<div class="pblk"><p style="font-size:12px;color:var(--ink-dim)">Tap any company to open its file — what it makes, where, and why it matters.</p></div>`;
+    html+=`<div class="chips">`+node.cos.map(cid=>{const co=CO[cid];if(!co)return'';
+      const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');
+      return `<button class="chip" data-co="${cid}">${logoHTML(co)}<span class="ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="cr">${co.makes} · ${co.ctry}</span></span><span class="arr">→</span></button>`;
+    }).join('')+`</div>`;
+  }
+  else if(panelTab==='metrics'){
+    html+=`<div class="pblk"><div class="kmini" style="margin-bottom:10px">METRICS THAT MOVE THIS LAYER</div><div class="mlist">`+
+      node.mx.map(m=>`<div class="mitem"><div class="mk">${m[0]}</div><div class="mv">${m[1]}</div></div>`).join('')+`</div></div>`;
+  }
+  else if(panelTab==='geography'){
+    html+=`<div class="pblk"><div class="kmini" style="margin-bottom:10px">WHERE IT COMES FROM</div><div class="geo">`+
+      node.geo.map(g=>`<div class="georow"><span class="gflag">${g[0]}</span><span class="gt">${g[1]}</span></div>`).join('')+`</div></div>`;
+  }
+  pbody.innerHTML=html;
+  // wire interactions
+  pbody.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>expandCompany(b.dataset.co,b)));
+  pbody.querySelectorAll('.related button').forEach(b=>b.addEventListener('click',()=>{const r=b.dataset.rel;if(REGIONS[r]){enterRegion(REGIONS[r].into);}else{openNode(r);if(region==='hierarchy')focusLayer(r);}}));
+  // inject kmini style once
+}
+function buildCompanyCard(cid){
+  const co=CO[cid];if(!co)return document.createElement('div');
+  const url=COURL[cid];
+  const links=companyBacklinks(cid);
+  const card=document.createElement('div');card.className='cocard';
+  card.innerHTML=`<div class="ch">${logoHTML(co)}<div class="chn"><h3>${co.n}</h3>
+    <div class="csub"><span>${co.tk}</span><span>· ${co.ctry}</span></div></div></div>
+    <p class="crole">${co.role}</p>
+    <div class="kmini" style="margin-top:4px">WATCH</div>
+    <div class="cmetrics">${co.mx.map(m=>`<span class="m">${m}</span>`).join('')}</div>
+    ${url?`<a class="cosrc" href="${url}" target="_blank" rel="noopener noreferrer">↗ &nbsp;${co.tk.match(/^[A-Z]+$/)?'Investor relations & news':'Company & news'}</a>`:''}
+    ${links.length?`<div class="kmini" style="margin-top:13px">WHERE IT SHOWS UP · ${links.length}</div>
+      <div class="related" style="margin-top:7px">${links.map(l=>`<button data-bk="${l.id}"><span class="d" style="background:${l.col}"></span>${l.name}</button>`).join('')}</div>`:''}`;
+  card.querySelectorAll('[data-bk]').forEach(b=>b.addEventListener('click',()=>{closeModals();openNode(b.dataset.bk);if(region==='hierarchy')focusLayer(b.dataset.bk);}));
+  return card;
+}
+function toggleCard(cid,btn,container){
+  if(btn.nextElementSibling&&btn.nextElementSibling.classList.contains('cocard')){btn.nextElementSibling.remove();return;}
+  container.querySelectorAll('.cocard').forEach(c=>c.remove());
+  const card=buildCompanyCard(cid);btn.after(card);card.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function expandCompany(cid,btn){toggleCard(cid,btn,pbody);}
+
+/* ---------- INVESTOR WATCHLIST ---------- */
+function companySev(cid){const l=allNodes().filter(n=>n.cos&&n.cos.includes(cid));return l.length?Math.max(...l.map(n=>n.sev||0)):0;}
+const WATCH_GROUPS=[
+  {t:'Memory · HBM oligopoly',ids:['skhynix','samsung','micron']},
+  {t:'Advanced packaging & equipment',ids:['tsmc','besi','asml','lam','disco','kla','ase','amkor']},
+  {t:'Materials & substrates',ids:['ajinomoto','ibiden','shinetsu']},
+  {t:'Connectivity · CXL · switching',ids:['astera','marvell','broadcom','montage','rambus','microchip']},
+  {t:'Optics · photonics',ids:['coherent','lumentum2','fabrinet','innolight','ciena','sumitomo','corning','ayar','lightmatter','celestial']},
+  {t:'The AI buyers',ids:['nvidia','amd','intel']},
+];
+const watchModal=document.getElementById('watchModal'),wmBody=document.getElementById('wmBody'),wmSub=document.getElementById('wmSub');
+
+const ROADMAP=[
+  {y:'2025 · H2',k:'shipping',c:'#5eead4',t:'First production cloud CXL + photonic switches ship',d:'Azure ships CXL-attached memory (Astera Leo) — the first in a commercial cloud. NVIDIA Quantum-X Photonics and Broadcom\'s Tomahawk-6 Davisson (102.4 Tb/s CPO) begin sampling to tier-1 hyperscalers.',cos:['astera','nvidia','broadcom']},
+  {y:'2026 · H1',k:'catalyst',c:'#46c8e0',t:'HBM4 qualifies at NVIDIA (Rubin)',d:'SK Hynix and Samsung deliver HBM4 — the next bandwidth leap (a 2,048-bit bus). TSMC races CoWoS toward ~130k wafers/month. Whoever qualifies first wins the allocation.',cos:['skhynix','samsung','tsmc']},
+  {y:'2026',k:'bottleneck',c:'#f6a345',t:'1.6T optics ramp & the EML-laser squeeze',d:'1.6T transceivers ramp (InnoLight volume, Marvell DSP inside). EML lasers sell out through 2027 after NVIDIA\'s ~$4B Lumentum/Coherent lockup. ABF substrate back in shortage (Ibiden). Scarcity = pricing power.',cos:['innolight','marvell','lumentum2','coherent','ibiden']},
+  {y:'2027',k:'catalyst',c:'#9a8cff',t:'The interconnect war goes live',d:'CXL 3.0 host CPUs arrive (Intel Diamond Rapids, AMD Zen 6); first UALink production silicon challenges NVLink. CoWoS-L enables bigger packages with more HBM stacks. Astera sells the connecting silicon either way.',cos:['intel','amd','astera','broadcom','tsmc']},
+  {y:'2028 – 2030',k:'horizon',c:'#7ee787',t:'Light takes over — CPO & memory disaggregation at scale',d:'Co-packaged optics reach mass deployment; optical I/O chiplets ship in products (Ayar, Lightmatter); photonic memory disaggregation arrives (Marvell/Celestial). HBM4E pushes ~4 TB/s per stack. The rack becomes one machine.',cos:['ayar','lightmatter','marvell','celestial','broadcom','nvidia']},
+];
+const GEO=[
+  {cc:'TWN',country:'Taiwan',sev:5,role:'Logic die (TSMC N3/N2) + CoWoS advanced packaging — ~90% of leading-edge logic and near-100% of CoWoS. A disruption here halts the entire AI hardware stack within months.',cos:['tsmc','ase']},
+  {cc:'KOR',country:'South Korea',sev:5,role:'HBM manufacturing — SK Hynix + Samsung, 95%+ of global HBM in two cities. The memory every AI GPU is built around.',cos:['skhynix','samsung']},
+  {cc:'NLD',country:'Netherlands',sev:5,role:'EUV lithography — ASML, a 100% monopoly. No sub-7nm chip (logic or HBM base die) exists without it. Plus Besi hybrid bonding.',cos:['asml','besi']},
+  {cc:'JPN',country:'Japan',sev:4,role:'The silent materials chokepoint — photoresist, silicon wafers, ABF film (Ajinomoto ~95%) & substrates (Ibiden), and InP lasers (Sumitomo). Low visibility, huge leverage.',cos:['ajinomoto','ibiden','shinetsu','sumitomo']},
+  {cc:'USA',country:'United States',sev:3,role:'Design & IP — NVIDIA, AMD, Marvell, Astera, Broadcom — plus Micron HBM, Lumentum/Coherent lasers, Lam/KLA tools and EDA. Owns the value; outsources the fabrication.',cos:['nvidia','amd','marvell','astera','broadcom','micron','lumentum2','coherent','lam','kla']},
+  {cc:'CHN',country:'China',sev:3,role:'Optical-module volume — InnoLight + Eoptolink (~60% of transceivers) — plus Montage CXL silicon. Dominates assembly but depends on US DSPs and US/Japan lasers. A geopolitical flashpoint.',cos:['innolight','montage']},
+  {cc:'THA',country:'Thailand',sev:2,role:'Precision optical assembly — Fabrinet builds transceivers for Coherent, Lumentum, Ciena. A quiet single-country concentration in optics.',cos:['fabrinet']},
+];
+const SHORTLIST=[
+  {t:'Chokepoint monopolies',d:'Single points of failure — if any one stalls, the whole stack stalls. Highest barriers, near-impossible to displace.',items:[
+    ['tsmc','Makes the GPU AND the CoWoS packaging that bonds HBM to it — everything routes through its fabs. CoWoS booked to 2027.'],
+    ['asml','A 100% EUV-lithography monopoly. No sub-7nm chip — logic or HBM base die — exists without an ASML machine.'],
+    ['ajinomoto','~95% of ABF film, the insulating layer in every high-end chip package. The quietest monopoly in the whole chain.'],
+  ]},
+  {t:'The scale players',d:'The deepest revenue pools — where the AI build-out shows up first and largest in the P&L.',items:[
+    ['nvidia','The demand engine. Sets the roadmap, buys the most HBM and optics, and pre-buys supply to lock out rivals.'],
+    ['skhynix','The HBM bellwether — #1 in the scarcest, most fought-over component; first to qualify each new generation.'],
+    ['broadcom','Switching (Tomahawk) + custom XPUs for hyperscalers; the anchor of the merchant-silicon / UALink camp.'],
+    ['marvell','The most complete optical stack — ~70% DSP share + Celestial photonic fabric + custom AI silicon.'],
+  ]},
+  {t:'The pure-plays',d:'Concentrated bets — smaller floats, high leverage to one specific part of the build-out.',items:[
+    ['astera','The cleanest pure-play on AI connectivity — retimers, CXL, fabric switches. Wins the interconnect war either way.'],
+    ['lumentum2','The laser chokepoint — the only volume supplier of 200G/lane EML lasers; NVIDIA pre-paid ~$2B to lock it.'],
+    ['besi','The hybrid-bonding tool the next HBM generations require. Tiny float, enormous optionality.'],
+  ]},
+];
+function renderShort(){
+  wmSub.textContent='the names that structurally define this map — who matters most, and why · educational, not investment advice';
+  wmBody.innerHTML=SHORTLIST.map(g=>`<div class="wm-group"><div class="wm-gt">${g.t}</div><div class="sl-d">${g.d}</div><div class="sl-list">`+
+    g.items.map(([cid,why])=>{const co=CO[cid];if(!co)return'';const sv=companySev(cid);const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');
+      return `<button class="sl-row" data-co="${cid}">${logoHTML(co)}<span class="sl-ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="sl-why">${why}</span></span><span class="sev" style="background:${sevColor(sv)}"></span></button>`;}).join('')+
+    `</div></div>`).join('');
+  wireChips();
+}
+function wireChips(){wmBody.querySelectorAll('[data-co]').forEach(b=>b.addEventListener('click',()=>toggleCard(b.dataset.co,b,wmBody)));}
+function renderWatch(){
+  wmSub.textContent='every public ticker in the AI-memory supply chain · grouped by layer · dot = chokepoint severity';
+  wmBody.innerHTML=WATCH_GROUPS.map(g=>`<div class="wm-group"><div class="wm-gt">${g.t}</div><div class="chips">`+
+    g.ids.map(cid=>{const co=CO[cid];if(!co)return'';const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');const sv=companySev(cid);
+      return `<button class="chip" data-co="${cid}">${logoHTML(co)}<span class="ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="cr">${co.makes} · ${co.ctry}</span></span><span class="sev" style="background:${sevColor(sv)}" title="chokepoint ${sevWord(sv)}"></span><span class="arr">→</span></button>`;}).join('')+
+    `</div></div>`).join('');
+  wireChips();
+}
+function renderGeo(){
+  wmSub.textContent='where each critical step physically happens · ordered by single-point-of-failure risk';
+  wmBody.innerHTML=GEO.map(g=>`<div class="geo-card">
+    <div class="gh"><span class="gcc">${g.cc}</span><span class="gn">${g.country}${g.sev>=5?'<span class="spof">single point of failure</span>':''}</span>
+      <span class="gsev">${[1,2,3,4,5].map(i=>`<i style="background:${i<=g.sev?sevColor(g.sev):'rgba(255,255,255,.08)'}"></i>`).join('')}</span></div>
+    <div class="gr">${g.role}</div>
+    <div class="chips">`+g.cos.map(cid=>{const co=CO[cid];if(!co)return'';const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');
+      return `<button class="chip" data-co="${cid}">${logoHTML(co)}<span class="ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="cr">${co.makes}</span></span><span class="arr">→</span></button>`;}).join('')+`</div>
+    </div>`).join('');
+  wireChips();
+}
+function renderRoad(){
+  wmSub.textContent='what happens when, and who benefits · 2025 → 2030 · tap a ticker to open its file';
+  wmBody.innerHTML=`<div class="tl">`+ROADMAP.map(m=>`
+    <div class="tl-item" style="--dotc:${m.c}">
+      <div class="tl-date">${m.y}<span class="tl-kind">${m.k}</span></div>
+      <div class="tl-t">${m.t}</div>
+      <div class="tl-d">${m.d}</div>
+      <div class="tl-cos">`+m.cos.map(cid=>{const co=CO[cid];if(!co)return'';return `<button class="tl-co" data-co="${cid}">${logoHTML(co)}${co.n} <span class="tk">${co.tk}</span></button>`;}).join('')+`</div>
+    </div>`).join('')+`</div>`;
+  wireChips();
+}
+let intelTab='short';
+function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;}
+function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');}
+function closeIntel(){watchModal.classList.remove('on');}
+function closeModals(){closeIntel();}
+document.getElementById('intelBtn').addEventListener('click',()=>openIntel('short'));
+document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
+watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
+watchModal.querySelector('.wmclose').addEventListener('click',closeIntel);
+window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(watchModal.classList.contains('on'))closeIntel();
+    else if(typeof tour!=='undefined'&&tour.active)endTour();
+    else if(panel.classList.contains('open'))closePanel();
+  }
+  if(typeof tour!=='undefined'&&tour.active){
+    if(e.key==='ArrowRight'){tour.i<TOUR.length-1?setStep(tour.i+1):endTour();}
+    else if(e.key==='ArrowLeft'&&tour.i>0)setStep(tour.i-1);
+  }
+});
+
+// small helper css class injected
+const st=document.createElement('style');st.textContent='.kmini{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}';document.head.appendChild(st);
+
+/* =========================================================================
+   LEFT RAIL renderer (context per region)
+   ========================================================================= */
+const railcore=document.getElementById('railcore');
+const RAIL={
+  map:{kicker:'The Atlas',title:'One connected world',lede:'Every layer of the AI memory stack, the two technologies bending it (CXL &amp; photonics), and the wall that forces it all — drawn as one graph. Drag to fly through it; click any node to open its file.',
+    toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['ai','The Memory Wall','why it all exists','#f6a345']]},
+  hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, the chokepoints, and the metrics to watch.',toc:null},
+  cxl:{kicker:'Region · 02',title:'CXL Fabric',lede:'Coherent memory over PCIe — expansion, pooling, and sharing. Click the switch, hosts, or modules; toggle the capability below.',
+    nodes:[['cxl_switch','The Interconnect War','#9a8cff'],['cxl_module','CXL Memory Module','#9a8cff'],['cxl','↑ CXL in the stack','#9a8cff']]},
+  photonics:{kicker:'Region · 03',title:'Photonics',lede:'The copper wall vs light. Click the chips, links, and laser callout — companies and bottlenecks live inside each node.',
+    nodes:[['phot_laser','The Laser Bottleneck','#f6a345'],['phot_cpo','Co-Packaged Optics','#7ee787'],['phot_transceiver','Optical Transceivers','#7ee787']]},
+  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'LLM decode is memory-bound. Drive the KV-cache calculator below and watch it overflow a single GPU — the force behind HBM, CXL, and photonics.',
+    nodes:[['kv_econ','KV-Cache Economics','#f6a345'],['hbm','→ HBM (the prize)','#5eead4'],['cxl_switch','→ The Interconnect War','#9a8cff']]},
+};
+function renderRail(region){
+  const r=RAIL[region]||RAIL.map;
+  let html=`<div class="ksec">${r.kicker}<span class="ln"></span></div><h2>${r.title}</h2><p class="lede">${r.lede}</p><div id="railprog"></div>`;
+  if(region==='hierarchy'||region==='map'&&false){}
+  if(region==='hierarchy'){
+    html+=`<div class="toc">`+HIER.map(h=>`<button data-layer="${h.id}"><span class="dot" style="background:${h.col}"></span><span class="nm">${h.name}</span><span class="meta">${h.bw}</span></button>`).join('')+`</div>`;
+  }else if(r.nodes){
+    html+=`<div class="toc">`+r.nodes.map(t=>`<button data-node="${t[0]}"><span class="dot" style="background:${t[2]}"></span><span class="nm">${t[1]}</span><span class="meta">open</span></button>`).join('')+`</div>`;
+  }else if(r.toc){
+    html+=`<div class="toc">`+r.toc.map(t=>`<button data-go="${t[0]}"><span class="dot" style="background:${t[3]}"></span><span class="nm">${t[1]}</span><span class="meta">${t[2]}</span></button>`).join('')+`</div>`;
+  }
+  railcore.innerHTML=html;
+  railcore.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.layer);focusLayer(b.dataset.layer);railcore.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('on',x===b));}));
+  railcore.querySelectorAll('[data-node]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.node);railcore.querySelectorAll('[data-node]').forEach(x=>x.classList.toggle('on',x===b));}));
+  railcore.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>enterRegion(b.dataset.go)));
+  updateExplored();
+}
+
+/* =========================================================================
+   SCENES
+   ========================================================================= */
+let region='map';
+let groups={};
+
+function clearScene(){hovered=null;Object.values(groups).forEach(disposeGroup);groups={};pickables=[];}
+
+/* ---------- MAP (knowledge graph overview) ---------- */
+const MAPNODES=[
+  {id:'hierarchy',name:'The Memory Stack',col:'#5eead4',pos:[0,4,0],r:2.1,sub:'8 layers · SRAM → network'},
+  {id:'cxl',name:'CXL Fabric',col:'#9a8cff',pos:[-8.6,-1.4,0.5],r:1.7,sub:'pool · share · disaggregate'},
+  {id:'ai',name:'The Memory Wall',col:'#f6a345',pos:[8.6,-1.4,0.5],r:1.7,sub:'why the stack exists'},
+  {id:'photonics',name:'Photonics',col:'#7ee787',pos:[0,-7,-0.5],r:1.7,sub:'light replaces copper'},
+];
+const MAPEDGES=[
+  ['hierarchy','ai','HBM holds the KV cache'],
+  ['hierarchy','cxl','overflow spills to CXL'],
+  ['hierarchy','photonics','memory disaggregation',0.6],
+  ['cxl','photonics','optical CXL'],
+  ['ai','cxl','KV offload',4.2],
+  ['ai','photonics','rack-scale fabric'],
+];
+function buildMap(){
+  const g=new THREE.Group();groups.map=g;
+  const pos={};MAPNODES.forEach(n=>pos[n.id]=new THREE.Vector3(...n.pos));
+  // edges (curved tubes)
+  MAPEDGES.forEach(([a,b,lab,bump])=>{
+    const va=pos[a],vb=pos[b];const mid=va.clone().add(vb).multiplyScalar(0.5);mid.y+=(bump||2.2);
+    const curve=new THREE.QuadraticBezierCurve3(va,mid,vb);
+    const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,40,0.035,8,false),new THREE.MeshBasicMaterial({color:0x3a4a66,transparent:true,opacity:0.5}));
+    g.add(tube);
+    const el=label(lab,'edge');el.position.copy(curve.getPoint(0.5));g.add(el);
+    // travelling pulse
+    const pulse=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshBasicMaterial({color:0x9fb6d8}));
+    g.add(pulse);g.userData.pulses=g.userData.pulses||[];g.userData.pulses.push({mesh:pulse,curve,t:Math.random(),sp:0.18+Math.random()*0.12});
+  });
+  // nodes — premium rounded-cube modules with wireframe + glow ring + halo
+  MAPNODES.forEach(n=>{
+    const s=n.r*1.3;
+    const core=new THREE.Mesh(new RoundedBoxGeometry(s,s,s,6,s*0.18),solidMat(n.col,0.16));
+    core.position.set(...n.pos);core.rotation.set(0.42,0.6,0);g.add(core);
+    core.userData.spin=0.14;
+    core.add(new THREE.LineSegments(new THREE.EdgesGeometry(core.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.55})));
+    // glowing orbital ring
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(n.r*1.75,0.05,14,72),new THREE.MeshBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.55}));
+    ring.position.set(...n.pos);ring.rotation.x=Math.PI*0.46;ring.rotation.y=0.3;g.add(ring);core.userData.ring=ring;
+    // soft halo
+    const halo=new THREE.Mesh(new THREE.SphereGeometry(n.r*1.5,24,24),new THREE.MeshBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.05,side:THREE.BackSide}));
+    halo.position.set(...n.pos);g.add(halo);
+    pick(core,n.id,()=>enterRegion(n.id));
+    const tl=label(n.name,'node',()=>enterRegion(n.id));tl.position.set(n.pos[0],n.pos[1]+n.r+1.0,n.pos[2]);g.add(tl);
+    const sl=label(n.sub,'faint');sl.position.set(n.pos[0],n.pos[1]-n.r-0.85,n.pos[2]);g.add(sl);
+    g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
+  });
+  scene.add(g);
+  flyTo(0,0.5,37, 0,-1.2,0, 1.2);
+}
+
+/* ---------- HIERARCHY (premium glass spine) ---------- */
+function buildHierarchy(){
+  const g=new THREE.Group();groups.hier=g;
+  const n=HIER.length,gap=2.5,baseY=(n-1)*gap/2;
+  const capN=[3.2e7,5e7,2.9e11,8e12,3e13,3e13,3e13,1e15];
+  HIER.forEach((l,i)=>{
+    const y=baseY-i*gap;
+    const w=3.0+logPct(capN[i],3e7,1e15)/100*7.0;
+    const d=3.6+logPct(capN[i],3e7,1e15)/100*3.6;
+    const geo=new RoundedBoxGeometry(w,1.45,d,6,0.3);
+    const slab=new THREE.Mesh(geo,glassMat(l.col,0.055,0.82));
+    slab.position.set(0,y,0);slab.userData.idx=i;slab.userData.baseEmi=0.055;
+    g.add(slab);
+    const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo,32),new THREE.LineBasicMaterial({color:new THREE.Color(l.col),transparent:true,opacity:0.4}));
+    slab.add(edges);
+    pick(slab,l.id,()=>{openNode(l.id);focusLayer(l.id);});
+    const nm=label(l.name,'title');nm.position.set(-w/2-0.6,0.15,0);nm.element.style.transform='translate(-100%,-50%)';slab.add(nm);
+    const sp=label(`${l.bw} · ${l.lat}`,'faint');sp.position.set(w/2+0.6,0,0);sp.element.style.transform='translate(0,-50%)';slab.add(sp);
+    if(l.sev>=4){const b=label(`◆ chokepoint`,'heat');b.position.set(w/2+0.6,-0.55,0);b.element.style.transform='translate(0,-50%)';slab.add(b);}
+    // flow particles to layer below
+    if(i<n-1){
+      const bwN=[20000,33000,8000,410,256,14,130000][i]||100;
+      const count=Math.round(THREE.MathUtils.clamp(logPct(bwN,10,40000)/100*55,8,55));
+      const pg=new THREE.BufferGeometry();const pp=new Float32Array(count*3);const seeds=[];
+      for(let k=0;k<count;k++){const sx=(Math.random()-0.5)*Math.min(w,2.4),sz=(Math.random()-0.5)*Math.min(d,2.4);pp[k*3]=sx;pp[k*3+1]=y;pp[k*3+2]=sz;seeds.push({sx,sz,t:Math.random()});}
+      pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+      const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:new THREE.Color(l.col),size:0.15,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false}));
+      g.add(pts);
+      g.userData.flows=g.userData.flows||[];g.userData.flows.push({pts,seeds,yT:y,yB:y-gap,sp:THREE.MathUtils.clamp(logPct(bwN,10,40000)/100,0.15,1)*1.6});
+    }
+  });
+  const top=label('▲ FAST · TINY · COSTLY','faint');top.position.set(0,baseY+1.6,0);top.element.style.transform='translate(-50%,-50%)';g.add(top);
+  const bot=label('▼ SLOW · VAST · CHEAP','faint');bot.position.set(0,baseY-(n-1)*gap-1.6,0);bot.element.style.transform='translate(-50%,-50%)';g.add(bot);
+  scene.add(g);
+  flyTo(15,6,21, 0,0,0, 1.2);
+}
+function focusLayer(id){const i=HIER.findIndex(h=>h.id===id);if(i<0)return;const gap=2.5,baseY=(HIER.length-1)*gap/2;const y=baseY-i*gap;tweenObj(controls.target,{x:3.2,y,z:0},0.7);} // shift stack left so its right-edge labels clear the panel
+
+/* ---------- CXL FABRIC ---------- */
+let cxlState='pooling';
+// a recognizable RAM stick (DIMM): green PCB + gold contacts + notch + black DRAM chips
+function dimmStick(){
+  const s=new THREE.Group();
+  const pcb=new THREE.Mesh(new RoundedBoxGeometry(2.7,1.18,0.22,3,0.06),solidMat('#1f7a4d',0.16));s.add(pcb);s.userData.lit=pcb;
+  const gold=new THREE.Mesh(new THREE.BoxGeometry(2.62,0.24,0.26),new THREE.MeshStandardMaterial({color:0xd9a441,metalness:0.92,roughness:0.32,emissive:0x3a2a06,emissiveIntensity:0.35}));gold.position.y=-0.64;s.add(gold);
+  const notch=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.28,0.32),new THREE.MeshBasicMaterial({color:0x06070d}));notch.position.set(0.42,-0.62,0);s.add(notch);
+  for(let i=0;i<4;i++){const ch=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.64,0.07),new THREE.MeshStandardMaterial({color:0x14181f,metalness:0.35,roughness:0.55}));ch.position.set(-1.0+i*0.66,0.1,0.15);s.add(ch);}
+  // invisible larger hit box so the whole stick is clickable
+  const hit=new THREE.Mesh(new THREE.BoxGeometry(2.9,1.5,0.5),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));s.add(hit);s.userData.hit=hit;
+  return s;
+}
+// a small chunk of memory that travels the link (reads as "memory being lent out")
+function memBlock(color){const b=new THREE.Mesh(new RoundedBoxGeometry(0.52,0.36,0.17,2,0.05),new THREE.MeshStandardMaterial({color:new THREE.Color(color),emissive:new THREE.Color(color),emissiveIntensity:0.75,metalness:0.25,roughness:0.4}));
+  const c=new THREE.Mesh(new THREE.BoxGeometry(0.48,0.08,0.19),new THREE.MeshBasicMaterial({color:0xd9a441}));c.position.y=-0.19;b.add(c);return b;}
+function buildCXL(){
+  const g=new THREE.Group();groups.cxl=g;g.userData.links=[];g.userData.pulses=[];g.userData.hosts=[];g.userData.mods=[];
+  // headline — frames the whole region in one plain sentence
+  const head=label('CXL: many servers borrow from <b style="color:#9a8cff">ONE</b> shared pool of memory','title');head.position.set(0,8.4,0);head.element.style.transform='translate(-50%,-50%)';head.element.style.fontSize='18px';g.add(head);
+  // ---- the switch (the hub everything plugs into) ----
+  const sw=new THREE.Mesh(new THREE.IcosahedronGeometry(1.6,0),solidMat('#9a8cff',0.4));sw.userData.flat=true;
+  g.add(sw);g.userData.sw=sw;
+  pick(sw,'cxl_switch',()=>openNode('cxl_switch'));
+  const swl=label('CXL SWITCH','title');swl.position.set(0,2.25,0);swl.element.style.transform='translate(-50%,-50%)';g.add(swl);
+  const sl=label('the shared-memory hub · routes any server to any module','faint');sl.position.set(0,-2.15,0);sl.element.style.transform='translate(-50%,-50%)';g.add(sl);
+  // ---- compute hosts on top (the machines that need memory) ----
+  const hosts=[['GPU server','#7ee787'],['CPU server','#5aa9ff'],['GPU server','#7ee787'],['CPU server','#5aa9ff']];
+  const htitle=label('SERVERS — each runs short of its own memory','faint');htitle.position.set(0,6.7,0);htitle.element.style.transform='translate(-50%,-50%)';htitle.element.style.letterSpacing='1.5px';g.add(htitle);
+  hosts.forEach((h,i)=>{const ang=Math.PI*(0.16+0.68*(i/(hosts.length-1)));const R=9.5;const x=Math.cos(ang)*R,z=-Math.sin(ang)*R*0.55,y=5.0;
+    const node=new THREE.Mesh(new RoundedBoxGeometry(2.2,1.4,2.2,4,0.2),solidMat(h[1],0.08));node.position.set(x,y,z);g.add(node);
+    node.add(new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(h[1]),transparent:true,opacity:0.45})));
+    pick(node,'host',()=>openNode('cxl_host'));
+    const nl=label(h[0],'faint');nl.position.set(0,1.35,0);nl.element.style.transform='translate(-50%,-50%)';node.add(nl);
+    g.userData.hosts.push(node);addCXLLink(g,sw.position,node.position,h[1]);}); // memory flows switch → host (arriving)
+  // ---- shared memory pool on the bottom (real RAM sticks) ----
+  const mods=[['Samsung','CMM-D','256 GB'],['Micron','CXL module','256 GB'],['Shared','big pool','512 GB'],['SK Hynix','CXL module','256 GB']];
+  const ptitle=label('SHARED MEMORY POOL — CXL memory modules any server can draw from','faint');ptitle.position.set(0,-8.0,0);ptitle.element.style.transform='translate(-50%,-50%)';ptitle.element.style.letterSpacing='1.5px';g.add(ptitle);
+  mods.forEach((m,i)=>{const ang=Math.PI*(0.16+0.68*(i/(mods.length-1)));const R=9.5;const x=Math.cos(ang)*R,z=Math.sin(ang)*R*0.55,y=-5.0;
+    const stick=dimmStick();stick.position.set(x,y,z);stick.rotation.y=-0.35+ (i/(mods.length-1))*0.7;g.add(stick);
+    pick(stick.userData.hit,'mod',()=>openNode('cxl_module'));
+    const ml=label(`<b style="color:#cfe6ff">${m[0]}</b> · ${m[2]}<br><span style="opacity:.6;font-size:.82em">${m[1]}</span>`,'faint');ml.position.set(0,-1.5,0);ml.element.style.transform='translate(-50%,-50%)';ml.element.style.textAlign='center';stick.add(ml);
+    g.userData.mods.push(stick);addCXLLink(g,stick.position,sw.position,'#9a8cff');}); // memory flows module → switch (rising)
+  scene.add(g);
+  setCXL('pooling');
+  flyTo(0,1,25, 0,-0.4,0, 1.2);
+}
+function addCXLLink(g,a,b,color){const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.clone(),b.clone()]),new THREE.LineBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:0.3}));g.add(ln);g.userData.links.push(ln);
+  const p=memBlock(color);g.add(p);g.userData.pulses.push({mesh:p,a:a.clone(),b:b.clone(),t:Math.random(),sp:0.4+Math.random()*0.3});}
+function setCXL(v){cxlState=v;const g=groups.cxl;if(!g)return;
+  // Expansion = one server bolts on one module · Pooling = all share · Sharing = all read the same block
+  g.userData.links.forEach(l=>l.material.opacity=v==='expansion'?0.12:v==='pooling'?0.42:0.6);
+  g.userData.pulses.forEach((p,i)=>p.active=(v==='expansion')?(i===0||i===g.userData.hosts.length):true);
+  g.userData.mods.forEach((m,i)=>{if(m.userData.lit)m.userData.lit.material.emissiveIntensity=v==='expansion'?(i===0?0.6:0.08):v==='sharing'?(i===2?0.7:0.16):0.26;});
+  g.userData.hosts.forEach((h,i)=>h.material.emissiveIntensity=v==='expansion'?(i===0?0.5:0.06):0.18);
+}
+
+/* ---------- PHOTONICS ---------- */
+const WDM=[0xff5d6c,0xff9f45,0xffe14d,0x7ee787,0x46c8e0,0x5aa9ff,0x9a8cff,0xff7ad9];
+let photWDM=true;
+const texLoader=new THREE.TextureLoader();
+function addBackdrop(group,url,w,h,pos,opacity){
+  const tex=texLoader.load(url);tex.colorSpace=THREE.SRGBColorSpace;
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
+    new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity,depthWrite:false,fog:false}));
+  m.position.set(pos[0],pos[1],pos[2]);m.renderOrder=-10;group.add(m);
+  // soft dark scrim in front so 3D objects read clearly over it
+  const scrim=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:0x06070d,transparent:true,opacity:0.34,depthWrite:false,fog:false}));
+  scrim.position.set(pos[0],pos[1],pos[2]+0.1);scrim.renderOrder=-9;group.add(scrim);
+  return m;
+}
+function buildPhotonics(){
+  const g=new THREE.Group();groups.phot=g;g.userData.flows=[];
+  addBackdrop(g,'assets/concept_photonics.png',54,30.4,[0,0.5,-18],0.5);
+  // two chips that need to talk
+  function chip(x,lab,id){const c=new THREE.Mesh(new RoundedBoxGeometry(2.8,2.4,2.8,5,0.24),solidMat('#16294a',0.1));c.position.set(x,0,0);g.add(c);
+    c.add(new THREE.LineSegments(new THREE.EdgesGeometry(c.geometry,32),new THREE.LineBasicMaterial({color:0x46c8e0,transparent:true,opacity:0.5})));
+    pick(c,id,()=>openNode(id==='cL'?'phot_cpo':'phot_transceiver'));
+    const l=label(lab,'title');l.position.set(0,1.9,0);l.element.style.transform='translate(-50%,-50%)';c.add(l);return c;}
+  chip(-9.5,'GPU','cL');chip(9.5,'Switch','cR');
+  const head=label('Two ways for AI chips to talk to each other:','title');head.position.set(0,5.9,0);head.element.style.transform='translate(-50%,-50%)';head.element.style.fontSize='17px';g.add(head);
+
+  // === COPPER (top) — cheap but the signal dies after ~1 metre ===
+  const cY=3.1;
+  const cu=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,9,12),new THREE.MeshStandardMaterial({color:0xc8803a,metalness:0.85,roughness:0.4,emissive:0xf6a345,emissiveIntensity:0.12}));
+  cu.rotation.z=Math.PI/2;cu.position.set(-4.5,cY,0);g.add(cu);pick(cu,'cu',()=>openNode('phot_cpo'));
+  const cuLab=label('① COPPER WIRE — cheap, but the signal dies after ~1 metre and runs hot','faint');cuLab.position.set(-3.5,cY+1.0,0);cuLab.element.style.transform='translate(-50%,-50%)';cuLab.element.style.color='#f6a345';g.add(cuLab);
+  const die=label('✕ signal dies here','heat');die.position.set(0.6,cY,0);die.element.style.transform='translate(0,-50%)';g.add(die);
+
+  // === LIGHT (bottom) — a laser turns data into light that travels far ===
+  const oY=-2.9;
+  const laser=new THREE.Group();laser.position.set(-9,oY,0);g.add(laser);
+  const ldBody=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.55,1.2,18),new THREE.MeshStandardMaterial({color:0x2a1016,metalness:0.6,roughness:0.3,emissive:0xff4d6d,emissiveIntensity:0.55}));ldBody.rotation.z=-Math.PI/2;laser.add(ldBody);
+  const ldTip=new THREE.Mesh(new THREE.SphereGeometry(0.26,18,18),new THREE.MeshBasicMaterial({color:0xff9aab}));ldTip.position.set(0.62,0,0);laser.add(ldTip);
+  pick(ldBody,'laser',()=>openNode('phot_laser'));pick(ldTip,'laser',()=>openNode('phot_laser'));g.userData.laser=ldTip;
+  const lLab=label('◆ THE LASER — turns data into light, and it\'s the bottleneck (click)','node',()=>openNode('phot_laser'));lLab.position.set(-5.5,oY-1.7,0);lLab.element.style.borderColor='rgba(255,107,94,.55)';lLab.element.style.color='#ff9aab';g.add(lLab);
+  const fib=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,18.5,12),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending,depthWrite:false}));fib.rotation.z=Math.PI/2;fib.position.set(0,oY,0);g.add(fib);pick(fib,'fib',()=>openNode('phot_transceiver'));
+  const oLab=label('② LIGHT (PHOTONICS) — travels far, carries ~10× the data, almost no heat. This is replacing copper.','faint');oLab.position.set(2,oY+1.0,0);oLab.element.style.transform='translate(-50%,-50%)';oLab.element.style.color='#5eead4';g.add(oLab);
+  WDM.forEach((c,wi)=>{const count=22;const pg=new THREE.BufferGeometry();const pp=new Float32Array(count*3);const zoff=(wi-WDM.length/2)*0.06;
+    for(let k=0;k<count;k++){pp[k*3]=-9;pp[k*3+1]=oY;pp[k*3+2]=zoff;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+    const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:c,size:0.22,transparent:true,opacity:0.98,blending:THREE.AdditiveBlending,depthWrite:false}));g.add(pts);
+    g.userData.flows.push({pts,count,wi,zoff,y:oY,sp:1.6+wi*0.05,seeds:Array.from({length:count},()=>({t:Math.random()}))});});
+  const wdmLab=label('each colour of light = another data stream at once (WDM)','faint');wdmLab.position.set(4,oY-0.95,0);wdmLab.element.style.transform='translate(-50%,-50%)';g.add(wdmLab);
+  scene.add(g);
+  flyTo(0,1,31, 0,-0.2,0, 1.2);
+}
+
+/* ---------- AI / MEMORY WALL ---------- */
+let kv={ctx:8,batch:4,model:0};
+const MODELS=[{n:'Llama-3 8B',L:32,kvh:8,hd:128,W:16},{n:'Llama-3.1 70B',L:80,kvh:8,hd:128,W:140},{n:'Llama-3.1 405B',L:126,kvh:8,hd:128,W:810}];
+function kvGB(m,ctxK,b){return (2*m.L*m.kvh*m.hd*ctxK*1024*b*2)/1e9;}
+function buildAI(){
+  const g=new THREE.Group();groups.ai=g;
+  addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4);
+  // subtle data-ocean atmosphere (the flood of context the GPU's memory must hold)
+  {const n=300;const pg=new THREE.BufferGeometry();const pp=new Float32Array(n*3);const seeds=[];
+    for(let i=0;i<n;i++){const x=(Math.random()-0.5)*46,y=1+(Math.random()-0.5)*12,z=-15+Math.random()*6;
+      pp[i*3]=x;pp[i*3+1]=y;pp[i*3+2]=z;seeds.push({x,y,z,ph:Math.random()*6.28,sp:0.25+Math.random()*0.4});}
+    pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+    const ocean=new THREE.Points(pg,new THREE.PointsMaterial({color:0x4a8fcf,size:0.1,transparent:true,opacity:0.32,blending:THREE.AdditiveBlending,depthWrite:false}));
+    g.add(ocean);g.userData.ocean={pts:ocean,seeds};}
+
+  // === THE MEMORY TANK — one GPU's HBM (192 GB). Weights fill the bottom, KV cache fills the top. ===
+  const TANKH=13,capGB=192,scale=TANKH/capGB,baseY=-6.5,ceilY=baseY+TANKH;
+  const shellGeo=new RoundedBoxGeometry(3.8,TANKH,3.8,4,0.24);
+  const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x16243c,metalness:0.1,roughness:0.3,transparent:true,opacity:0.09,clearcoat:1,envMapIntensity:1.2}));
+  shell.position.set(0,baseY+TANKH/2,0);g.add(shell);
+  shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x5eead4,transparent:true,opacity:0.34})));
+  pick(shell,'kv',()=>openNode('kv_econ'));
+  const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4}));rim.position.set(0,ceilY,0);g.add(rim);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);g.add(base);
+  // headline + how-to
+  const tTitle=label('Does one chat fit in a single GPU?','title');tTitle.position.set(0,ceilY+3.4,0);tTitle.element.style.transform='translate(-50%,-50%)';tTitle.element.style.fontSize='18px';g.add(tTitle);
+  const tSub=label('Weights fill the bottom. The KV cache — the AI\'s memory of the conversation — fills the top.','faint');tSub.position.set(0,ceilY+2.4,0);tSub.element.style.transform='translate(-50%,-50%)';g.add(tSub);
+  const tSub2=label('Drag the sliders below ↓','faint');tSub2.position.set(0,ceilY+1.7,0);tSub2.element.style.transform='translate(-50%,-50%)';tSub2.element.style.color='#5eead4';g.add(tSub2);
+  const ceilLab=label('one B200 = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
+  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(0,baseY-1.7,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
+  groups.ai.userData.tank={baseY,ceilY,scale,capGB,TANKH};
+  scene.add(g);
+  updateKV();
+  flyTo(0,1,28, 0,0.6,0, 1.2);
+}
+function updateKV(){
+  const g=groups.ai;if(!g)return;const t=g.userData.tank;if(!t)return;
+  [...g.children].filter(c=>c.userData.fill).forEach(c=>{g.remove(c);if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose();c.traverse(ch=>{if(ch.isCSS2DObject&&ch.element.parentNode)ch.element.parentNode.removeChild(ch.element);});});
+  const m=MODELS[kv.model];const val=kvGB(m,kv.ctx,kv.batch);
+  const wGB=m.W,totalGB=wGB+val,baseY=t.baseY,ceilY=t.ceilY,scale=t.scale,capGB=t.capGB,TANKH=t.TANKH;
+  const overflow=totalGB>capGB;
+  const gw=fmt=>fmt<1000?fmt.toFixed(0):(fmt/1000).toFixed(1)+'k';
+  // weights fill (bottom)
+  const wH=Math.min(wGB,capGB)*scale;
+  const wB=new THREE.Mesh(new RoundedBoxGeometry(3.4,Math.max(wH,0.05),3.4,2,0.06),solidMat('#46c8e0',0.12));wB.position.set(0,baseY+wH/2,0);wB.material.transparent=true;wB.material.opacity=0.92;wB.userData.fill=true;g.add(wB);
+  const wl=label(`weights · ${wGB} GB`,'faint');wl.position.set(-2.45,baseY+Math.max(wH,0.6)/2,0);wl.element.style.transform='translate(-100%,-50%)';wl.element.style.color='#46c8e0';wB.add(wl);
+  // KV cache fill (on top, bounded by the tank)
+  const room=Math.max(0,ceilY-(baseY+wH));
+  const kvIn=Math.min(val*scale,room);
+  const kB=new THREE.Mesh(new RoundedBoxGeometry(3.4,Math.max(kvIn,0.05),3.4,2,0.06),solidMat(overflow?'#f6a345':'#7ee787',0.3));kB.position.set(0,baseY+wH+kvIn/2,0);kB.material.transparent=true;kB.material.opacity=0.95;kB.userData.fill=true;g.add(kB);
+  const kl=label(`KV cache · ${gw(val)} GB`,'title');kl.position.set(2.45,baseY+wH+Math.max(kvIn,0.7)/2,0);kl.element.style.transform='translate(0,-50%)';kl.element.style.color=overflow?'#f6a345':'#7ee787';kB.add(kl);
+  // overflow — spills out over the rim (bounded so it never flies off-screen)
+  if(overflow){
+    const overGB=totalGB-capGB;const overH=Math.min(overGB*scale,TANKH*1.05);
+    const oB=new THREE.Mesh(new RoundedBoxGeometry(3.6,Math.max(overH,0.12),3.6,2,0.06),solidMat('#ff6b5e',0.42));oB.position.set(0,ceilY+overH/2+0.18,0);oB.material.transparent=true;oB.material.opacity=0.9;oB.userData.fill=true;g.add(oB);
+    const ol=label(`↑ over by ${gw(overGB)} GB — won't fit!`,'heat');ol.position.set(2.45,ceilY+overH/2+0.18,0);ol.element.style.transform='translate(0,-50%)';oB.add(ol);
+  }
+  // live consequences
+  const gpusN=Math.max(1,Math.ceil(totalGB/192));
+  const msTok=totalGB/(gpusN*8);const tokSec=Math.round(1000/msTok);const costK=gpusN*35;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const out=document.getElementById('kvOut');if(out){out.textContent=gw(val);out.style.color=overflow?'#f6a345':'#7ee787';}
+  set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',costK<1000?('$'+costK+'k'):('$'+(costK/1000).toFixed(2)+'M'));
+  const note=document.getElementById('kvNote');
+  if(note){note.classList.toggle('ok',!overflow);
+    if(overflow)note.innerHTML=`This chat needs <b>${gw(totalGB)} GB</b> — more than one GPU holds (192 GB). It must be split across <b>${gpusN} GPUs</b> (~${costK<1000?'$'+costK+'k':'$'+(costK/1000).toFixed(1)+'M'}) or offloaded to CXL. <b>That's why long context with many users gets expensive fast.</b>`;
+    else note.innerHTML=`Fits one GPU: weights (${wGB} GB) + KV cache (${val.toFixed(0)} GB) = <b>${totalGB.toFixed(0)} of 192 GB</b>. Now push <b>context</b> or <b>users</b> up and watch the tank fill.`;
+  }
+}
+
+/* =========================================================================
+   DOCK (per-region controls)
+   ========================================================================= */
+const dock=document.getElementById('dock');
+const dockcore=document.getElementById('dockcore');
+function setDock(region){
+  const kvNote=document.getElementById('kvNote');if(kvNote)kvNote.style.display=(region==='ai')?'block':'none';
+  if(region==='cxl'){
+    dock.style.display='';
+    dockcore.innerHTML=`<span class="dlabel">Capability</span><div class="seg" id="cxlSeg">
+      <button data-v="expansion">Expansion</button><button data-v="pooling" class="on">Pooling</button><button data-v="sharing">Sharing</button></div>
+      <span class="dlabel" id="cxlCap" style="margin-left:6px;text-transform:none;letter-spacing:0"><b style="color:var(--violet)">Pooling:</b> every server draws from the shared pool — no memory sits stranded.</span>`;
+    const CXLCAP={expansion:'<b style="color:var(--gold)">Expansion:</b> one server bolts on one extra memory module to grow past its own limit.',pooling:'<b style="color:var(--violet)">Pooling:</b> every server draws from the shared pool — no memory sits stranded.',sharing:'<b style="color:var(--accent-2)">Sharing:</b> several servers read the <i>same</i> block of memory at once, kept consistent.'};
+    dockcore.querySelector('#cxlSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#cxlSeg button').forEach(x=>x.classList.toggle('on',x===b));setCXL(b.dataset.v);const cap=document.getElementById('cxlCap');if(cap)cap.innerHTML=CXLCAP[b.dataset.v];});
+  }else if(region==='ai'){
+    dock.style.display='';
+    dockcore.innerHTML=`<span class="dlabel">Model</span><div class="seg" id="mSeg"><button data-m="0" class="on">8B</button><button data-m="1">70B</button><button data-m="2">405B</button></div>
+      <div class="slider-wrap"><span class="dlabel">Context</span><input type="range" id="ctxSl" min="1" max="256" value="8"><span class="sv" id="ctxV">8K</span></div>
+      <div class="slider-wrap"><span class="dlabel">Users</span><input type="range" id="batSl" min="1" max="128" value="4"><span class="sv" id="batV">4 chats</span></div>
+      <div class="kvo-cluster">
+        <div class="kvo"><span class="kvo-v" id="kvOut" style="color:#7ee787">4</span><span class="kvo-l">KV cache · GB</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvGpus">1</span><span class="kvo-l">GPUs · B200</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvSpeed">—</span><span class="kvo-l">ms / token</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvCost">—</span><span class="kvo-l">hardware</span></div>
+      </div>`;
+    dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>x.classList.toggle('on',x===b));kv.model=+b.dataset.m;updateKV();});
+    const cs=dockcore.querySelector('#ctxSl'),bs=dockcore.querySelector('#batSl');
+    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K';updateKV();});
+    bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();});
+    updateKV();
+  }else if(region==='photonics'){
+    dock.style.display='';
+    dockcore.innerHTML=`<span class="dlabel">Wavelength-division multiplexing</span>
+      <label class="toggle on" id="wdmT"><span class="sw"></span>WDM colours</label>
+      <span class="dlabel" style="margin-left:6px">each colour = +100 Gb/s on one fibre</span>`;
+    dockcore.querySelector('#wdmT').addEventListener('click',e=>{photWDM=!photWDM;e.currentTarget.classList.toggle('on',photWDM);const g=groups.phot;if(g)g.userData.flows.forEach((f,i)=>f.pts.visible=photWDM||i===4);});
+  }else{dock.style.display='none';}
+}
+
+/* =========================================================================
+   REGION SWITCH
+   ========================================================================= */
+function enterRegion(r){
+  if(r===region&&groups&&Object.keys(groups).length){/* allow re-entry refresh */}
+  region=r;
+  clearScene();closePanel();
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.region===(r==='map'?'map':r)));
+  if(r==='map'){buildMap();}
+  else if(r==='hierarchy'){buildHierarchy();}
+  else if(r==='cxl'){buildCXL();}
+  else if(r==='photonics'){buildPhotonics();}
+  else if(r==='ai'){buildAI();}
+  setDock(r);
+  renderRail(r);
+  controls.autoRotate=false;controls.autoRotateSpeed=0.3;
+  if(r==='map')setTimeout(()=>{if(region==='map'&&!camT.active)controls.autoRotate=true;},1400); // gentle idle orbit on the overview
+  requestAnimationFrame(()=>{renderOnce();setTimeout(renderOnce,60);}); // force first paint even if rAF throttled
+  const hints={map:'<b>drag</b> to orbit the graph · <b>click</b> a node to enter',
+    hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
+    cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
+    photonics:'<b>click</b> a chip or the laser callout · toggle WDM below',
+    ai:'<b>drag</b> the sliders · watch the KV cache overflow the GPU'};
+  document.getElementById('hint').innerHTML=hints[r]||'';
+}
+document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(!b)return;enterRegion(b.dataset.region);});
+
+/* ---------- GUIDED TOUR (zero → expert) ---------- */
+const TOUR=[
+  {region:'ai',node:'kv_econ',title:'1 · Start with the problem',text:'AI is bottlenecked by <b>memory</b>, not compute. To write each word, a GPU re-reads the entire model from memory — and sits idle ~1,200× waiting on it. Drag the sliders below: bigger context explodes the memory needed.',
+   q:{ask:'Quick gut check before we dive in — what do you think limits how fast an AI writes each word?',opts:[
+     ['The math it has to do',false,'Reasonable guess — but modern GPUs do the math almost absurdly fast. That\'s not the limit.'],
+     ['Fetching the data from memory',true,'Exactly right. The GPU finishes the math ~1,200× faster than it can fetch the data — so it sits and waits on memory. That one fact is what this whole map is about.'],
+     ['Its internet connection',false,'Nope — it\'s all happening inside one machine, on one chip. The hold-up is memory.']
+   ]}},
+  {region:'hierarchy',node:'hbm',title:'2 · The prize — HBM',text:'The answer is <b>HBM</b>: ultra-fast memory stacked onto the GPU. Just three firms make it (SK Hynix, Samsung, Micron) and it sells out a year ahead. This one component is the centre of gravity of the entire AI trade.'},
+  {region:'hierarchy',node:'hbm',title:'3 · The real chokepoint',text:'Tap <b>"Who makes it"</b> in the panel. HBM is gated from below by TSMC\'s <b>CoWoS</b> packaging (booked to 2027), ASML\'s EUV monopoly, and Japan\'s grip on materials (Ajinomoto\'s 95% ABF). The bottleneck is packaging, not the chip.'},
+  {region:'cxl',node:'cxl_switch',title:'4 · When HBM runs out — CXL',text:'When a model outgrows one GPU\'s memory, <b>CXL</b> pools memory across the rack — and sets off the standards war: NVIDIA\'s NVLink vs the open UALink camp. <b>Astera Labs</b> is the pure-play that wins whichever way it breaks.'},
+  {region:'photonics',node:'phot_laser',title:'5 · Breaking the wall — light',text:'To wire memory and GPUs together at rack scale, copper gives way to <b>light</b>. The bottleneck shifts to the <b>laser</b> — fewer than five makers, with NVIDIA locking up ~$4B of Lumentum & Coherent supply through 2027.'},
+  {region:'map',node:null,title:'6 · Now you can read the map',text:'You\'ve walked the whole chain: the wall → HBM → the chokepoints → CXL → photonics. Click any node to go deeper, and click a <b>company</b> to see every layer it touches. The floor is yours.'}
+];
+let tour={active:false,i:0,answered:{}};
+const tourEl=document.getElementById('tour'),tourBtn=document.getElementById('tourBtn');
+function startTour(){tour.active=true;tour.answered={};tourEl.classList.add('on');tourBtn.style.display='none';document.getElementById('hint').style.opacity='0';setStep(0);}
+function endTour(){tour.active=false;tourEl.classList.remove('on');tourBtn.style.display='';document.getElementById('hint').style.opacity='';}
+function setStep(i){
+  tour.i=Math.max(0,Math.min(TOUR.length-1,i));const s=TOUR[tour.i];
+  enterRegion(s.region);
+  if(s.node)setTimeout(()=>{openNode(s.node);if(s.region==='hierarchy')focusLayer(s.node);},680);
+  renderTour();
+}
+function renderTour(){
+  const s=TOUR[tour.i];const ans=tour.answered[tour.i];
+  let qhtml='';
+  if(s.q){
+    if(!ans){qhtml=`<div class="tq"><div class="tq-ask">${s.q.ask}</div>`+s.q.opts.map((o,k)=>`<button class="tq-opt" data-k="${k}">${o[0]}</button>`).join('')+`</div>`;}
+    else{const o=s.q.opts[ans.k];qhtml=`<div class="tq"><div class="tq-fb ${o[1]?'right':'wrong'}">${o[1]?'✓ ':'→ '}${o[2]}</div></div>`;}
+  }
+  const gated=s.q&&!ans;
+  tourEl.querySelector('.core').innerHTML=`
+    <div class="trow"><span class="tstep">STEP ${tour.i+1} / ${TOUR.length}</span>
+      <div class="tprog">${TOUR.map((_,k)=>`<i class="${k<=tour.i?'on':''}"></i>`).join('')}</div></div>
+    <h3>${s.title}</h3><p>${s.text}</p>${qhtml}
+    <div class="tnav">
+      <button id="tExit">Exit</button>
+      ${tour.i>0?'<button id="tPrev">← Back</button>':''}
+      <button class="next" id="tNext"${gated?' disabled':''}>${tour.i<TOUR.length-1?'Next →':'Finish ✓'}</button>
+    </div>`;
+  if(gated)tourEl.querySelectorAll('.tq-opt').forEach(b=>b.addEventListener('click',()=>{tour.answered[tour.i]={k:+b.dataset.k};renderTour();}));
+  tourEl.querySelector('#tExit').onclick=endTour;
+  const p=tourEl.querySelector('#tPrev');if(p)p.onclick=()=>setStep(tour.i-1);
+  const n=tourEl.querySelector('#tNext');if(n&&!gated)n.onclick=()=>{tour.i<TOUR.length-1?setStep(tour.i+1):endTour();};
+}
+tourBtn.addEventListener('click',startTour);
+
+/* =========================================================================
+   ANIMATE
+   ========================================================================= */
+let __frames=0,__lastErr='';
+function renderOnce(){try{scene.updateMatrixWorld(true);composer.render();labelRenderer.render(scene,camera);}catch(e){__lastErr=e.message;}}
+let __lastRender=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now();
+  if(now-__lastRender<32)return;   // cap ~30fps — halves GPU load, quiets the fan
+  __lastRender=now;
+  try{
+  __frames++;
+  const dt=Math.min(clock.getDelta(),0.05),tt=clock.elapsedTime;
+  stepTweens(dt);controls.update();
+
+  if(region==='map'&&groups.map){
+    (groups.map.userData.cores||[]).forEach(c=>{c.rotation.y+=dt*c.userData.spin;if(c.userData.ring)c.userData.ring.rotation.z+=dt*0.25;});
+    (groups.map.userData.pulses||[]).forEach(p=>{p.t+=dt*p.sp;if(p.t>1)p.t-=1;p.mesh.position.copy(p.curve.getPoint(p.t));});
+  }
+  else if(region==='hierarchy'&&groups.hier){
+    (groups.hier.userData.flows||[]).forEach(f=>{const a=f.pts.geometry.attributes.position.array;f.seeds.forEach((s,k)=>{s.t+=dt*f.sp*0.5;if(s.t>1)s.t-=1;a[k*3]=s.sx;a[k*3+1]=f.yT-(f.yT-f.yB)*s.t;a[k*3+2]=s.sz;});f.pts.geometry.attributes.position.needsUpdate=true;});
+    groups.hier.children.forEach(c=>{if(c.userData.idx!==undefined){const tgt=c.userData.baseEmi;c.material.emissiveIntensity+=(tgt-c.material.emissiveIntensity)*0.08;c.position.y+=Math.sin(tt*0.5+c.userData.idx)*0.0006;}});
+  }
+  else if(region==='cxl'&&groups.cxl){
+    const sw=groups.cxl.userData.sw;if(sw){sw.rotation.y+=dt*0.3;sw.rotation.x+=dt*0.12;sw.material.emissiveIntensity=0.4+Math.sin(tt*2)*0.12;}
+    (groups.cxl.userData.pulses||[]).forEach(p=>{p.mesh.visible=!!p.active;if(!p.active)return;p.t+=dt*p.sp;if(p.t>1)p.t-=1;p.mesh.position.lerpVectors(p.a,p.b,p.t);p.mesh.rotation.y+=dt*1.6;const s=0.85+Math.sin(p.t*Math.PI)*0.3;p.mesh.scale.setScalar(s);});
+    groups.cxl.rotation.y=Math.sin(tt*0.08)*0.04;
+  }
+  else if(region==='photonics'&&groups.phot){
+    (groups.phot.userData.flows||[]).forEach(f=>{const a=f.pts.geometry.attributes.position.array;f.seeds.forEach((s,k)=>{s.t+=dt*f.sp*0.5;if(s.t>1)s.t-=1;a[k*3]=-9+s.t*18;a[k*3+1]=f.y+Math.sin(s.t*Math.PI*4+f.wi)*0.04;a[k*3+2]=f.zoff;});f.pts.geometry.attributes.position.needsUpdate=true;});
+    if(groups.phot.userData.laser){groups.phot.userData.laser.scale.setScalar(1+Math.sin(tt*5)*0.28);}
+  }
+  else if(region==='ai'&&groups.ai){
+    (groups.ai.userData.rack||[]).forEach((g,i)=>g.material.emissiveIntensity=0.18+Math.sin(tt*2+i*0.5)*0.12);
+    const oc=groups.ai.userData.ocean;
+    if(oc){const a=oc.pts.geometry.attributes.position.array;oc.seeds.forEach((s,i)=>{a[i*3]=s.x+Math.sin(tt*s.sp+s.ph)*0.5;a[i*3+1]=s.y+Math.cos(tt*s.sp*0.7+s.ph)*0.35;});oc.pts.geometry.attributes.position.needsUpdate=true;oc.pts.material.opacity=0.42+Math.sin(tt*0.6)*0.1;}
+    groups.ai.rotation.y=Math.sin(tt*0.06)*0.03;
+  }
+  composer.render();labelRenderer.render(scene,camera);
+  }catch(err){__lastErr=err.message+' @ '+(err.stack||'').split('\n')[1];}
+}
+
+window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setSize(W(),H());composer.setSize(W(),H());labelRenderer.setSize(W(),H());});
+
+/* BOOT */
+const lmsg=['Mapping the supply chain…','Stacking HBM dies…','Lighting the waveguides…','Wiring the CXL fabric…','Tracing the bottlenecks…'];
+let li=0;const lint=setInterval(()=>{li=(li+1)%lmsg.length;const e=document.getElementById('lt');if(e)e.textContent=lmsg[li];},650);
+window.__atlas={scene,lr,camera,get region(){return region},get groups(){return groups},
+  countCSS2D(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject)n++;});return n;},
+  countVisible(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)n++;});return n;},
+  frames(){return __frames;},lastErr(){return __lastErr;},render(){renderOnce();},
+  probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
+enterRegion('map');
+animate();
+// keep the canvas painting even when the tab is backgrounded (rAF pauses when hidden)
+setInterval(()=>{if(document.hidden)renderOnce();},350);
+
+/* ---------- WELCOME / ONBOARDING ---------- */
+const welcome=document.getElementById('welcome');
+function showWelcome(){welcome.classList.add('show');}
+function hideWelcome(){welcome.classList.remove('show');try{localStorage.setItem('atlas_seen','1');}catch(e){}}
+document.getElementById('wTour').addEventListener('click',()=>{hideWelcome();setTimeout(()=>{if(typeof startTour==='function')startTour();},260);});
+document.getElementById('wExplore').addEventListener('click',hideWelcome);
+welcome.addEventListener('click',e=>{if(e.target===welcome)hideWelcome();});
+const introBtn=document.createElement('button');introBtn.id='introReopen';introBtn.innerHTML='?&nbsp; What is this';introBtn.addEventListener('click',showWelcome);document.body.appendChild(introBtn);
+
+setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);
+  let seen=false;try{seen=localStorage.getItem('atlas_seen')==='1';}catch(e){}
+  if(!seen)setTimeout(showWelcome,450);
+},1500);
+</script>
+</body>
+</html>
