@@ -14,7 +14,7 @@ It's a single self-contained HTML file. No build step, no backend, no sign-up.
 
 ## What's inside
 
-Five interlinked **regions** in one continuous 3D world — drag to orbit, click any glowing node to open its file:
+Six interlinked **regions** in one continuous 3D world — drag to orbit, click any glowing node to open its file:
 
 | Region | What it shows |
 |---|---|
@@ -22,6 +22,7 @@ Five interlinked **regions** in one continuous 3D world — drag to orbit, click
 | **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged. |
 | **CXL** | A shared-memory fabric: four servers, a CXL switch, and a pool of memory modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
 | **Photonics** | Copper vs light: a copper wire whose signal dies mid-way vs a clickable laser firing wavelength-multiplexed light across the fibre. The laser is the bottleneck — click it. |
+| **KV Cache** | How the cache actually works, word by word: the newest word is the *query*, every earlier word holds a stored *key/value* pair (attention beams look back), and each step appends exactly one new pair. Toggle the cache off and watch every step recompute everything — the waste the cache prevents, with live computation counters. |
 | **The Wall** | A live KV-cache calculator rendered as GPU "memory tanks": one tank = one GPU's 192 GB. The blue block is the model (fixed); every chat adds one green slab that grows with conversation length. When the tank fills, the excess pours into more GPUs on the right — with GPUs-needed, $ cost and ms/token computed live. |
 
 ![HBM panel — who makes it, metrics, geography](docs/hbm-panel.png)
@@ -85,7 +86,7 @@ Everything lives in **`index.html`**: a `<style>` design system, an import map, 
 
 ```bash
 npm i                  # once — playwright-core drives your installed Edge, no browser download
-npm run verify         # 7 states × (DOM probes + pixel-class probes + baseline diff)
+npm run verify         # 8 states × (DOM probes + pixel-class probes + baseline diff)
 npm run verify:update  # re-bless baselines after an intended visual change
 ```
 

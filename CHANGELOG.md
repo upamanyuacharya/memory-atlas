@@ -2,6 +2,31 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.5.0] — 2026-07-06
+
+A dedicated **KV Cache region** — the mechanism itself, not just its economics —
+visualizing the query/keys/values intuition from Saad Ahmed's "KV cache,
+explained intuitively" (linked as a source in the panel).
+
+### Added
+- Region 04 "KV Cache": a model writes a sentence word by word. The gold cube is
+  the QUERY ("who here matters to me?"); every earlier word holds a stored
+  KEY + VALUE slab in a growing glass cache bracket; attention beams (weighted
+  differently — friend vs passer-by) look back from the query. Each step appends
+  exactly ONE new pair; the prompt is marked as prefilled in one pass.
+- Cache ON/OFF toggle: OFF flashes every stored pair red on each step — the
+  recompute-everything waste — with live counters (K/V computed this word,
+  total computations: n vs n(n+1)/2, cache size in MB on an 8B).
+- Controls: +1 word, auto-write, reset. Everything clickable opens a new
+  "How the KV Cache Works" panel node (plain-English room-of-cards analogy,
+  why it's a demand engine rather than a supply chokepoint, sources).
+- The Wall's legend link now leads here ("how the cache works →"); the Wall
+  stays the economics half of the story and the caption cross-links back.
+- Harness: new `kvcache` state (word count, per-step counter, cache-off
+  headline flip, teal key-slab pixel probe) — 8 states total, all deterministic.
+  The page-error gate caught two real bugs during this build (a TDZ boot error
+  and an unescaped-quote SyntaxError) before any human saw them.
+
 ## [1.4.0] — 2026-07-05
 
 Renderer-contract hardening — five principles adopted from a GPU-renderer review

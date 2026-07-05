@@ -103,11 +103,13 @@
   .navbtn[data-region="hierarchy"]{color:var(--accent)}
   .navbtn[data-region="cxl"]{color:var(--violet)}
   .navbtn[data-region="photonics"]{color:var(--spectrum)}
+  .navbtn[data-region="kvcache"]{color:#5aa9ff}
   .navbtn[data-region="ai"]{color:var(--heat)}
   .navbtn.active,.navbtn[data-region].active{color:#04110e;background:var(--accent);box-shadow:0 4px 22px rgba(94,234,212,.35)}
   .navbtn.active .ico{opacity:1;border-radius:50%}
   .navbtn[data-region="cxl"].active{background:var(--violet);color:#0a0820;box-shadow:0 4px 22px rgba(154,140,255,.35)}
   .navbtn[data-region="photonics"].active{background:var(--spectrum);color:#06140a;box-shadow:0 4px 22px rgba(126,231,135,.35)}
+  .navbtn[data-region="kvcache"].active{background:#5aa9ff;color:#05101f;box-shadow:0 4px 22px rgba(90,169,255,.35)}
   .navbtn[data-region="ai"].active{background:var(--heat);color:#1a1102;box-shadow:0 4px 22px rgba(246,163,69,.35)}
 
   /* ---------------- LEFT RAIL (context / breadcrumb) ---------------- */
@@ -284,6 +286,11 @@
   .seg button[data-tip]{position:relative}
   .seg button[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:300px;white-space:normal;font-family:var(--sans);font-size:13.5px;line-height:1.5;text-align:left;text-transform:none;letter-spacing:0;color:#d8e4f1;background:#0d1118;border:1px solid var(--hair-bright);border-radius:12px;padding:12px 14px;box-shadow:0 14px 44px rgba(0,0,0,.6);pointer-events:none;z-index:60}
   .seg button[data-tip]:hover::before{content:"";position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:#0d1118;border-right:1px solid var(--hair-bright);border-bottom:1px solid var(--hair-bright);pointer-events:none;z-index:61}
+  .stepBtn{font-family:var(--mono);font-size:14px;font-weight:600;color:#05101f;background:linear-gradient(120deg,#5aa9ff,#8cc5ff);border:0;border-radius:999px;padding:11px 20px;cursor:pointer;transition:all .3s var(--ease);box-shadow:0 8px 24px rgba(90,169,255,.28)}
+  .stepBtn:hover{transform:translateY(-1px);box-shadow:0 12px 30px rgba(90,169,255,.42)}
+  .stepBtn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+  .stepBtn.ghost{background:rgba(255,255,255,.06);color:var(--ink-dim);border:1px solid var(--hair);box-shadow:none}
+  .stepBtn.ghost:hover{color:var(--ink)}
   /* the Wall's fixed headline strip — DOM, so it can never collide with 3D labels */
   #wallHead{position:absolute;left:50%;top:136px;transform:translateX(-50%);z-index:22;text-align:center;pointer-events:none;max-width:min(92vw,900px)}
   #wallHead .wh-t{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
@@ -477,6 +484,8 @@
     .pblk p{font-size:15px}
   }
 </style>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BQ35RMCCW9"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BQ35RMCCW9");</script>
 </head>
 <body>
 <noscript>
@@ -528,6 +537,7 @@
     <button class="navbtn" data-region="hierarchy"><span class="ico"></span>Stack</button>
     <button class="navbtn" data-region="cxl"><span class="ico"></span>CXL</button>
     <button class="navbtn" data-region="photonics"><span class="ico"></span>Photonics</button>
+    <button class="navbtn" data-region="kvcache"><span class="ico"></span>KV Cache</button>
     <button class="navbtn" data-region="ai"><span class="ico"></span>The Wall</button>
   </div>
 </div>
@@ -716,6 +726,7 @@ const REGIONS={
   region_cxl:{name:'CXL Fabric',col:'#9a8cff',into:'cxl'},
   region_photonics:{name:'Photonics',col:'#7ee787',into:'photonics'},
   wall:{name:'The Memory Wall',col:'#f6a345',into:'ai'},
+  region_kv:{name:'Inside the KV Cache',col:'#5aa9ff',into:'kvcache'},
 };
 
 // ---- EXTRA NODES: deep fractal content for the CXL / Photonics / AI regions ----
@@ -774,6 +785,15 @@ const EXTRA={
     geo:[['CHN','modules — InnoLight, Eoptolink (~60%)'],['USA','DSP + integrated — Marvell, Coherent'],['THA','assembly — Fabrinet']],
     mx:[['800G→1.6T units','the transition pace'],['Fabrinet utilization','pluggable demand'],['DSP export policy','the China risk']],
     related:['phot_laser','phot_cpo','net']},
+  kv_how:{id:'kv_how',name:'How the KV Cache Works',kind:'attention · step by step',col:'#5aa9ff',sev:2,
+    stats:[['Per new word','1 K/V pair'],['Without cache','recompute ALL'],['Prompt','prefilled in 1 pass'],['Growth','linear with context']],
+    blurb:'When a model writes a word, that word becomes a <b>query</b> — it asks "who here matters to me?" Every earlier word answers through its <b>key</b> (how relevant am I?) and contributes through its <b>value</b> (what do I offer?). Those K/V vectors never change once computed — so the model <b>stores</b> them. Each new word computes exactly one new pair and appends it; the prompt itself is "prefilled" in a single pass. Without the cache, every single step would recompute K and V for the entire conversation — the same numbers, again and again.',
+    biz:'This one engineering trick is why long conversations are <em>possible</em> — and why they are <em>expensive</em>. The cache turns quadratic recomputation into linear growth, but that linear growth lands in <b>HBM</b>, the scarcest memory on earth. Every extra word of context is a permanent tenant in the GPU\'s memory until the chat ends. <span class="hl2">Open The Wall to see what that does to GPU counts.</span>',
+    cos:['nvidia','skhynix','micron'],
+    geo:[['—','an algorithm, not a place — but its appetite lands on Korean HBM and Taiwanese packaging']],
+    mx:[['context-length trend','every jump (8K→128K→1M) multiplies cache size'],['MLA adoption','DeepSeek-style compression cuts KV ~7× — watch who copies it'],['prefill vs decode pricing','APIs price them differently because the cache is the cost']],
+    why:'Not a supply chokepoint — a <b>demand engine</b>. The cache is pure memory pressure: it must live in HBM (nothing slower keeps up with decode), it grows with every word and every user, and it can\'t be shared between chats. It is the single biggest reason inference wants more memory every year.',
+    related:['kv_econ','hbm','wall']},
   kv_econ:{id:'kv_econ',name:'KV-Cache Economics',kind:'why memory is the wall',col:'#f6a345',sev:4,
     why:'A demand chokepoint rather than a supply one: every doubling of context length or concurrent users doubles the memory a GPU must hold, and it has to be HBM-fast. That pressure lands directly on the three HBM makers and TSMC\'s packaging line — the tightest links in the whole chain.',
     stats:[['Decode','memory-bound'],['H100 starve','~1,200× wait'],['Fix #1','more HBM'],['Fix #2','CXL + photonics']],
@@ -782,7 +802,7 @@ const EXTRA={
     cos:['nvidia','skhynix','micron','astera','marvell'],
     geo:[['—','a demand signal, not a place — but it pulls Korea HBM + Taiwan CoWoS']],
     mx:[['context-length trend','1M-token models = more KV'],['HBM bit-growth','the volume tape'],['inference cost/token','what KV pressure sets']],
-    related:['hbm','cxl','net','wall']},
+    related:['hbm','cxl','net','wall','region_kv','kv_how']},
 };
 function findNode(id){return HIER.find(h=>h.id===id)||EXTRA[id]||null;}
 function allNodes(){return HIER.concat(Object.values(EXTRA));}
@@ -802,6 +822,7 @@ const ELI={
   phot_laser:'To send data as light you first need a laser — and lasers can\'t be made from ordinary silicon, so they come from a tiny club of specialists. Demand is running so far ahead of supply that NVIDIA pre-paid ~$4B just to lock it up. When something is this scarce, the few suppliers get real pricing power.',
   phot_cpo:'Instead of plugging fibre-optic cables into the edge of a switch, you build the light engine <em>right into</em> the chip package — less power, far more bandwidth. Broadcom and NVIDIA are first out; startups Ayar and Lightmatter push it even closer to the GPU. Real technology, but mostly a 2028-and-beyond story at scale.',
   phot_transceiver:'The little modules that convert electrical signals into light at every switch port. China\'s InnoLight and Eoptolink build most of them — but the critical brain inside each one is a US-made chip (Marvell). That dependency is the real point of leverage in the whole optics story.',
+  kv_how:'Think of the newest word as someone walking into a room asking "who here matters to me?" Everyone already in the room holds up a card (their key) and an offer (their value). Those cards never change — so the model keeps them in a stack instead of asking everyone to rewrite them for every new arrival. That stack is the KV cache: one new card per word, forever growing, living in the GPU\'s fastest memory.',
   kv_econ:'Here\'s why everything else on this map exists: when an AI writes an answer, it has to re-read its entire memory of the conversation for <em>every single word</em> it produces. That memory (the "KV cache") balloons with longer chats and more users, and it has to live in expensive HBM. More memory pressure → more demand for every company in this atlas.',
 };
 function companyBacklinks(cid){return allNodes().filter(n=>n.cos&&n.cos.includes(cid)).map(n=>({id:n.id,name:n.name,col:n.col}));}
@@ -818,6 +839,7 @@ const SRC={
   phot_laser:[['Indium phosphide — the quiet bottleneck','https://yianisz.substack.com/p/indium-phosphide-inp-the-quiet-bottleneck'],['NVIDIA’s $4B laser lockup — TechTimes','https://www.techtimes.com/articles/317281/20260527/ai-data-center-optical-component-shortage-nvidias-4b-laser-lockup-pushes-rivals-past-2027.htm'],['NVIDIA $4B optical strategy — IO Fund','https://io-fund.com/ai-stocks/nvidia-4b-optical-strategy-cpo-ai-data-centers']],
   phot_cpo:[['Broadcom Tomahawk-6 Davisson (102.4 Tb/s CPO)','https://www.broadcom.com/company/news/product-releases/63626'],['NVIDIA Spectrum-X Photonics','https://nvidianews.nvidia.com/news/nvidia-spectrum-x-co-packaged-optics-networking-switches-ai-factories'],['Marvell completes Celestial AI acquisition','https://www.marvell.com/company/newsroom/marvell-completes-acquisition-of-celestial-ai.html']],
   phot_transceiver:[['InnoLight & Eoptolink dominate 60% of 800G','https://ip-fiber.com/blogs/news/nvidia-orders-surge-innolight-and-eoptolink-dominate-60-of-800g-sfp-optical-modules-supply'],['Marvell optical DSP','https://www.marvell.com/solutions/data-center/optical-dsp.html'],['Fabrinet at OFC 2026','https://www.investing.com/news/transcripts/fabrinet-at-2026-optical-fiber-conference-sustained-growth-amid-challenges-93CH-4567256']],
+  kv_how:[['KV cache, explained intuitively — Saad Ahmed','https://medium.com/@saad.ahmed1926q/kv-cache-explained-intuitively-2b425a36dfc7'],['DeepSeek-V2 paper — MLA compressed KV','https://arxiv.org/pdf/2405.04434'],['A visual guide to attention variants — Sebastian Raschka','https://magazine.sebastianraschka.com/p/visual-attention-variants']],
   kv_econ:[['Epoch AI — AI chip supply-chain constraints','https://epoch.ai/data-insights/ai-chip-supply-chain-constraints'],['SemiAnalysis — Co-Packaged Optics','https://newsletter.semianalysis.com/p/co-packaged-optics-cpo-book-scaling']],
 };
 
@@ -933,6 +955,7 @@ const RIGS={
   cxl:      {pos:[-1.2,1.2,28.5],tgt:[-1.2,0.9,0]},   // pulled back so the headline clears the nav
   photonics:{pos:[-1.4,1,31],    tgt:[-1.4,-0.2,0]},  // panned so the GPU chip clears the rail
   ai:       {pos:[0,1,28],       tgt:[0,0.6,0]},
+  kvcache:  {pos:[-2.6,0.8,25],  tgt:[-2.6,-2.4,0]},  // panned so the sentence clears the rail
 };
 function camEnter(r,{dx=0}={}){const g=RIGS[r];flyTo(g.pos[0]+dx,g.pos[1],g.pos[2], g.tgt[0]+dx,g.tgt[1],g.tgt[2], 1.2);}
 function camGlide(r,{dx=0,dz=0}={}){const g=RIGS[r];tweenObj(controls.target,{x:g.tgt[0]+dx},0.9);tweenObj(camera.position,{x:g.pos[0]+dx,z:g.pos[2]+dz},0.9);}
@@ -1217,13 +1240,15 @@ const st=document.createElement('style');st.textContent='.kmini{font-family:var(
 const railcore=document.getElementById('railcore');
 const RAIL={
   map:{kicker:'The Atlas',title:'One connected world',lede:'Every layer of the AI memory stack, the two technologies bending it (CXL &amp; photonics), and the wall that forces it all — drawn as one graph. Drag to fly through it; click any node to open its file.',
-    toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['ai','The Memory Wall','why it all exists','#f6a345']]},
+    toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['kvcache','The KV Cache','how it works','#5aa9ff'],['ai','The Memory Wall','why it all exists','#f6a345']]},
   hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, <b>where its chokepoint comes from</b> (or why it has none), and the metrics to watch. The ◆ flags mark the layers where supply is genuinely gated.',toc:null},
   cxl:{kicker:'Region · 02',title:'CXL Fabric',lede:'Coherent memory over PCIe — expansion, pooling, and sharing. Click the switch, hosts, or modules; toggle the capability below.',
     nodes:[['cxl_switch','The Interconnect War','#9a8cff'],['cxl_module','CXL Memory Module','#9a8cff'],['cxl','↑ CXL in the stack','#9a8cff']]},
   photonics:{kicker:'Region · 03',title:'Photonics',lede:'The copper wall vs light. Click the chips, links, and laser callout — companies and bottlenecks live inside each node.',
     nodes:[['phot_laser','The Laser Bottleneck','#f6a345'],['phot_cpo','Co-Packaged Optics','#7ee787'],['phot_transceiver','Optical Transceivers','#7ee787']]},
-  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'The tank = one GPU\'s <b>HBM</b>, the Stack\'s chokepoint layer. Overflow it and you buy whole extra GPUs.',
+  kvcache:{kicker:'Region · 04',title:'The KV Cache',lede:'Watch a model write a sentence word by word. The gold cube is the <b>query</b> — the word being written. It looks back at every stored <b>key/value</b> pair (the beams), then adds exactly <b>one new pair</b> to the cache. Toggle the cache off to see the waste it prevents.',
+    nodes:[['kv_how','How the cache works','#5aa9ff'],['kv_econ','KV-Cache Economics','#f6a345'],['hbm','→ HBM (where it lives)','#5eead4']]},
+  ai:{kicker:'Region · 05',title:'The Memory Wall',lede:'The tank = one GPU\'s <b>HBM</b>, the Stack\'s chokepoint layer. Overflow it and you buy whole extra GPUs.',
     nodes:[['kv_econ','KV-Cache Economics','#f6a345'],['hbm','→ HBM (the prize)','#5eead4'],['cxl_switch','→ The Interconnect War','#9a8cff']]},
 };
 function renderRail(region){
@@ -1582,8 +1607,8 @@ function updateKV(){
     :`This serves on <b style="color:#7ee787">ONE ${SERVING.GPU} GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
   // dynamic legend: the per-chat number lives here now, not in a floating scene label
   const whS=document.getElementById('whS');
-  if(whS)whS.innerHTML=`blue = model (${wGB} GB) · <b style="color:${overflow?'#f6a345':'#7ee787'}">green slab = one chat</b> (${f1(kvPer)} GB @ ${kv.ctx}K) · <button id="whLearn">what's a KV cache?</button>`;
-  const wl=document.getElementById('whLearn');if(wl)wl.onclick=()=>openNode('kv_econ');
+  if(whS)whS.innerHTML=`blue = model (${wGB} GB) · <b style="color:${overflow?'#f6a345':'#7ee787'}">green slab = one chat</b> (${f1(kvPer)} GB @ ${kv.ctx}K) · <button id="whLearn">how the cache works →</button>`;
+  const wl=document.getElementById('whLearn');if(wl)wl.onclick=()=>enterRegion('kvcache');
   if(ui.lastX==null)ui.lastX=wantX;
   else if(ui.lastX!==wantX){ui.lastX=wantX;camGlide('ai',{dx:wantX,dz:overflow?3:0});}
   // live consequences
@@ -1599,6 +1624,103 @@ function updateKV(){
   }
 }
 
+
+/* ---------- KV CACHE (how it actually works — token by token) ----------
+   Grounded in the query/keys/values intuition: the newest word is the QUERY
+   ("who here matters to me?"); every earlier word holds a stored KEY + VALUE.
+   With the cache: one new K/V pair per word. Without: recompute all of them,
+   every single step. */
+const KVR_WORDS=['The','GPU','is','waiting','on','memory','again','…so','buy','more','HBM'];
+const KVR_PREFILL=3;                       // "The GPU is" arrives as the prompt, prefilled in one pass
+const KVR_PERTOK_KB=131072/1024;           // 8B-class GQA: ~131 KB of KV per token (see MODELS)
+let kvr={n:KVR_PREFILL,cache:true,auto:false};
+function kvrTotals(n){
+  const withC=n;
+  let without=KVR_PREFILL;
+  for(let k=KVR_PREFILL+1;k<=n;k++)without+=k;
+  return {withC,without};
+}
+function buildKVCache(){
+  const g=new THREE.Group();groups.kvr=g;
+  const N=KVR_WORDS.length,DX=1.75,x0=-(N-1)*DX/2;
+  const X=i=>x0+i*DX;
+  const yTok=-4.6,yK=-2.3,yV=-1.15;
+  const matTok=solidMat('#26324a',0.07);
+  const matQ=solidMat('#f6a345',0.5);
+  const matK=solidMat('#5eead4',0.28);
+  const matV=solidMat('#9a8cff',0.28);
+  const matFlash=solidMat('#ff6b5e',0.5);
+  const ud=g.userData;Object.assign(ud,{toks:[],ks:[],vs:[],beams:[],wlbls:[],matTok,matQ,matK,matV,matFlash,flashUntil:0,flashOn:false,nextAt:0});
+  for(let i=0;i<N;i++){
+    const tok=new THREE.Mesh(new RoundedBoxGeometry(1.25,1.0,0.5,3,0.12),matTok);
+    tok.position.set(X(i),yTok,0);g.add(tok);ud.toks.push(tok);
+    pick(tok,'kv_how',()=>openNode('kv_how'));
+    const wl=label(KVR_WORDS[i],'faint');wl.position.set(X(i),yTok-1.0,0);wl.element.style.transform='translate(-50%,-50%)';g.add(wl);ud.wlbls.push(wl);
+    const k=new THREE.Mesh(new RoundedBoxGeometry(1.3,0.52,0.9,2,0.07),matK);k.position.set(X(i),yK,0);k.userData.isK=true;g.add(k);ud.ks.push(k);
+    const v=new THREE.Mesh(new RoundedBoxGeometry(1.3,0.52,0.9,2,0.07),matV);v.position.set(X(i),yV,0);g.add(v);ud.vs.push(v);
+    pick(k,'kv_how',()=>openNode('kv_how'));pick(v,'kv_how',()=>openNode('kv_how'));
+    const bm=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),
+      new THREE.LineBasicMaterial({color:0xf6a345,transparent:true,opacity:0.5,blending:THREE.AdditiveBlending,depthWrite:false}));
+    bm.renderOrder=PHASE.FX;bm.userData.w=0.5;g.add(bm);ud.beams.push(bm);
+  }
+  // cache bracket: a glass plane behind the K/V rack that grows with the cache
+  const rack=glassify(new THREE.Mesh(new THREE.BoxGeometry(1,3.0,0.2),new THREE.MeshPhysicalMaterial({color:0x14233f,opacity:0.24,metalness:0.1,roughness:0.35,emissive:0x5aa9ff,emissiveIntensity:0.03})));
+  rack.position.set(0,(yK+yV)/2,-0.7);g.add(rack);ud.rack=rack;
+  const rackL=label('THE KV CACHE','title');rackL.element.style.color='#8cc5ff';rackL.element.style.fontSize='15px';g.add(rackL);ud.rackL=rackL;
+  // one anchored label only (the legend strip carries the color story)
+  const pre=label('⟨ the prompt — prefilled in one pass ⟩','faint');pre.position.set(X((KVR_PREFILL-1)/2),yTok-1.8,0);pre.element.style.transform='translate(-50%,-50%)';g.add(pre);
+  scene.add(g);
+  kvr={n:KVR_PREFILL,cache:true,auto:false};
+  updateKVR(false);
+  camEnter('kvcache');
+}
+function updateKVR(stepped){
+  const g=groups.kvr;if(!g)return;const ud=g.userData;
+  const N=KVR_WORDS.length,DX=1.75,x0=-(N-1)*DX/2,X=i=>x0+i*DX;
+  const yTok=-4.6,yK=-2.3,yV=-1.15,n=kvr.n,q=n-1;
+  for(let i=0;i<N;i++){
+    const on=i<n;
+    ud.toks[i].visible=on;ud.wlbls[i].visible=on;
+    ud.ks[i].visible=on;ud.vs[i].visible=on;
+    ud.toks[i].material=(i===q)?ud.matQ:ud.matTok;
+    const bm=ud.beams[i];bm.visible=on&&i<q;
+    if(bm.visible){
+      bm.geometry.setFromPoints([new THREE.Vector3(X(q),yTok+0.6,0.1),new THREE.Vector3(X(i),yK-0.35,0.1)]);
+      bm.userData.w=0.2+srand()*0.65;   // attention weights differ: friend vs passer-by
+    }
+  }
+  if(stepped){ // the new pair pops into the rack
+    const k=ud.ks[q],v=ud.vs[q];
+    [k,v].forEach(m=>{m.scale.setScalar(0.01);tweenObj(m.scale,{x:1,y:1,z:1},0.5);});
+    if(!kvr.cache)ud.flashUntil=T.now+0.7; // no cache: EVERYTHING recomputes
+  }
+  // rack grows with the cache
+  const w=n*DX+0.6;ud.rack.scale.x=w;ud.rack.position.x=x0+(n-1)*DX/2;
+  ud.rackL.position.set(ud.rack.position.x,-0.25,0);
+  ud.rackL.element.innerHTML=`THE KV CACHE · ${n} pair${n>1?'s':''}`;
+  // counters + captions
+  const t=kvrTotals(n);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('kvrN',n);
+  set('kvrStep',kvr.cache?(n===KVR_PREFILL?KVR_PREFILL+' (prefill)':'1'):String(n));
+  set('kvrTot',kvr.cache?t.withC:t.without);
+  set('kvrMem',(n*KVR_PERTOK_KB/1024).toFixed(1)+' MB');
+  const whT=document.getElementById('whT');
+  if(whT)whT.innerHTML=kvr.cache
+    ?`Each new word adds <b style="color:#5aa9ff">ONE</b> K/V pair — the cache only ever grows`
+    :`Cache OFF: every word recomputes <b style="color:#ff6b5e">ALL ${n} pairs</b> — the same numbers, again and again`;
+  const whS=document.getElementById('whS');
+  if(whS)whS.innerHTML=`<b style="color:#f6a345">gold = the query</b> (word being written) · <b style="color:#7fe9d4">teal = keys</b> · <b style="color:#b9aaff">violet = values</b> · beams = attention looking back`;
+  const note=document.getElementById('kvNote');
+  if(note){note.classList.toggle('ok',kvr.cache);
+    if(n>=KVR_WORDS.length)note.innerHTML=`Sentence done: <b>${n} words → ${n} cached pairs (${(n*KVR_PERTOK_KB/1024).toFixed(1)} MB on an 8B)</b>. At 70B and 16K context that's 5.4 GB per chat — open <b>The Wall</b> to see it fill a GPU.`;
+    else if(kvr.cache)note.innerHTML=`"${KVR_WORDS[q]}" looked back at ${q} stored pair${q>1?'s':''} (the beams) and computed <b>just its own K/V</b>. Total so far: ${t.withC} computations, not ${t.without}.`;
+    else note.innerHTML=`Without the cache, writing "${KVR_WORDS[q]}" meant recomputing K/V for <b>all ${n} words</b> — ${t.without} total so far vs ${t.withC} with the cache. That waste is what the cache buys back.`;
+  }
+  const sb=document.getElementById('kvStep');if(sb)sb.disabled=kvr.n>=KVR_WORDS.length;
+}
+function stepKVR(){if(kvr.n>=KVR_WORDS.length){kvr.auto=false;const a=document.getElementById('kvAuto');if(a)a.classList.remove('on');return;}kvr.n++;updateKVR(true);}
+
 /* =========================================================================
    DOCK (per-region controls)
    ========================================================================= */
@@ -1606,8 +1728,8 @@ const dock=document.getElementById('dock');
 const dockcore=document.getElementById('dockcore');
 function setDock(region){
   dock.classList.toggle('ai',region==='ai');
-  const kvNote=document.getElementById('kvNote');if(kvNote)kvNote.style.display=(region==='ai')?'block':'none';
-  const wh=document.getElementById('wallHead');if(wh)wh.style.display=(region==='ai')?'block':'none';
+  const kvNote=document.getElementById('kvNote');if(kvNote)kvNote.style.display=(region==='ai'||region==='kvcache')?'block':'none';
+  const wh=document.getElementById('wallHead');if(wh)wh.style.display=(region==='ai'||region==='kvcache')?'block':'none';
   if(region==='cxl'){
     dock.style.display='';
     dockcore.innerHTML=`<span class="dlabel">Capability</span><div class="seg" id="cxlSeg">
@@ -1631,6 +1753,23 @@ function setDock(region){
     cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';updateKV();});
     bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();});
     updateKV();
+  }else if(region==='kvcache'){
+    dock.style.display='';dock.classList.add('ai'); // reuse the big-dock sizing
+    dockcore.innerHTML=`<button id="kvStep" class="stepBtn">+1 word</button>
+      <label class="toggle" id="kvAuto"><span class="sw"></span>auto-write</label>
+      <button id="kvReset" class="stepBtn ghost">reset</button>
+      <label class="toggle on" id="kvCacheT"><span class="sw"></span>KV cache</label>
+      <div class="kvo-cluster">
+        <div class="kvo"><span class="kvo-v" id="kvrN">3</span><span class="kvo-l">words so far</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvrStep">3</span><span class="kvo-l">K/V computed · this word</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvrTot">3</span><span class="kvo-l">total computations</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvrMem">0.4 MB</span><span class="kvo-l">cache size (8B)</span></div>
+      </div>`;
+    document.getElementById('kvStep').addEventListener('click',stepKVR);
+    document.getElementById('kvReset').addEventListener('click',()=>{kvr.n=KVR_PREFILL;kvr.auto=false;document.getElementById('kvAuto').classList.remove('on');updateKVR(false);});
+    document.getElementById('kvAuto').addEventListener('click',e=>{kvr.auto=!kvr.auto;e.currentTarget.classList.toggle('on',kvr.auto);if(groups.kvr)groups.kvr.userData.nextAt=T.now+0.2;});
+    document.getElementById('kvCacheT').addEventListener('click',e=>{kvr.cache=!kvr.cache;e.currentTarget.classList.toggle('on',kvr.cache);updateKVR(false);});
+    updateKVR(false);
   }else if(region==='photonics'){
     dock.style.display='';
     dockcore.innerHTML=`<span class="dlabel">Wavelength-division multiplexing</span>
@@ -1653,6 +1792,7 @@ function enterRegion(r){
   else if(r==='cxl'){buildCXL();}
   else if(r==='photonics'){buildPhotonics();}
   else if(r==='ai'){buildAI();}
+  else if(r==='kvcache'){buildKVCache();}
   setDock(r);
   renderRail(r);
   controls.autoRotate=false;controls.autoRotateSpeed=0.3;
@@ -1662,7 +1802,8 @@ function enterRegion(r){
     hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
     cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
     photonics:'<b>click</b> a chip or the laser callout · toggle WDM below',
-    ai:'<b>drag</b> the sliders · watch the KV cache overflow the GPU'};
+    ai:'<b>drag</b> the sliders · watch the KV cache overflow the GPU',
+    kvcache:'<b>+1 word</b> to step · toggle the cache off · <b>click</b> anything to open its file'};
   document.getElementById('hint').innerHTML=hints[r]||'';
 }
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(!b)return;enterRegion(b.dataset.region);});
@@ -1762,6 +1903,15 @@ function animate(){
     (groups.phot.userData.flows||[]).forEach(f=>{const a=f.pts.geometry.attributes.position.array;f.seeds.forEach((s,k)=>{s.t+=dt*f.sp*0.5;if(s.t>1)s.t-=1;a[k*3]=-9+s.t*18;a[k*3+1]=f.y+Math.sin(s.t*Math.PI*4+f.wi)*0.04;a[k*3+2]=f.zoff;});f.pts.geometry.attributes.position.needsUpdate=true;});
     if(groups.phot.userData.laser){groups.phot.userData.laser.scale.setScalar(1+Math.sin(tt*5)*0.28);}
   }
+  else if(region==='kvcache'&&groups.kvr){
+    const ud=groups.kvr.userData;
+    ud.beams.forEach((bm,j)=>{if(bm.visible)bm.material.opacity=bm.userData.w*(0.55+0.35*Math.sin(tt*2.2+j*0.9));});
+    const q=ud.toks[kvr.n-1];if(q)q.material.emissiveIntensity=0.5+Math.sin(tt*3)*0.2;
+    const fl=T.now<ud.flashUntil;
+    if(fl!==ud.flashOn){ud.flashOn=fl;
+      for(let i=0;i<kvr.n;i++){ud.ks[i].material=fl?ud.matFlash:ud.matK;ud.vs[i].material=fl?ud.matFlash:ud.matV;}}
+    if(kvr.auto&&!T.frozen&&T.now>ud.nextAt){ud.nextAt=T.now+1.4;stepKVR();}
+  }
   else if(region==='ai'&&groups.ai){
     (groups.ai.userData.rack||[]).forEach((g,i)=>g.material.emissiveIntensity=0.18+Math.sin(tt*2+i*0.5)*0.12);
     const oc=groups.ai.userData.ocean;
@@ -1784,6 +1934,7 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   freeze(t){T.frozen=true;if(t!=null)T.now=t;renderOnce();},thaw(){T.frozen=false;},get frozen(){return T.frozen;},
   go(r){enterRegion(r);},
   setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}},
+  kvStep(){stepKVR();},kvCache(on){kvr.cache=on;updateKVR(false);},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
 enterRegion('map');
 animate();

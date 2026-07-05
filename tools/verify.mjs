@@ -44,6 +44,7 @@ function serve() {
 /* ---------- pixel helpers (pngjs) ---------- */
 const isGreen = (r, g, b) => g > 110 && g - r > 25 && g - b > 30;
 const isAmber = (r, g, b) => r > 140 && g > 80 && r - g > 30 && g - b > 40;
+const isTeal = (r, g, b) => g > 150 && b > 140 && g - r > 40;
 function countClass(png, rect, cls) {
   const [x0, y0, x1, y1] = rect.map((v, i) => Math.floor(v * (i % 2 ? png.height : png.width)));
   let n = 0;
@@ -125,6 +126,29 @@ const STATES = [
       if (!s.wdm) throw 'WDM toggle missing';
     },
     px: png => { if (lumaStddev(png, [0.3, 0.15, 0.85, 0.75]) < 8) throw 'photonics crop looks blank'; },
+  },
+  {
+    name: 'kvcache',
+    setup: async p => {
+      await p.evaluate(() => window.__atlas.go('kvcache')); await p.waitForTimeout(1700);
+      await p.evaluate(() => { window.__atlas.kvStep(); window.__atlas.kvStep(); window.__atlas.kvStep(); });
+      await p.waitForTimeout(700);
+    },
+    dom: async p => {
+      const s = await p.evaluate(() => ({ n: document.getElementById('kvrN').textContent, head: document.getElementById('whT').textContent, step: document.getElementById('kvrStep').textContent }));
+      if (s.n !== '6') throw `words=${s.n}`;
+      if (!/ONE/.test(s.head)) throw `headline=${s.head}`;
+      if (s.step !== '1') throw `per-step=${s.step}`;
+      // cache-off mode flips the story (DOM-only check, then restore)
+      const off = await p.evaluate(() => { window.__atlas.kvCache(false); return document.getElementById('whT').textContent; });
+      if (!/ALL 6 pairs/.test(off)) throw `off-headline=${off}`;
+      await p.evaluate(() => window.__atlas.kvCache(true));
+      await p.waitForTimeout(150);
+    },
+    px: png => {
+      const t = countClass(png, [0.2, 0.45, 0.8, 0.8], isTeal);
+      if (t < 300) throw `only ${t} teal key-slab pixels`;
+    },
   },
   {
     name: 'wall-fit',
