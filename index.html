@@ -824,6 +824,15 @@ const SRC={
 /* =========================================================================
    THREE.JS CORE
    ========================================================================= */
+/* =========================================================================
+   DETERMINISM CONTRACT — all scene randomness comes from srand() (seeded,
+   reset per region build) and all animation keys off the owned clock T,
+   freezable via __atlas.freeze(t). This is what makes screenshot gates
+   byte-comparable: same build + same frozen t = same pixels.
+   ========================================================================= */
+let __seed=42;
+function srand(){__seed=(__seed*1103515245+12345)&0x7fffffff;return __seed/0x7fffffff;}
+const T={now:0,frozen:false};
 const appEl=document.getElementById('app');
 const W=()=>window.innerWidth,H=()=>window.innerHeight;
 const scene=new THREE.Scene();
@@ -878,7 +887,7 @@ grid.material.opacity=0.4;grid.material.transparent=true;scene.add(grid);
 
 // drifting motes
 (function(){const g=new THREE.BufferGeometry();const n=500;const p=new Float32Array(n*3);
-for(let i=0;i<n;i++){p[i*3]=(Math.random()-0.5)*180;p[i*3+1]=(Math.random()-0.5)*110;p[i*3+2]=(Math.random()-0.5)*180;}
+for(let i=0;i<n;i++){p[i*3]=(srand()-0.5)*180;p[i*3+1]=(srand()-0.5)*110;p[i*3+2]=(srand()-0.5)*180;}
 g.setAttribute('position',new THREE.BufferAttribute(p,3));
 scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0x2a3a55,size:0.11,transparent:true,opacity:0.55})));})();
 
@@ -891,6 +900,16 @@ function disposeGroup(grp){if(!grp)return;grp.traverse(o=>{if(o.isCSS2DObject&&o
 function label(text,cls='',onClick=null){const d=document.createElement('div');d.className='lbl3d '+cls;d.innerHTML=text;if(onClick){d.addEventListener('pointerdown',e=>{e.stopPropagation();onClick();});}const o=new CSS2DObject(d);o.element=d;return o;}
 function glassMat(color,emi=0.05,opacity=0.9){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.15,roughness:0.22,clearcoat:1.0,clearcoatRoughness:0.18,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.25,transparent:true,opacity:Math.min(opacity+0.06,0.97)});}
 function solidMat(color,emi=0.1){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.4,roughness:0.3,clearcoat:1,clearcoatRoughness:0.16,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.3});}
+/* =========================================================================
+   RENDER PHASE CONTRACT — depth is an access contract, not a boolean.
+   OPAQUE world geometry writes depth (default). GLASS (tank shells etc.)
+   reads depth but NEVER writes it, and renders after its contents — a
+   depth-writing transparent shell can depth-kill everything inside it
+   (the v1.2.0 ghost-fill bug). FX (additive particles) never write depth.
+   ========================================================================= */
+const PHASE={OPAQUE:0,GLASS:5,FX:8};
+function glassify(mesh){mesh.material.transparent=true;mesh.material.depthWrite=false;mesh.renderOrder=PHASE.GLASS;return mesh;}
+function fxPoints(geom,color,size,opacity){const p=new THREE.Points(geom,new THREE.PointsMaterial({color,size,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false}));p.renderOrder=PHASE.FX;return p;}
 function logPct(v,min,max){const lv=Math.log10(Math.max(v,min)),a=Math.log10(min),b=Math.log10(max);return Math.max(5,Math.min(100,((lv-a)/(b-a))*100));}
 
 /* camera tween */
@@ -901,6 +920,22 @@ function stepTweens(dt){
   if(camT.active){camT.t=Math.min(1,camT.t+dt/camT.dur);const e=1-Math.pow(1-camT.t,3);camera.position.lerpVectors(camT.fp,camT.tp,e);controls.target.lerpVectors(camT.ft,camT.tt,e);if(camT.t>=1)camT.active=false;}
   for(let i=tweens.length-1;i>=0;i--){const tw=tweens[i];tw.t=Math.min(1,tw.t+dt/tw.dur);const e=1-Math.pow(1-tw.t,3);for(const k in tw.to)tw.obj[k]=tw.from[k]+(tw.to[k]-tw.from[k])*e;if(tw.t>=1)tweens.splice(i,1);}
 }
+
+/* =========================================================================
+   CAMERA OWNER — every region is framed from this table and posed through
+   camEnter/camGlide. The rigs already bake in the UI safe areas (left rail,
+   top nav + CTA band, bottom dock): the pans/pull-backs below exist so 3D
+   content clears the fixed UI. No builder or pass may hand-roll a pose.
+   ========================================================================= */
+const RIGS={
+  map:      {pos:[-2.2,0.5,37],  tgt:[-2.2,-1.2,0]},  // panned left so the graph clears the rail
+  hierarchy:{pos:[15,6,21],      tgt:[0,0,0]},
+  cxl:      {pos:[-1.2,1.2,28.5],tgt:[-1.2,0.9,0]},   // pulled back so the headline clears the nav
+  photonics:{pos:[-1.4,1,31],    tgt:[-1.4,-0.2,0]},  // panned so the GPU chip clears the rail
+  ai:       {pos:[0,1,28],       tgt:[0,0.6,0]},
+};
+function camEnter(r,{dx=0}={}){const g=RIGS[r];flyTo(g.pos[0]+dx,g.pos[1],g.pos[2], g.tgt[0]+dx,g.tgt[1],g.tgt[2], 1.2);}
+function camGlide(r,{dx=0,dz=0}={}){const g=RIGS[r];tweenObj(controls.target,{x:g.tgt[0]+dx},0.9);tweenObj(camera.position,{x:g.pos[0]+dx,z:g.pos[2]+dz},0.9);}
 
 /* =========================================================================
    PICKABLE REGISTRY — every clickable mesh registers an id + handler
@@ -1217,7 +1252,7 @@ function renderRail(region){
 let region='map';
 let groups={};
 
-function clearScene(){hovered=null;Object.values(groups).forEach(disposeGroup);groups={};pickables=[];}
+function clearScene(){__seed=1234;hovered=null;Object.values(groups).forEach(disposeGroup);groups={};pickables=[];}
 
 /* ---------- MAP (knowledge graph overview) ---------- */
 const MAPNODES=[
@@ -1246,7 +1281,7 @@ function buildMap(){
     const el=label(lab,'edge');el.position.copy(curve.getPoint(tPos||0.5));g.add(el);
     // travelling pulse
     const pulse=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshBasicMaterial({color:0x9fb6d8}));
-    g.add(pulse);g.userData.pulses=g.userData.pulses||[];g.userData.pulses.push({mesh:pulse,curve,t:Math.random(),sp:0.18+Math.random()*0.12});
+    g.add(pulse);g.userData.pulses=g.userData.pulses||[];g.userData.pulses.push({mesh:pulse,curve,t:srand(),sp:0.18+srand()*0.12});
   });
   // nodes — premium rounded-cube modules with wireframe + glow ring + halo
   MAPNODES.forEach(n=>{
@@ -1267,7 +1302,7 @@ function buildMap(){
     g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
   });
   scene.add(g);
-  flyTo(-2.2,0.5,37, -2.2,-1.2,0, 1.2); // panned left so the graph sits clear of the rail
+  camEnter('map');
 }
 
 /* ---------- HIERARCHY (premium glass spine) ---------- */
@@ -1294,9 +1329,9 @@ function buildHierarchy(){
       const bwN=[20000,33000,8000,410,256,14,130000][i]||100;
       const count=Math.round(THREE.MathUtils.clamp(logPct(bwN,10,40000)/100*55,8,55));
       const pg=new THREE.BufferGeometry();const pp=new Float32Array(count*3);const seeds=[];
-      for(let k=0;k<count;k++){const sx=(Math.random()-0.5)*Math.min(w,2.4),sz=(Math.random()-0.5)*Math.min(d,2.4);pp[k*3]=sx;pp[k*3+1]=y;pp[k*3+2]=sz;seeds.push({sx,sz,t:Math.random()});}
+      for(let k=0;k<count;k++){const sx=(srand()-0.5)*Math.min(w,2.4),sz=(srand()-0.5)*Math.min(d,2.4);pp[k*3]=sx;pp[k*3+1]=y;pp[k*3+2]=sz;seeds.push({sx,sz,t:srand()});}
       pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
-      const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:new THREE.Color(l.col),size:0.15,transparent:true,opacity:0.85,blending:THREE.AdditiveBlending,depthWrite:false}));
+      const pts=fxPoints(pg,new THREE.Color(l.col),0.15,0.85);
       g.add(pts);
       g.userData.flows=g.userData.flows||[];g.userData.flows.push({pts,seeds,yT:y,yB:y-gap,sp:THREE.MathUtils.clamp(logPct(bwN,10,40000)/100,0.15,1)*1.6});
     }
@@ -1304,7 +1339,7 @@ function buildHierarchy(){
   const top=label('▲ FAST · TINY · COSTLY','faint');top.position.set(0,baseY+1.6,0);top.element.style.transform='translate(-50%,-50%)';g.add(top);
   const bot=label('▼ SLOW · VAST · CHEAP','faint');bot.position.set(0,baseY-(n-1)*gap-1.6,0);bot.element.style.transform='translate(-50%,-50%)';g.add(bot);
   scene.add(g);
-  flyTo(15,6,21, 0,0,0, 1.2);
+  camEnter('hierarchy');
 }
 function focusLayer(id){const i=HIER.findIndex(h=>h.id===id);if(i<0)return;const gap=2.5,baseY=(HIER.length-1)*gap/2;const y=baseY-i*gap;tweenObj(controls.target,{x:3.2,y,z:0},0.7);} // shift stack left so its right-edge labels clear the panel
 
@@ -1353,10 +1388,10 @@ function buildCXL(){
     g.userData.mods.push(stick);addCXLLink(g,stick.position,sw.position,'#9a8cff');}); // memory flows module → switch (rising)
   scene.add(g);
   setCXL('pooling');
-  flyTo(-1.2,1.2,28.5, -1.2,0.9,0, 1.2); // pulled back + panned so the headline clears the nav and hosts clear the rail
+  camEnter('cxl');
 }
 function addCXLLink(g,a,b,color){const ln=new THREE.Line(new THREE.BufferGeometry().setFromPoints([a.clone(),b.clone()]),new THREE.LineBasicMaterial({color:new THREE.Color(color),transparent:true,opacity:0.3}));g.add(ln);g.userData.links.push(ln);
-  const p=memBlock(color);g.add(p);g.userData.pulses.push({mesh:p,a:a.clone(),b:b.clone(),t:Math.random(),sp:0.4+Math.random()*0.3});}
+  const p=memBlock(color);g.add(p);g.userData.pulses.push({mesh:p,a:a.clone(),b:b.clone(),t:srand(),sp:0.4+srand()*0.3});}
 function setCXL(v){cxlState=v;const g=groups.cxl;if(!g)return;
   // Expansion = one server bolts on one module · Pooling = all share · Sharing = all read the same block
   g.userData.links.forEach(l=>l.material.opacity=v==='expansion'?0.12:v==='pooling'?0.42:0.6);
@@ -1408,11 +1443,11 @@ function buildPhotonics(){
   const oLab=label('② LIGHT (PHOTONICS) — travels far, carries ~10× the data, almost no heat. This is replacing copper.','faint');oLab.position.set(2,oY+1.0,0);oLab.element.style.transform='translate(-50%,-50%)';oLab.element.style.color='#5eead4';g.add(oLab);
   WDM.forEach((c,wi)=>{const count=22;const pg=new THREE.BufferGeometry();const pp=new Float32Array(count*3);const zoff=(wi-WDM.length/2)*0.06;
     for(let k=0;k<count;k++){pp[k*3]=-9;pp[k*3+1]=oY;pp[k*3+2]=zoff;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
-    const pts=new THREE.Points(pg,new THREE.PointsMaterial({color:c,size:0.22,transparent:true,opacity:0.98,blending:THREE.AdditiveBlending,depthWrite:false}));g.add(pts);
-    g.userData.flows.push({pts,count,wi,zoff,y:oY,sp:1.6+wi*0.05,seeds:Array.from({length:count},()=>({t:Math.random()}))});});
+    const pts=fxPoints(pg,c,0.22,0.98);g.add(pts);
+    g.userData.flows.push({pts,count,wi,zoff,y:oY,sp:1.6+wi*0.05,seeds:Array.from({length:count},()=>({t:srand()}))});});
   const wdmLab=label('each colour of light = another data stream at once (WDM)','faint');wdmLab.position.set(4,oY-0.95,0);wdmLab.element.style.transform='translate(-50%,-50%)';g.add(wdmLab);
   scene.add(g);
-  flyTo(-1.4,1,31, -1.4,-0.2,0, 1.2); // panned so the GPU chip + copper label clear the rail
+  camEnter('photonics');
 }
 
 /* ---------- AI / MEMORY WALL ---------- */
@@ -1422,6 +1457,9 @@ let kv={ctx:16,batch:8,model:1}; // default: 70B · 16K · 8 chats ≈ 183/192 G
 // per token: GQA (Llama-style) = 2·L·kv_heads·head_dim·2B; the 1T MoE class
 // (Kimi K2.6 / DeepSeek recipe) uses MLA — compressed-latent KV ≈ 70 KB/token,
 // SMALLER than the 405B despite 2.5× the parameters. That contrast is the point.
+/* SERVING CONTRACT — the one source for the GPU the Wall reasons about.
+   Headline, caption, dock, rim label and the math all consume these. */
+const SERVING={GPU:'B200',CAP_GB:192,COST_K:35,BW_FACTOR:8};
 const MODELS=[
   {n:'8B',W:16,kvTok:131072,tip:'Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The "runs on one GPU (even a gaming card)" class.'},
   {n:'70B',W:140,kvTok:327680,tip:'Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B200, or 2× H100.'},
@@ -1434,23 +1472,21 @@ function buildAI(){
   addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.68);
   // subtle data-ocean atmosphere (the flood of context the GPU's memory must hold)
   {const n=300;const pg=new THREE.BufferGeometry();const pp=new Float32Array(n*3);const seeds=[];
-    for(let i=0;i<n;i++){const x=(Math.random()-0.5)*46,y=1+(Math.random()-0.5)*12,z=-15+Math.random()*6;
-      pp[i*3]=x;pp[i*3+1]=y;pp[i*3+2]=z;seeds.push({x,y,z,ph:Math.random()*6.28,sp:0.25+Math.random()*0.4});}
+    for(let i=0;i<n;i++){const x=(srand()-0.5)*46,y=1+(srand()-0.5)*12,z=-15+srand()*6;
+      pp[i*3]=x;pp[i*3+1]=y;pp[i*3+2]=z;seeds.push({x,y,z,ph:srand()*6.28,sp:0.25+srand()*0.4});}
     pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
-    const ocean=new THREE.Points(pg,new THREE.PointsMaterial({color:0x4a8fcf,size:0.1,transparent:true,opacity:0.32,blending:THREE.AdditiveBlending,depthWrite:false}));
+    const ocean=fxPoints(pg,0x4a8fcf,0.1,0.32);
     g.add(ocean);g.userData.ocean={pts:ocean,seeds};}
 
   // === THE MEMORY TANKS — GPU 1 is the hero; ghost GPUs appear when the work spills over. ===
   // Intuition model: the blue block is THE MODEL (fixed). Every chat adds ONE
   // green slab whose height = that conversation's KV cache. Slabs stack until
   // the 192 GB tank is full — then the excess pours into more (ghost) GPUs.
-  const TANKH=13,capGB=192,scale=TANKH/capGB,baseY=-6.5,ceilY=baseY+TANKH;
+  const TANKH=13,capGB=SERVING.CAP_GB,scale=TANKH/capGB,baseY=-6.5,ceilY=baseY+TANKH;
   const shellGeo=new RoundedBoxGeometry(3.8,TANKH,3.8,4,0.24);
   function makeTank(x,ghost){
     const t=new THREE.Group();t.position.set(x,0,0);
-    // depthWrite:false + late renderOrder: glass must never depth-occlude the fills inside it
-    const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x1a2c4a,metalness:0.1,roughness:0.25,transparent:true,opacity:ghost?0.14:0.34,clearcoat:1,envMapIntensity:1.4,emissive:0x5eead4,emissiveIntensity:ghost?0.02:0.05,depthWrite:false}));
-    shell.renderOrder=5;
+    const shell=glassify(new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x1a2c4a,metalness:0.1,roughness:0.25,opacity:ghost?0.14:0.34,clearcoat:1,envMapIntensity:1.4,emissive:0x5eead4,emissiveIntensity:ghost?0.02:0.05})));
     shell.position.set(0,baseY+TANKH/2,0);t.add(shell);
     shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x9ffbe9,transparent:true,opacity:ghost?0.4:1})));
     const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:ghost,opacity:ghost?0.4:1}));rim.position.set(0,ceilY,0);t.add(rim);
@@ -1478,12 +1514,11 @@ function buildAI(){
   // in the dock caption; the dock carries the numbers. Nothing is said twice.
   const lblW=label('','faint');lblW.element.style.transform='translate(-100%,-50%)';lblW.element.style.color='#46c8e0';g.add(lblW);
   const morLbl=label('','heat');morLbl.visible=false;morLbl.position.set(16.8,ceilY+1.1,0);g.add(morLbl); // floats above GPU 4, never clips the screen edge
-  const ceilLab=label('one B200 GPU = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
+  const ceilLab=label(`one ${SERVING.GPU} GPU = ${SERVING.CAP_GB} GB →`,'faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
   g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,ceilLab,slabs:[],unitBox,matKV,matKV2,matHot,matHot2,ghosts,gFills,gLbls,morLbl,rim:hero.userData.rim,lastX:null};
   scene.add(g);
   updateKV();
-  const cx=g.userData.kvui.lastX||0;
-  flyTo(cx,1,28, cx,0.6,0, 1.2);
+  camEnter('ai',{dx:g.userData.kvui.lastX||0});
 }
 function updateKV(){
   const g=groups.ai;if(!g)return;const ui=g.userData.kvui;if(!ui)return;
@@ -1540,27 +1575,27 @@ function updateKV(){
   // recenter the camera on the row of GPUs (skip the tween on first paint)
   const wantX=Math.min(gpusN-1,3)*5.6/2;
   // the fixed headline IS the answer: how many GPUs does serving this actually take?
-  const costK0=gpusN*35;
+  const costK0=gpusN*SERVING.COST_K;
   const whT=document.getElementById('whT');
   if(whT)whT.innerHTML=overflow
-    ?`Serving this needs <b style="color:#f6a345">${gpusN} × B200 GPUs</b> · ~${costK0<1000?'$'+costK0+'k':'$'+(costK0/1000).toFixed(1)+'M'} of hardware`
-    :`This serves on <b style="color:#7ee787">ONE B200 GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
+    ?`Serving this needs <b style="color:#f6a345">${gpusN} × ${SERVING.GPU} GPUs</b> · ~${costK0<1000?'$'+costK0+'k':'$'+(costK0/1000).toFixed(1)+'M'} of hardware`
+    :`This serves on <b style="color:#7ee787">ONE ${SERVING.GPU} GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
   // dynamic legend: the per-chat number lives here now, not in a floating scene label
   const whS=document.getElementById('whS');
   if(whS)whS.innerHTML=`blue = model (${wGB} GB) · <b style="color:${overflow?'#f6a345':'#7ee787'}">green slab = one chat</b> (${f1(kvPer)} GB @ ${kv.ctx}K) · <button id="whLearn">what's a KV cache?</button>`;
   const wl=document.getElementById('whLearn');if(wl)wl.onclick=()=>openNode('kv_econ');
   if(ui.lastX==null)ui.lastX=wantX;
-  else if(ui.lastX!==wantX){ui.lastX=wantX;tweenObj(controls.target,{x:wantX},0.9);tweenObj(camera.position,{x:wantX,z:overflow?31:28},0.9);}
+  else if(ui.lastX!==wantX){ui.lastX=wantX;camGlide('ai',{dx:wantX,dz:overflow?3:0});}
   // live consequences
-  const msTok=totalGB/(gpusN*8);const costK=gpusN*35;
+  const msTok=totalGB/(gpusN*SERVING.BW_FACTOR);const costK=gpusN*SERVING.COST_K;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   const out=document.getElementById('kvOut');if(out){out.textContent=f1(val);out.style.color=overflow?'#f6a345':'#7ee787';}
   set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',costK<1000?('$'+costK+'k'):('$'+(costK/1000).toFixed(2)+'M'));
   const note=document.getElementById('kvNote');
   if(note){note.classList.toggle('ok',!overflow);
     // the caption carries ONLY the arithmetic — GPU count and cost live in the headline
-    if(overflow)note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} GB</b> · one GPU holds 192 GB · <b>longer chats × more users = more GPUs</b>`;
-    else note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} of 192 GB</b> · push <b>context</b> or <b>users</b> and watch it spill`;
+    if(overflow)note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} GB</b> · one GPU holds ${SERVING.CAP_GB} GB · <b>longer chats × more users = more GPUs</b>`;
+    else note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} of ${SERVING.CAP_GB} GB</b> · push <b>context</b> or <b>users</b> and watch it spill`;
   }
 }
 
@@ -1587,7 +1622,7 @@ function setDock(region){
       <div class="slider-wrap"><span class="dlabel">Users</span><input type="range" id="batSl" min="1" max="128" value="${kv.batch}"><span class="sv" id="batV">${kv.batch} chats</span></div>
       <div class="kvo-cluster">
         <div class="kvo"><span class="kvo-v" id="kvOut" style="color:#7ee787">4</span><span class="kvo-l">KV cache · GB</span></div>
-        <div class="kvo"><span class="kvo-v" id="kvGpus">1</span><span class="kvo-l">GPUs · B200</span></div>
+        <div class="kvo"><span class="kvo-v" id="kvGpus">1</span><span class="kvo-l">GPUs · ${SERVING.GPU}</span></div>
         <div class="kvo"><span class="kvo-v" id="kvSpeed">—</span><span class="kvo-l">ms / token</span></div>
         <div class="kvo"><span class="kvo-v" id="kvCost">—</span><span class="kvo-l">hardware</span></div>
       </div>`;
@@ -1707,7 +1742,7 @@ function animate(){
   __lastRender=now;
   try{
   __frames++;
-  const dt=Math.min(clock.getDelta(),0.05),tt=clock.elapsedTime;
+  const dt0=Math.min(clock.getDelta(),0.05),dt=T.frozen?0:dt0;T.now+=dt;const tt=T.now;
   stepTweens(dt);controls.update();
 
   if(region==='map'&&groups.map){
@@ -1746,6 +1781,9 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   countCSS2D(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject)n++;});return n;},
   countVisible(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)n++;});return n;},
   frames(){return __frames;},lastErr(){return __lastErr;},render(){renderOnce();},
+  freeze(t){T.frozen=true;if(t!=null)T.now=t;renderOnce();},thaw(){T.frozen=false;},get frozen(){return T.frozen;},
+  go(r){enterRegion(r);},
+  setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
 enterRegion('map');
 animate();

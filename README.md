@@ -81,6 +81,37 @@ Everything lives in **`index.html`**: a `<style>` design system, an import map, 
 
 **To add a company:** add an entry to `CO`, list its id in any node's `cos`, and optionally in `WATCH_GROUPS`/`GEO`/`ROADMAP`/`SHORTLIST`. Backlinks, chips and cards wire up automatically.
 
+### Verification harness
+
+```bash
+npm i                  # once — playwright-core drives your installed Edge, no browser download
+npm run verify         # 7 states × (DOM probes + pixel-class probes + baseline diff)
+npm run verify:update  # re-bless baselines after an intended visual change
+```
+
+[`tools/verify.mjs`](tools/verify.mjs) drives every region into a known state, freezes the
+app's owned clock (`__atlas.freeze(t)` — all animation keys off an injectable time source
+and seeded RNG, so frames are deterministic), then gates on three levels: DOM assertions,
+**pixel-class content probes** ("amber spill pixels must exist in the right half" — because
+healthy stats don't prove the GPU rendered anything), and a mean-diff comparison against
+blessed baselines in `tools/baselines/`. Run-to-run drift measures 0.00–0.15%.
+
+### Renderer contracts
+
+- **Camera owner:** every region is framed from the `RIGS` table via `camEnter`/`camGlide`;
+  the rigs bake in the UI safe areas (left rail, top nav band, bottom dock). No builder
+  hand-rolls a pose.
+- **Render phases:** depth is an access contract, not a boolean. Opaque world geometry
+  writes depth; `glassify()` (tank shells) reads but never writes it and renders after its
+  contents; `fxPoints()` (additive particles) never writes depth. A depth-writing
+  transparent shell can depth-kill everything inside it — that was a real shipped bug.
+- **Determinism:** scene randomness comes from a seeded RNG (reset per region build);
+  animation reads the owned clock `T`, never `performance.now()`/`clock.elapsedTime`
+  directly. This is what makes the screenshot gates byte-comparable.
+- **Serving numbers:** the GPU name, 192 GB capacity, $/GPU and bandwidth factor the Wall
+  reasons about live in one `SERVING` object consumed by the headline, caption, dock,
+  rim label and the math.
+
 ### Engineering notes (learned the hard way)
 
 - **Raycasting** binds to the canvas (`renderer.domElement`), not the CSS2D label layer, and calls `camera.updateMatrixWorld()` before every pick — otherwise clicks silently miss when the frame loop is throttled (e.g. on `file://`).

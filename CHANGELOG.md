@@ -2,6 +2,33 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.4.0] — 2026-07-05
+
+Renderer-contract hardening — five principles adopted from a GPU-renderer review
+skill, chosen because each one maps to a bug this project actually shipped.
+No visual change (the harness proves it: 0.00–0.15% frame drift vs baselines).
+
+### Added
+- **Verification harness** (`tools/verify.mjs`, `npm run verify`): 7 deterministic
+  states across all regions, gated by DOM probes, pixel-class content probes
+  (green chat slabs present, amber spill present per state — stats alone don't
+  prove pixels), and mean-diff baseline comparison. Its very first run caught a
+  real boot bug (seeded-RNG declaration after first use).
+- **Determinism contract**: all scene randomness via seeded `srand()` (reset per
+  region build); all animation keys off an owned, freezable clock
+  (`__atlas.freeze(t)` / `thaw()`), replacing `clock.elapsedTime` and every
+  `Math.random()` in scene code. Harness hooks: `__atlas.go(region)`,
+  `__atlas.setKV(model, ctx, chats)`.
+- **Camera owner**: one `RIGS` table + `camEnter`/`camGlide` own every region's
+  framing (UI safe areas baked in); all five hand-rolled `flyTo` poses and the
+  Wall's ad-hoc recenter tween now route through it.
+- **Render-phase contract**: `PHASE` constants with `glassify()` (transparent,
+  depth-read-only, renders after contents — the v1.2.0 ghost-fill bug, now
+  impossible by construction) and `fxPoints()` (additive, depth-read-only) owning
+  what were four hand-set flag combinations.
+- **`SERVING` contract**: GPU name, 192 GB capacity, $35k/GPU and bandwidth
+  factor single-sourced; headline, caption, dock, rim label and math all consume it.
+
 ## [1.3.1] — 2026-07-05
 
 Declutter pass on The Wall ("isn't this way too cluttered?"). New rule: one message

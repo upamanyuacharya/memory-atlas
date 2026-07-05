@@ -1,3 +1,5 @@
 assets/batch.log
 assets/tsmc_test.png
 .claude/
+node_modules/
+tools/shots/
