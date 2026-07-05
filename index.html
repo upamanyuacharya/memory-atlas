@@ -81,21 +81,23 @@
       radial-gradient(50% 40% at 12% 85%, rgba(246,163,69,0.05), transparent 60%);
     filter:saturate(1.05)}
   /* fixed film grain */
-  #grain{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0.035;mix-blend-mode:overlay;
+  /* no mix-blend-mode: blending a fixed layer over a per-frame-changing canvas
+     forces full-screen re-composits on the CPU */
+  #grain{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0.05;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 
   /* ---------------- TOP NAV (floating glass pill) ---------------- */
   #topwrap{position:absolute;top:0;left:0;right:0;z-index:30;display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;pointer-events:none}
   #brand{pointer-events:auto;display:flex;flex-direction:column;gap:3px}
   #brand .badge{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);
-    background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px 11px;backdrop-filter:blur(16px);width:max-content}
+    background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px 11px;width:max-content}
   #brand .badge .pulse{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2.4s var(--ease) infinite}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.7)}}
   #brand h1{font-family:var(--display);font-weight:600;font-size:24px;letter-spacing:-0.02em;margin-top:7px;line-height:1}
   #brand h1 i{font-style:italic;font-weight:500;color:var(--accent)}
 
-  #nav{pointer-events:auto;display:flex;gap:4px;background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:5px;backdrop-filter:blur(20px);box-shadow:0 8px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
-  .navbtn{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .4s var(--ease);white-space:nowrap;position:relative;display:flex;align-items:center;gap:7px}
+  #nav{pointer-events:auto;position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;gap:5px;background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:6px;backdrop-filter:blur(10px);box-shadow:0 8px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+  .navbtn{font-family:var(--mono);font-size:13.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);background:transparent;border:0;border-radius:999px;padding:12px 21px;cursor:pointer;transition:all .4s var(--ease);white-space:nowrap;position:relative;display:flex;align-items:center;gap:8px}
   .navbtn .ico{width:7px;height:7px;border-radius:2px;background:currentColor;opacity:.6;transition:all .4s var(--ease)}
   .navbtn:hover{color:var(--ink);background:rgba(255,255,255,.04)}
   .navbtn[data-region="hierarchy"]{color:var(--accent)}
@@ -110,7 +112,7 @@
 
   /* ---------------- LEFT RAIL (context / breadcrumb) ---------------- */
   #rail{position:absolute;left:24px;top:96px;z-index:20;width:336px;pointer-events:auto;transition:opacity .4s var(--ease)}
-  .shell{background:var(--glass);border:1px solid var(--hair);border-radius:22px;padding:6px;backdrop-filter:blur(22px);box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+  .shell{background:var(--glass);border:1px solid var(--hair);border-radius:22px;padding:6px;backdrop-filter:blur(10px);box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
   .core{background:linear-gradient(180deg,rgba(20,24,33,.55),rgba(10,12,17,.55));border:1px solid var(--hair);border-radius:17px;padding:18px}
   #rail .ksec{font-family:var(--mono);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:8px;margin-bottom:12px}
   #rail .ksec .ln{flex:1;height:1px;background:var(--hair)}
@@ -264,13 +266,43 @@
   .kvo{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:48px}
   .kvo .kvo-v{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums}
   .kvo .kvo-l{font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint)}
-  #kvNote{position:absolute;left:50%;bottom:118px;transform:translateX(-50%);z-index:26;font-family:var(--mono);font-size:13.5px;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 17px;backdrop-filter:blur(14px);max-width:88vw;text-align:center;transition:opacity .4s,color .4s;pointer-events:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  /* kvNote is the first row INSIDE the dock shell — flow layout, no overlap possible */
+  #kvNote{font-family:var(--mono);font-size:14.5px;line-height:1.55;color:var(--ink-dim);background:linear-gradient(180deg,rgba(20,24,33,.55),rgba(10,12,17,.55));border:1px solid var(--hair);border-radius:17px;padding:13px 20px;margin-bottom:6px;text-align:center;transition:color .4s}
   #kvNote b{color:var(--heat)}
   #kvNote.ok b{color:var(--accent)}
+  /* the Wall's dock is the main instrument — make it big and unmissable */
+  #dock.ai .core{gap:18px;padding:17px 24px;max-width:min(94vw,1000px)}
+  #dock.ai .dlabel{font-size:13.5px;color:var(--ink)}
+  #dock.ai .seg button{font-size:15px;padding:12px 19px}
+  #dock.ai .slider-wrap{min-width:300px}
+  #dock.ai .slider-wrap input[type=range]{height:6px}
+  #dock.ai .slider-wrap input[type=range]::-webkit-slider-thumb{width:20px;height:20px}
+  #dock.ai .slider-wrap .sv{font-size:15px;min-width:92px}
+  #dock.ai .kvo .kvo-v{font-size:21px}
+  #dock.ai .kvo .kvo-l{font-size:10.5px}
+  /* hover cards on the model buttons — real examples of each class */
+  .seg button[data-tip]{position:relative}
+  .seg button[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:300px;white-space:normal;font-family:var(--sans);font-size:13.5px;line-height:1.5;text-align:left;text-transform:none;letter-spacing:0;color:#d8e4f1;background:#0d1118;border:1px solid var(--hair-bright);border-radius:12px;padding:12px 14px;box-shadow:0 14px 44px rgba(0,0,0,.6);pointer-events:none;z-index:60}
+  .seg button[data-tip]:hover::before{content:"";position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:#0d1118;border-right:1px solid var(--hair-bright);border-bottom:1px solid var(--hair-bright);pointer-events:none;z-index:61}
+  /* the Wall's fixed headline strip — DOM, so it can never collide with 3D labels */
+  #wallHead{position:absolute;left:50%;top:136px;transform:translateX(-50%);z-index:22;text-align:center;pointer-events:none;max-width:min(92vw,900px)}
+  #wallHead .wh-t{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
+  #wallHead .wh-s{font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:6px;line-height:1.6;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+  @media (max-width:980px){#wallHead{top:160px}#wallHead .wh-t{font-size:18px}#wallHead .wh-s{display:none}}
+  /* first-visit tour nudge (side card, not a takeover) */
+  #tourNudge{position:fixed;right:24px;bottom:70px;z-index:30;width:250px;background:var(--glass);border:1px solid var(--hair-bright);border-radius:16px;padding:15px 16px;box-shadow:0 16px 50px rgba(0,0,0,.55);animation:nudgein .6s var(--ease)}
+  @keyframes nudgein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  #tourNudge .tn-t{font-family:var(--display);font-size:16px;font-weight:600;margin-bottom:4px}
+  #tourNudge .tn-d{font-size:13px;color:var(--ink-dim);line-height:1.5;margin-bottom:11px}
+  #tourNudge .tn-row{display:flex;gap:8px}
+  #tourNudge #tnStart{flex:1;font-family:var(--mono);font-size:12.5px;font-weight:600;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:9px 12px;cursor:pointer;transition:all .3s var(--ease)}
+  #tourNudge #tnStart:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(94,234,212,.4)}
+  #tourNudge #tnSkip{width:34px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:13px}
+  #tourNudge #tnSkip:hover{color:var(--ink)}
 
   /* ---------------- WELCOME / ONBOARDING ---------------- */
   #welcome{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:24px;
-    background:radial-gradient(80% 70% at 50% 30%,rgba(10,14,22,.66),rgba(4,6,10,.9));backdrop-filter:blur(7px);
+    background:radial-gradient(80% 70% at 50% 30%,rgba(10,14,22,.88),rgba(4,6,10,.96));
     opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
   #welcome.show{opacity:1;pointer-events:auto}
   #welcome .wcard{width:min(620px,94vw);transform:translateY(14px) scale(.98);transition:transform .6s var(--ease)}
@@ -298,12 +330,15 @@
   #introBtn{position:absolute;top:0;right:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
   @media (max-width:560px){.wtitle{font-size:30px}#welcome .core{padding:26px 24px}}
   #footlinks{position:fixed;left:24px;bottom:24px;z-index:30;display:flex;gap:8px;align-items:center}
-  #introReopen,#ghLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;backdrop-filter:blur(14px);transition:all .3s var(--ease);text-decoration:none}
+  #introReopen,#ghLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;transition:all .3s var(--ease);text-decoration:none}
   #introReopen:hover,#ghLink:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
   @media (max-width:980px){#footlinks{left:16px;bottom:16px}#ghLink{display:none}}
 
   /* ---------------- 3D LABELS ---------------- */
-  .lbl3d{font-family:var(--mono);font-size:14.5px;letter-spacing:.01em;color:var(--ink);background:rgba(8,11,17,.74);border:1px solid var(--hair);border-radius:9px;padding:6px 12px;white-space:nowrap;pointer-events:none;backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.45);transition:opacity .3s}
+  /* NO backdrop-filter here: these labels move every rendered frame, and a moving
+     backdrop-blur region forces a full compositor re-blur per frame — the #1 CPU
+     burner found in profiling. A more opaque background reads the same. */
+  .lbl3d{font-family:var(--mono);font-size:14.5px;letter-spacing:.01em;color:var(--ink);background:rgba(8,11,17,.88);border:1px solid var(--hair);border-radius:9px;padding:6px 12px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.45);transition:opacity .3s}
   .lbl3d.title{font-family:var(--display);font-size:18px;font-weight:600;letter-spacing:-.01em;padding:8px 15px}
   .lbl3d.faint{color:var(--ink-dim);background:rgba(8,11,17,.5);border-color:transparent;font-size:13.5px;box-shadow:none}
   .lbl3d.heat{color:var(--heat);border-color:rgba(246,163,69,.45);font-weight:600}
@@ -322,7 +357,7 @@
   /* ---------------- WATCHLIST MODAL ---------------- */
   #watchModal,#roadModal{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
   #watchModal.on,#roadModal.on{opacity:1;pointer-events:auto}
-  .wm-backdrop{position:absolute;inset:0;background:rgba(4,6,10,.74);backdrop-filter:blur(9px)}
+  .wm-backdrop{position:absolute;inset:0;background:rgba(4,6,10,.74);backdrop-filter:blur(6px)}
   .wm-card{position:relative;width:min(900px,95vw);max-height:86vh;transform:scale(.97);transition:transform .45s var(--ease)}
   #watchModal.on .wm-card,#roadModal.on .wm-card{transform:scale(1)}
   .wm-card .core{padding:0;display:flex;flex-direction:column;max-height:85vh;overflow:hidden}
@@ -421,7 +456,7 @@
     #rail{display:none}
     #brand h1{font-size:19px}
     #topwrap{padding:14px 16px;flex-wrap:wrap;gap:10px}
-    #nav{order:3;width:100%;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    #nav{position:static;transform:none;order:3;width:100%;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     #nav::-webkit-scrollbar{display:none}
     /* reading panel becomes a bottom sheet on small screens */
     #panel{left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:72vh;transform:translateY(24px) scale(.99)}
@@ -505,16 +540,26 @@
   <div class="pbody" id="pbody"></div>
 </div></div></div>
 
-<!-- BOTTOM DOCK -->
-<div id="dock" style="display:none"><div class="shell"><div class="core" id="dockcore"></div></div></div>
+<!-- BOTTOM DOCK (kvNote lives inside the shell so it can never overlap the controls) -->
+<div id="dock" style="display:none"><div class="shell"><div id="kvNote" style="display:none"></div><div class="core" id="dockcore"></div></div></div>
 
 <div id="hint"><b>drag</b> to orbit · <b>scroll</b> to zoom · <b>click</b> any node to open its file</div>
 
 <!-- GUIDED TOUR CARD -->
 <div id="tour"><div class="shell"><div class="core"></div></div></div>
 
-<!-- KV live takeaway (AI region) -->
-<div id="kvNote" style="display:none"></div>
+<!-- The Wall's fixed headline (written by updateKV) -->
+<div id="wallHead" style="display:none">
+  <div class="wh-t" id="whT"></div>
+  <div class="wh-s">blue = the model (fixed) · each green slab = <b style="color:#7ee787">one chat's memory</b> · <span style="color:#5eead4">drag the sliders ↓</span></div>
+</div>
+
+<!-- quiet tour nudge for first-time visitors (replaces the auto-opening welcome modal) -->
+<div id="tourNudge" style="display:none">
+  <div class="tn-t">First time here?</div>
+  <div class="tn-d">A 3-minute guided tour takes you zero → expert.</div>
+  <div class="tn-row"><button id="tnStart">▶&nbsp;Start the tour</button><button id="tnSkip">✕</button></div>
+</div>
 
 <!-- INVESTOR INTELLIGENCE MODAL (tabs: by layer · by country · roadmap) -->
 <div id="watchModal">
@@ -625,6 +670,7 @@ const HIER=[
    cos:['tsmc','nvidia','amd'],geo:[['TWN','TSMC fabrication'],['USA','design']],
    mx:[['SRAM density','flat across nodes → bandwidth pressure pushed onto HBM']],related:['reg','hbm']},
   {id:'hbm',name:'HBM3E / HBM4',kind:'On-package DRAM · the prize',col:'#5eead4',cap:'80–288 GB',bw:'3.35–8 TB/s',lat:'150–220 ns',en:'~4 pJ/b',sev:5,
+   why:'Only three companies on earth can make HBM (SK Hynix, Samsung, Micron) — and even their output is capped from outside: every stack must be bonded to the GPU on TSMC\'s CoWoS packaging line (booked into 2027) and printed on ASML\'s EUV machines (a literal monopoly). Demand runs a year ahead of supply, so <b>allocation</b>, not price, decides who ships GPUs.',
    blurb:'High Bandwidth Memory — DRAM dies stacked 8–12 high with through-silicon vias, bonded to the GPU package via a silicon interposer. A single stack runs a 1,024-bit bus. The single most fought-over component in AI.',
    biz:'<span class="hl">The center of gravity.</span> A 3-way oligopoly (<b>SK Hynix</b>, <b>Samsung</b>, <b>Micron</b>) makes the stacks; <b>TSMC</b> CoWoS packaging is the real ceiling on supply; <b>Besi</b>/<b>ASML</b>/Japan materials gate it from below. HBM is ~5–10× the cost/GB of DDR and sells out a year ahead.',
    cos:['skhynix','samsung','micron','tsmc','besi','asml','lam','disco','ase','ajinomoto','ibiden','shinetsu'],
@@ -633,12 +679,14 @@ const HIER=[
    mx:[['HBM bit-growth','industry HBM bit supply YoY — the core volume signal'],['CoWoS capacity','TSMC packaging adds gate every GPU shipped'],['HBM ASP / margin','memory-maker gross margin = cycle health'],['NVIDIA allocation','who gets qualified at NVIDIA = who wins']],
    related:['sram','ddr','cxl','wall','photonics']},
   {id:'ddr',name:'Host DDR5',kind:'CPU-attached DRAM',col:'#5aa9ff',cap:'0.5–8 TB',bw:'50–410 GB/s',lat:'80–100 ns',en:'~15 pJ/b',sev:2,
+   why:'Commodity by design: dozens of fabs, a deep spot market, and three suppliers with swing capacity. Prices cycle hard, but nothing structurally gates AI here — which is exactly why the money crowds into HBM instead.',
    blurb:'The CPU\'s main memory. 8–20× less bandwidth than HBM but 10–40× the capacity at a fraction of the cost. The GPU reaches it only across PCIe.',
    biz:'Same three DRAM makers, plus the interface layer: <b>Rambus</b> and <b>Montage</b> sell the RCD/MRDIMM buffer chips that scale with every server. A commodity-cycle business with an AI-content kicker.',
    cos:['skhynix','samsung','micron','rambus','montage'],
    geo:[['KOR','DRAM — Hynix, Samsung'],['USA','Micron, Rambus IP'],['CHN','Montage buffers']],
    mx:[['DDR5 ASP / spot','the classic memory cycle indicator'],['MRDIMM attach','buffer content per server rising'],['server DRAM content','GB per AI server']],related:['hbm','cxl']},
   {id:'cxl',name:'CXL Memory',kind:'Coherent · poolable',col:'#9a8cff',cap:'TB → tens of TB',bw:'64–256 GB/s',lat:'170–270 ns',en:'~15 pJ/b',sev:3,
+   why:'Not scarce hardware — scarce <b>silicon and standards</b>: the DRAM inside is commodity, but the controllers and switches that make it poolable come from a handful of design houses (Astera, Montage, Rambus, Microchip), and adoption is gated on each CPU generation actually supporting it.',
    blurb:'Compute Express Link memory expanders attach over the PCIe physical layer with cache coherence — and can be pooled and shared across many hosts. The escape valve when HBM + DDR run out.',
    biz:'The connectivity layer is where merchant silicon makes real money: <b>Astera Labs</b> (controllers, switches), <b>Marvell</b>, <b>Rambus</b> + <b>Montage</b> (controllers), <b>Microchip</b>. Adoption is early but Azure shipped the first production cloud CXL in 2025. <span class="hl2">Open the CXL region for the full fabric.</span>',
    cos:['astera','marvell','rambus','montage','microchip','micron'],
@@ -652,6 +700,7 @@ const HIER=[
    geo:[['KOR','NAND — Samsung, Hynix'],['USA/JPN','Micron, Kioxia']],
    mx:[['NAND ASP','flash cycle'],['enterprise SSD bit-growth','AI checkpoint/storage demand']],related:['ddr','net']},
   {id:'net',name:'Network / Fabric',kind:'Scale-out + remote',col:'#27406a',cap:'~unlimited',bw:'25 GB/s → 130 TB/s',lat:'µs → s',en:'—',sev:4,
+   why:'The cables aren\'t the chokepoint — three specific things are. <b>(1) NVLink lock-in:</b> inside a rack, GPUs talk over NVIDIA\'s proprietary fabric, so rival accelerators can\'t join the cluster. <b>(2) Lasers:</b> between racks, data travels as light, and every optical port needs an indium-phosphide laser — fewer than five firms make them at volume, sold out into 2027 after NVIDIA\'s ~$4B lockup. <b>(3) Switch silicon:</b> a near-duopoly (Broadcom, NVIDIA). Miss any one and the cluster stops scaling.',
    blurb:'From 400/800G InfiniBand & Ethernet to the NVLink switch fabric inside a GB200 NVL72 rack (130 TB/s). The point where "the rack" becomes the unit of compute — and where optics takes over from copper.',
    biz:'The interconnect battleground: <b>NVIDIA</b> (NVLink moat) vs the merchant camp <b>Broadcom</b> + <b>Marvell</b> + <b>Astera</b> (UALink/Ethernet). Optics is the fastest-growing slice. <span class="hl2">Open the Photonics region.</span>',
    cos:['nvidia','broadcom','marvell','astera','coherent','lumentum2','fabrinet','innolight','ciena'],
@@ -670,6 +719,7 @@ const REGIONS={
 // ---- EXTRA NODES: deep fractal content for the CXL / Photonics / AI regions ----
 const EXTRA={
   cxl_switch:{id:'cxl_switch',name:'The Interconnect War',kind:'CXL · NVLink · UALink',col:'#9a8cff',sev:4,
+    why:'Standards lock-in, not manufacturing: whoever wins NVLink vs UALink decides which chipmakers get the design wins for years. NVIDIA defends the lock (even paying ~$2B to keep Marvell in its camp); everyone else funds the challenger.',
     stats:[['Scale-up','NVLink 1.8 TB/s'],['Open rival','UALink 1.0'],['Memory','CXL 3.x'],['Switch backlog','AVGO $10B+']],
     blurb:'Inside a rack, GPUs must talk to each other and to pooled memory at terabytes per second. Three standards fight for it: NVIDIA\'s proprietary <b>NVLink</b> (shipping, 1.8 TB/s — the moat), the open <b>UALink</b> consortium (AMD, Broadcom, Intel, Google, Meta — spec done, silicon ~2027), and <b>CXL</b> for coherent memory pooling.',
     biz:'The highest-stakes battleground in AI hardware. <b>NVLink wins</b> → NVIDIA\'s lock-in holds. <b>UALink wins</b> → <b>Astera</b> (switches), <b>Broadcom</b> (silicon), <b>AMD</b> (competitive GPUs at scale) all benefit. Most likely they coexist — and <span class="hl2">Astera wins either way</span> as a multi-standard chip house. NVIDIA put ~$2B into Marvell to keep it inside the NVLink camp.',
@@ -678,6 +728,7 @@ const EXTRA={
     mx:[['UALink tape-outs','first production silicon = 2027 on track?'],['Astera Scorpio wins','switch TAM ~10× retimers'],['NVLink Fusion breadth','who joins NVIDIA\'s camp'],['CXL attach rate','<5% of servers today → ~30% by 2028']],
     related:['cxl','net','cxl_module','wall']},
   cxl_module:{id:'cxl_module',name:'CXL Memory Module',kind:'Type 3 expander',col:'#9a8cff',sev:3,
+    why:'The DRAM inside is commodity — the pinch is the controller chip that fronts it (Astera Leo, Montage, Rambus IP). Few firms ship it, and every module pays them.',
     stats:[['Bandwidth','36–256 GB/s'],['Added latency','~70–90 ns'],['Capacity','128–512 GB'],['First cloud','Azure M-series']],
     blurb:'A box of DDR5 behind a CXL controller that the CPU sees as a slower, poolable tier of memory. Samsung CMM-D, Micron and SK Hynix ship the modules; the controller silicon is where the value sits.',
     biz:'For the memory makers this is an <b>ASP premium</b> on the same DRAM die. The real margin is the controller: <b>Astera</b> (Leo), <b>Montage</b>, and <b>Rambus</b> IP underneath. Adoption is early — Azure shipped the first production cloud CXL in 2025; the pooling revolution is ~12–18 months ahead of deployments.',
@@ -694,6 +745,7 @@ const EXTRA={
     mx:[['memory per GPU','HBM4 = 288 GB, still not enough'],['pooling attach','% of racks wired for CXL'],['stranded DRAM','the waste CXL recovers']],
     related:['cxl_switch','cxl_module','hbm','wall']},
   phot_laser:{id:'phot_laser',name:'The Laser Bottleneck',kind:'EML / InP lasers',col:'#f6a345',sev:5,
+    why:'Physics, not factories: silicon cannot emit light, so lasers must be grown on indium-phosphide wafers at 15–50% yields — capacity can\'t simply be bought. Fewer than five firms do it at volume, and NVIDIA pre-paying ~$4B to lock supply through 2027 shows exactly how binding that is.',
     stats:[['Suppliers','<5 globally'],['Lead time','past 2027'],['NVIDIA lockup','~$4B'],['EML price','double-digit ↑']],
     blurb:'Every optical link begins with a laser — and silicon cannot make light. EML/CW lasers are grown on indium-phosphide (InP), not silicon, at 15–50% yields. Fewer than five firms make them at volume.',
     biz:'<span class="hl">The single tightest link in optics.</span> <b>Lumentum</b> is the only volume supplier of 200G/lane EML lasers (needed for 1.6T). NVIDIA committed ~$2B each to <b>Lumentum</b> and <b>Coherent</b> to lock supply through 2027 — capacity capture disguised as investment. Everyone else gets rationed.',
@@ -702,6 +754,7 @@ const EXTRA={
     mx:[['EML laser ASP','rising = supply still tight'],['InP lead times','past 2027 = severe'],['CPO laser POs','the NVIDIA lockup orders']],
     related:['phot_cpo','phot_transceiver','net']},
   phot_cpo:{id:'phot_cpo',name:'Co-Packaged Optics',kind:'CPO + optical I/O',col:'#7ee787',sev:3,
+    why:'Manufacturing yield, not demand: attaching fibres to silicon at scale is still unsolved, there\'s no interoperable standard yet, and every CPO design needs the same scarce lasers as everything else.',
     stats:[['Broadcom TH6','102.4 Tb/s'],['NVIDIA','Spectrum-X'],['Power','~70% less'],['At scale','2028–30']],
     blurb:'Move the optics into the switch/GPU package — millimetres of silicon instead of centimetres of lossy copper. Broadcom\'s Davisson (102.4 Tb/s) and NVIDIA\'s Spectrum-X are sampling; Ayar and Lightmatter push optics right beside the compute die.',
     biz:'CPO <b>helps</b> Broadcom, NVIDIA, the laser makers, <b>TSMC</b> (Si-photonics foundry) and pure-plays <b>Ayar</b>/<b>Lightmatter</b>. It <b>threatens</b> pluggable-module volume (InnoLight, Fabrinet) — but only from ~2028. Marvell paid <b>$3.25B for Celestial AI</b>, the valuation anchor for the whole theme.',
@@ -710,6 +763,7 @@ const EXTRA={
     mx:[['CPO attach rate','hyperscaler deployments'],['Ayar/Lightmatter IPO','private-market temperature'],['yield / fiber-attach','the manufacturing gate']],
     related:['phot_laser','phot_transceiver','net','hbm']},
   phot_transceiver:{id:'phot_transceiver',name:'Optical Transceivers',kind:'800G / 1.6T modules',col:'#7ee787',sev:3,
+    why:'Assembly is abundant (China builds ~60% of modules) — but every single module needs a US-designed DSP chip and a scarce laser inside. One export-control decision or one laser shortage stalls the whole segment.',
     stats:[['China share','~60% volume'],['Marvell DSP','~70% share'],['2026 800G','~33M units'],['Assembler','Fabrinet']],
     share:{title:'800G module volume (est.)',seg:[['InnoLight',38,'#7ee787'],['Eoptolink',22,'#46c8e0'],['Coherent / others',40,'#3a4a66']]},
     blurb:'The pluggable modules that light up every switch port. InnoLight + Eoptolink dominate volume, Coherent is vertically integrated, Fabrinet assembles for everyone — and every module needs a Marvell or Broadcom DSP inside.',
@@ -719,6 +773,7 @@ const EXTRA={
     mx:[['800G→1.6T units','the transition pace'],['Fabrinet utilization','pluggable demand'],['DSP export policy','the China risk']],
     related:['phot_laser','phot_cpo','net']},
   kv_econ:{id:'kv_econ',name:'KV-Cache Economics',kind:'why memory is the wall',col:'#f6a345',sev:4,
+    why:'A demand chokepoint rather than a supply one: every doubling of context length or concurrent users doubles the memory a GPU must hold, and it has to be HBM-fast. That pressure lands directly on the three HBM makers and TSMC\'s packaging line — the tightest links in the whole chain.',
     stats:[['Decode','memory-bound'],['H100 starve','~1,200× wait'],['Fix #1','more HBM'],['Fix #2','CXL + photonics']],
     blurb:'LLM decode reads every weight plus the entire KV cache from HBM for each token. The GPU computes ~1,200× faster than it can fetch — so it idles on memory. Longer context and bigger batches explode the cache (drag the sliders).',
     biz:'This is <span class="hl">why the whole supply chain exists</span>. It converts straight into demand for <b>HBM</b> (SK Hynix/Micron), <b>CoWoS</b> (TSMC), pooled <b>CXL</b> (Astera) and optical <b>disaggregation</b> (Marvell/Celestial). Every doubling of context is a doubling of memory demand.',
@@ -777,7 +832,10 @@ camera.position.set(17,11,26);
 
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
 renderer.setSize(W(),H());
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.25));
+// resolution-aware pixel budget: cap total canvas pixels at ~3.2M so 1440p/4K
+// screens don't quadruple the raster cost (floor 0.6 keeps 4K acceptably sharp)
+function fitPixelRatio(){return Math.max(0.6,Math.min(window.devicePixelRatio,1.25,Math.sqrt(3.2e6/(W()*H()))));}
+renderer.setPixelRatio(fitPixelRatio());
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.0;
 appEl.appendChild(renderer.domElement);
@@ -855,8 +913,10 @@ function onDown(e){downXY={x:e.clientX,y:e.clientY};renderer.domElement.style.cu
 // hover affordance — pointer cursor + gentle lift on anything clickable
 let hovered=null;
 function setHover(obj){if(obj===hovered)return;if(hovered)tweenObj(hovered.scale,{x:1,y:1,z:1},0.18);hovered=obj;if(hovered)tweenObj(hovered.scale,{x:1.07,y:1.07,z:1.07},0.18);}
+let __lastPick=0;
 renderer.domElement.addEventListener('pointermove',e=>{
   if(downXY){renderer.domElement.style.cursor='grabbing';return;}
+  const now=performance.now();if(now-__lastPick<50)return;__lastPick=now; // hover raycast at ≤20Hz, not per mousemove event
   pointer.x=(e.clientX/W())*2-1;pointer.y=-(e.clientY/H())*2+1;
   camera.updateMatrixWorld();raycaster.setFromCamera(pointer,camera);
   const hits=raycaster.intersectObjects(pickables,false);
@@ -951,7 +1011,8 @@ function renderPanelBody(){
       <div class="share-leg">${node.share.seg.map(s=>`<span><i style="background:${s[2]}"></i>${s[0]} ${s[1]}%</span>`).join('')}</div></div>`;
     html+=`<div class="pblk"><div class="kmini" style="margin-bottom:8px">BOTTLENECK SEVERITY</div>
       <div class="sevmeter"><div class="bars">${[1,2,3,4,5].map(i=>`<i style="background:${i<=node.sev?sevColor(node.sev):'rgba(255,255,255,.08)'}"></i>`).join('')}</div>
-      <span class="lbl" style="color:${sevColor(node.sev)}">${sevWord(node.sev)}</span></div></div>`;
+      <span class="lbl" style="color:${sevColor(node.sev)}">${sevWord(node.sev)}</span></div>
+      ${node.why?`<div class="kmini" style="margin:4px 0 7px;color:${sevColor(node.sev)}">${node.sev>=3?'WHERE THE CHOKEPOINT COMES FROM':'WHY IT\'S NOT A CHOKEPOINT'}</div><p>${node.why}</p>`:''}</div>`;
     if(node.related&&node.related.length){
       html+=`<div class="pblk"><div class="kmini" style="margin-bottom:8px">CONNECTED TO</div><div class="related">`+
         node.related.map(r=>{const t=findNode(r);const reg=REGIONS[r];const nm=t?t.name:(reg?reg.name:r);const cc=t?t.col:(reg?reg.col:'#888');
@@ -1120,12 +1181,12 @@ const railcore=document.getElementById('railcore');
 const RAIL={
   map:{kicker:'The Atlas',title:'One connected world',lede:'Every layer of the AI memory stack, the two technologies bending it (CXL &amp; photonics), and the wall that forces it all — drawn as one graph. Drag to fly through it; click any node to open its file.',
     toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['ai','The Memory Wall','why it all exists','#f6a345']]},
-  hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, the chokepoints, and the metrics to watch.',toc:null},
+  hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, <b>where its chokepoint comes from</b> (or why it has none), and the metrics to watch. The ◆ flags mark the layers where supply is genuinely gated.',toc:null},
   cxl:{kicker:'Region · 02',title:'CXL Fabric',lede:'Coherent memory over PCIe — expansion, pooling, and sharing. Click the switch, hosts, or modules; toggle the capability below.',
     nodes:[['cxl_switch','The Interconnect War','#9a8cff'],['cxl_module','CXL Memory Module','#9a8cff'],['cxl','↑ CXL in the stack','#9a8cff']]},
   photonics:{kicker:'Region · 03',title:'Photonics',lede:'The copper wall vs light. Click the chips, links, and laser callout — companies and bottlenecks live inside each node.',
     nodes:[['phot_laser','The Laser Bottleneck','#f6a345'],['phot_cpo','Co-Packaged Optics','#7ee787'],['phot_transceiver','Optical Transceivers','#7ee787']]},
-  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'LLM decode is memory-bound. Drive the KV-cache calculator below and watch it overflow a single GPU — the force behind HBM, CXL, and photonics.',
+  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'The tank is one GPU\'s <b>HBM</b> — the chokepoint layer from the Stack. Every extra user and every extra 1K of context claims more of it; when it overflows, you buy whole extra GPUs (more HBM, more CoWoS packaging). Drive the sliders below and watch the cost happen.',
     nodes:[['kv_econ','KV-Cache Economics','#f6a345'],['hbm','→ HBM (the prize)','#5eead4'],['cxl_switch','→ The Interconnect War','#9a8cff']]},
 };
 function renderRail(region){
@@ -1353,9 +1414,19 @@ function buildPhotonics(){
 }
 
 /* ---------- AI / MEMORY WALL ---------- */
-let kv={ctx:8,batch:4,model:0};
-const MODELS=[{n:'Llama-3 8B',L:32,kvh:8,hd:128,W:16},{n:'Llama-3.1 70B',L:80,kvh:8,hd:128,W:140},{n:'Llama-3.1 405B',L:126,kvh:8,hd:128,W:810}];
-function kvGB(m,ctxK,b){return (2*m.L*m.kvh*m.hd*ctxK*1024*b*2)/1e9;}
+let kv={ctx:16,batch:8,model:1}; // default: 70B · 16K · 8 chats ≈ 183/192 GB — near-full, so ANY slider nudge visibly spills
+// Model classes, mid-2026 (researched via /last30days 2026-07-05):
+// W = weights in GB (fp16; 1T-class is fp8 as shipped). kvTok = KV-cache bytes
+// per token: GQA (Llama-style) = 2·L·kv_heads·head_dim·2B; the 1T MoE class
+// (Kimi K2.6 / DeepSeek recipe) uses MLA — compressed-latent KV ≈ 70 KB/token,
+// SMALLER than the 405B despite 2.5× the parameters. That contrast is the point.
+const MODELS=[
+  {n:'8B',W:16,kvTok:131072,tip:'Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The "runs on one GPU (even a gaming card)" class.'},
+  {n:'70B',W:140,kvTok:327680,tip:'Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B200, or 2× H100.'},
+  {n:'405B',W:810,kvTok:516096,tip:'Today: Llama-3.1-405B (dense), Qwen3.5-397B (MoE). The classic heavyweight — an 8-GPU node, and the heaviest KV per chat here.'},
+  {n:'1T MoE',W:1000,kvTok:70272,tip:'Today: Kimi K2.6 (1T, 32B active), DeepSeek V4 (1.6T), Ling 2.5. MLA compresses KV ~7× below the 405B — a giant model with tiny per-chat memory. Cluster territory.'},
+];
+function kvGB(m,ctxK,b){return (m.kvTok*ctxK*1024*b)/1e9;}
 function buildAI(){
   const g=new THREE.Group();groups.ai=g;
   addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.58);
@@ -1391,7 +1462,9 @@ function buildAI(){
   const unitBox=new THREE.BoxGeometry(1,1,1);
   const matW=solidMat('#46c8e0',0.12);matW.transparent=true;matW.opacity=0.92;
   const matKV=solidMat('#7ee787',0.3);matKV.transparent=true;matKV.opacity=0.95;
+  const matKV2=solidMat('#4fae63',0.22);matKV2.transparent=true;matKV2.opacity=0.95;   // alternating shade so individual chats are countable
   const matHot=solidMat('#f6a345',0.32);matHot.transparent=true;matHot.opacity=0.95;
+  const matHot2=solidMat('#c97f2e',0.24);matHot2.transparent=true;matHot2.opacity=0.95;
   for(let i=0;i<3;i++){
     const gt=makeTank(5.6*(i+1),true);gt.visible=false;g.add(gt);ghosts.push(gt);
     const fill=new THREE.Mesh(unitBox,matHot);fill.visible=false;g.add(fill);gFills.push(fill);
@@ -1402,13 +1475,11 @@ function buildAI(){
   const lblKV=label('','faint');lblKV.element.style.transform='translate(0,-50%)';g.add(lblKV);
   const spillLbl=label('↷ doesn\'t fit — spills to the next GPU','heat');spillLbl.visible=false;spillLbl.position.set(2.85,ceilY+0.55,0);spillLbl.element.style.transform='translate(0,-50%)';g.add(spillLbl);
   const morLbl=label('','heat');morLbl.visible=false;morLbl.position.set(20.4,baseY+3,0);g.add(morLbl);
-  // headline + how-to
-  const tTitle=label('Can one GPU hold your AI service?','title');tTitle.position.set(0,ceilY+3.4,0);tTitle.element.style.transform='translate(-50%,-50%)';tTitle.element.style.fontSize='18px';g.add(tTitle);
-  const tSub=label('Blue = the model itself (fixed) · each green slab = <b style="color:#7ee787">one chat\'s memory</b>, growing with conversation length','faint');tSub.position.set(0,ceilY+2.4,0);tSub.element.style.transform='translate(-50%,-50%)';g.add(tSub);
-  const tSub2=label('Drag the sliders below ↓','faint');tSub2.position.set(0,ceilY+1.7,0);tSub2.element.style.transform='translate(-50%,-50%)';tSub2.element.style.color='#5eead4';g.add(tSub2);
+  // headline lives in fixed DOM (#wallHead), not the 3D scene — it can never
+  // collide with the UI no matter where the camera pans
   const ceilLab=label('one B200 GPU = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
-  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(-5.6,baseY+2.4,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
-  g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,lblKV,slabs:[],unitBox,matKV,matHot,ghosts,gFills,gLbls,morLbl,spillLbl,rim:hero.userData.rim,heads:[tTitle,tSub,tSub2],lastX:null};
+  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(5.8,-0.8,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
+  g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,lblKV,slabs:[],unitBox,matKV,matKV2,matHot,matHot2,ghosts,gFills,gLbls,morLbl,spillLbl,learn,rim:hero.userData.rim,lastX:null};
   scene.add(g);
   updateKV();
   const cx=g.userData.kvui.lastX||0;
@@ -1428,7 +1499,9 @@ function updateKV(){
   ui.wMesh.scale.set(3.35,Math.max(wH,0.06),3.35);
   ui.wMesh.position.set(0,baseY+Math.max(wH,0.06)/2,0);
   ui.lblW.element.innerHTML=`THE MODEL · ${wGB} GB`;
-  ui.lblW.position.set(-2.5,baseY+Math.max(Math.min(wH,TANKH)/2,0.35),0);
+  // outside-left normally; centered inside the blue block when the camera pans right for spillover
+  ui.lblW.element.style.transform=overflow?'translate(-50%,-50%)':'translate(-100%,-50%)';
+  ui.lblW.position.set(overflow?0:-2.5,baseY+Math.max(Math.min(wH,TANKH)/2,0.35),0);
   // — one slab per chat, stacked until the tank is full (pooled meshes, no realloc) —
   const chunk=Math.max(1,Math.ceil(kv.batch/28));   // ≤28 slabs on screen; 1 slab = `chunk` chats
   const nSlabs=Math.ceil(kv.batch/chunk);
@@ -1439,7 +1512,7 @@ function updateKV(){
     let mesh=ui.slabs[shown];
     if(!mesh){mesh=new THREE.Mesh(ui.unitBox,ui.matKV);g.add(mesh);ui.slabs.push(mesh);}
     mesh.visible=true;
-    mesh.material=overflow?ui.matHot:ui.matKV;
+    mesh.material=overflow?(i%2?ui.matHot2:ui.matHot):(i%2?ui.matKV2:ui.matKV);
     mesh.scale.set(3.35,Math.max(h-0.05,0.04),3.35);
     mesh.position.set(0,y+h/2,0);
     y+=slabH;shown++;
@@ -1468,7 +1541,14 @@ function updateKV(){
   ui.rim.material.color.set(overflow?0xff6b5e:0x5eead4);
   // recenter the camera on the row of GPUs (skip the tween on first paint)
   const wantX=Math.min(gpusN-1,3)*5.6/2;
-  ui.heads.forEach(h=>{h.position.x=wantX;});   // headlines track the camera so they never drift under the fixed UI
+  // the fixed headline IS the answer: how many GPUs does serving this actually take?
+  const costK0=gpusN*35;
+  const whT=document.getElementById('whT');
+  if(whT)whT.innerHTML=overflow
+    ?`Serving this needs <b style="color:#f6a345">${gpusN} × B200 GPUs</b> · ~${costK0<1000?'$'+costK0+'k':'$'+(costK0/1000).toFixed(1)+'M'} of hardware`
+    :`This serves on <b style="color:#7ee787">ONE B200 GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
+  // keep the explainer pill out of the ghosts' way: right side when it fits, screen-left when spilling
+  ui.learn.position.set(overflow?wantX-7.6:5.8,-0.8,0);
   if(ui.lastX==null)ui.lastX=wantX;
   else if(ui.lastX!==wantX){ui.lastX=wantX;tweenObj(controls.target,{x:wantX},0.9);tweenObj(camera.position,{x:wantX,z:overflow?31:28},0.9);}
   // live consequences
@@ -1489,7 +1569,9 @@ function updateKV(){
 const dock=document.getElementById('dock');
 const dockcore=document.getElementById('dockcore');
 function setDock(region){
+  dock.classList.toggle('ai',region==='ai');
   const kvNote=document.getElementById('kvNote');if(kvNote)kvNote.style.display=(region==='ai')?'block':'none';
+  const wh=document.getElementById('wallHead');if(wh)wh.style.display=(region==='ai')?'block':'none';
   if(region==='cxl'){
     dock.style.display='';
     dockcore.innerHTML=`<span class="dlabel">Capability</span><div class="seg" id="cxlSeg">
@@ -1499,9 +1581,9 @@ function setDock(region){
     dockcore.querySelector('#cxlSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#cxlSeg button').forEach(x=>x.classList.toggle('on',x===b));setCXL(b.dataset.v);const cap=document.getElementById('cxlCap');if(cap)cap.innerHTML=CXLCAP[b.dataset.v];});
   }else if(region==='ai'){
     dock.style.display='';
-    dockcore.innerHTML=`<span class="dlabel">Model</span><div class="seg" id="mSeg"><button data-m="0" class="on">8B</button><button data-m="1">70B</button><button data-m="2">405B</button></div>
-      <div class="slider-wrap"><span class="dlabel">Context</span><input type="range" id="ctxSl" min="1" max="256" value="8"><span class="sv" id="ctxV">8K</span></div>
-      <div class="slider-wrap"><span class="dlabel">Users</span><input type="range" id="batSl" min="1" max="128" value="4"><span class="sv" id="batV">4 chats</span></div>
+    dockcore.innerHTML=`<span class="dlabel">Model</span><div class="seg" id="mSeg">${MODELS.map((m,i)=>`<button data-m="${i}"${i===kv.model?' class="on"':''} data-tip="${m.tip}">${m.n}</button>`).join('')}</div>
+      <div class="slider-wrap"><span class="dlabel">Context / chat</span><input type="range" id="ctxSl" min="1" max="256" value="${kv.ctx}"><span class="sv" id="ctxV">${kv.ctx}K tokens</span></div>
+      <div class="slider-wrap"><span class="dlabel">Users</span><input type="range" id="batSl" min="1" max="128" value="${kv.batch}"><span class="sv" id="batV">${kv.batch} chats</span></div>
       <div class="kvo-cluster">
         <div class="kvo"><span class="kvo-v" id="kvOut" style="color:#7ee787">4</span><span class="kvo-l">KV cache · GB</span></div>
         <div class="kvo"><span class="kvo-v" id="kvGpus">1</span><span class="kvo-l">GPUs · B200</span></div>
@@ -1510,7 +1592,7 @@ function setDock(region){
       </div>`;
     dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>x.classList.toggle('on',x===b));kv.model=+b.dataset.m;updateKV();});
     const cs=dockcore.querySelector('#ctxSl'),bs=dockcore.querySelector('#batSl');
-    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K';updateKV();});
+    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';updateKV();});
     bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();});
     updateKV();
   }else if(region==='photonics'){
@@ -1654,7 +1736,7 @@ function animate(){
   }catch(err){__lastErr=err.message+' @ '+(err.stack||'').split('\n')[1];}
 }
 
-window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setSize(W(),H());labelRenderer.setSize(W(),H());});
+window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setPixelRatio(fitPixelRatio());renderer.setSize(W(),H());labelRenderer.setSize(W(),H());});
 
 /* BOOT */
 const lmsg=['Mapping the supply chain…','Stacking HBM dies…','Lighting the waveguides…','Wiring the CXL fabric…','Tracing the bottlenecks…'];
@@ -1682,7 +1764,11 @@ const ghLink=document.createElement('a');ghLink.id='ghLink';ghLink.href='https:/
 
 setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);
   let seen=false;try{seen=localStorage.getItem('atlas_seen')==='1';}catch(e){}
-  if(!seen)setTimeout(showWelcome,450);
+  // First visit: no takeover modal — a quiet side nudge; the full intro stays behind "? What is this"
+  if(!seen){const n=document.getElementById('tourNudge');if(n){n.style.display='block';
+    const done=()=>{n.remove();try{localStorage.setItem('atlas_seen','1');}catch(e){}};
+    document.getElementById('tnStart').addEventListener('click',()=>{done();startTour();});
+    document.getElementById('tnSkip').addEventListener('click',done);}}
 },1500);
 </script>
 </body>

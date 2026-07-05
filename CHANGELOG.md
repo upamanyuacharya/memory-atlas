@@ -2,6 +2,45 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.3.0] — 2026-07-05
+
+CPU fix + Wall v2, from direct user feedback ("framerate still super low, CPU goes
+insanely high", "the wall section needs to be bigger", "tutorial too prominent",
+"chokepoint sources need explaining", "slider effects unclear", "there are 1T models now").
+
+### Performance (this time it was the compositor, on the CPU)
+- Removed `backdrop-filter` from the 3D labels — a blur region that MOVES every
+  rendered frame forces a full CPU re-blur per frame; this was the biggest burner.
+- Removed `mix-blend-mode` from the film-grain overlay (blending a fixed layer over
+  a per-frame-changing canvas re-composites the whole screen on the CPU).
+- Removed the full-screen backdrop blur from the welcome overlay; halved blur radii
+  on the remaining glass panels; stripped blur from all small pills.
+- Hover raycasting throttled to ≤20 Hz (was: every mousemove event).
+- Resolution-aware pixel budget (~3.2M canvas pixels max) so 1440p/4K screens don't
+  quadruple raster cost. Verified 29 fps active / 12 fps idle with zero errors.
+
+### The Wall v2 (researched via /last30days, 2026-07-05)
+- Four model classes with real mid-2026 anchors and hover cards: 8B (Qwen3-8B…),
+  70B (Llama-3.3-70B…), 405B (Llama-3.1-405B, Qwen3.5-397B), and **1T MoE**
+  (Kimi K2.6, DeepSeek V4, Ling 2.5) — including the MLA twist: the 1T class
+  carries ~7× LESS KV per chat than the 405B (70 KB vs 516 KB per token).
+- The headline now answers the question directly and live: "This serves on ONE
+  B200 GPU — 9 GB to spare" ↔ "Serving this needs 6 × B200 GPUs · ~$210k".
+  It's fixed DOM, so it can never collide with 3D labels.
+- Default state is 70B · 16K · 8 chats ≈ 183/192 GB — near-full, so every slider
+  nudge visibly spills; slabs alternate two shades so individual chats are countable.
+- The control dock is now the main instrument: larger type and sliders, the live
+  caption docked INSIDE the shell (text overlap is structurally impossible now).
+
+### Understandability
+- Every layer's panel now explains WHERE its chokepoint comes from (or why it
+  isn't one) — e.g. Network/Fabric: NVLink lock-in + the InP laser supply
+  (<5 firms, sold out into 2027) + the Broadcom/NVIDIA switch duopoly.
+- The Wall's sidebar ties the tank to the Stack's HBM chokepoint explicitly.
+- The welcome modal no longer auto-opens: first-time visitors get a small
+  side nudge offering the tour; the full intro stays behind "? What is this".
+- Top region nav centered and enlarged.
+
 ## [1.2.0] — 2026-07-05
 
 Performance overhaul + an intuitive KV-cache visualiser, from direct user feedback
