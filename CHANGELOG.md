@@ -2,6 +2,44 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.6.0] — 2026-07-06
+
+The real idle-fan fix. A Codex adversarial review plus a /last30days sweep of
+three.js practice converged on the same root cause: the app kept the GPU busy
+even when nothing was happening, and asked for the discrete GPU it never needed.
+
+### Fixed (performance)
+- **Dropped `powerPreference:'high-performance'`.** Since Chrome 80 the default
+  is 'low-power' precisely to keep the discrete GPU asleep on dual-GPU laptops;
+  requesting high-performance woke the dGPU (and cost a ~1s GPU-switch hitch at
+  launch) for an ambient explainer that never needed it. This was the single
+  biggest thermal win — wattage, not framerate, is what spins the fan.
+- **Rest-state render-on-demand.** The render loop now does ZERO work when the
+  scene is settled — no `renderer.render`, no CSS2D layout — and only wakes
+  within 9s of an interaction, during a tween, or while the KV auto-writer runs.
+  Measured: idle 0 fps / active 31 fps (was a perpetual 12 fps idle). This is the
+  three.js-recommended pattern (threejs.org/manual "Rendering on Demand"); the
+  project's own issues #7670 / #20131 flag the continuous loop as the energy sink.
+- **Removed the 350 ms hidden-tab heartbeat** — it forced a full render three
+  times a second forever, even backgrounded. `visibilitychange` repaints one
+  fresh frame when the tab returns instead.
+- **Removed the map's perpetual idle auto-rotate** — motion the scene ran for an
+  empty room, and it would have kept the GPU awake forever under rest-state.
+
+### Fixed (launch jank + memory)
+- **`renderer.compileAsync()` shader warm-up** on every region build (behind the
+  loader at launch) — precompiles materials off the main thread via
+  KHR_parallel_shader_compile, killing first-frame "shader compilation stutter".
+- **Backdrop texture leak.** `disposeGroup()` disposed materials but not their
+  `.map` textures; the Wall/Photonics PNGs were re-decoded and re-uploaded on
+  every revisit, stranding the old GPU textures. Now cached once and reused for
+  the app lifetime, and per-group textures are explicitly disposed.
+
+### Harness
+- New behavioral gate `idle-rest`: asserts the loop draws 0 frames while idle and
+  wakes on interaction — a loud regression guard against any future continuous
+  loop. 9 states total, all green.
+
 ## [1.5.0] — 2026-07-06
 
 A dedicated **KV Cache region** — the mechanism itself, not just its economics —

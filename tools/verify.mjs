@@ -192,6 +192,31 @@ const STATES = [
       if (a < 2000) throw `only ${a} amber pixels across ghost GPUs`;
     },
   },
+  {
+    // Behavioral: prove the loop renders ZERO frames while idle (the fan fix),
+    // and that it WAKES on interaction. This is the regression guard for the
+    // rest-state model — a reintroduced continuous loop fails here loudly.
+    name: 'idle-rest',
+    behavioral: true,
+    setup: async p => {
+      await p.evaluate(() => window.__atlas.go('map'));
+      await p.waitForTimeout(2200); // let the fly-in tween finish
+    },
+    dom: async p => {
+      await p.evaluate(() => window.__atlas.sleep()); // drop the wake window; no tweens now → truly idle
+      await p.waitForTimeout(400);
+      const f0 = await p.evaluate(() => window.__atlas.frames());
+      await p.waitForTimeout(1600);
+      const f1 = await p.evaluate(() => window.__atlas.frames());
+      const idleFrames = f1 - f0;
+      if (idleFrames > 1) throw `idle loop drew ${idleFrames} frames in 1.6s — rest-state broken (expected 0)`;
+      // now prove it wakes on a region change
+      await p.evaluate(() => window.__atlas.go('cxl'));
+      await p.waitForTimeout(600);
+      const f2 = await p.evaluate(() => window.__atlas.frames());
+      if (f2 - f1 < 3) throw `scene did not wake on region change (${f2 - f1} frames)`;
+    },
+  },
 ];
 
 /* ---------- main ---------- */
@@ -216,6 +241,15 @@ for (const st of STATES) {
   try {
     await page.evaluate(() => window.__atlas.thaw());
     await st.setup(page);
+    // behavioral gates assert runtime behavior (frame counts, wake/sleep) — no frozen
+    // frame, no screenshot, no baseline. The dom() callback owns the assertions.
+    if (st.behavioral) {
+      const err0 = await page.evaluate(() => window.__atlas.lastErr());
+      if (err0) throw `lastErr: ${err0}`;
+      await st.dom(page);
+      console.log(`✓ ${st.name}  behavioral gate passed`);
+      continue;
+    }
     await page.evaluate(() => window.__atlas.freeze(11.0));
     await page.waitForTimeout(120);
     const err = await page.evaluate(() => window.__atlas.lastErr());

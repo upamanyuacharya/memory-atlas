@@ -86,7 +86,7 @@ Everything lives in **`index.html`**: a `<style>` design system, an import map, 
 
 ```bash
 npm i                  # once — playwright-core drives your installed Edge, no browser download
-npm run verify         # 8 states × (DOM probes + pixel-class probes + baseline diff)
+npm run verify         # 9 states × (DOM probes + pixel-class probes + baseline diff)
 npm run verify:update  # re-bless baselines after an intended visual change
 ```
 
@@ -117,6 +117,7 @@ blessed baselines in `tools/baselines/`. Run-to-run drift measures 0.00–0.15%.
 
 - **Raycasting** binds to the canvas (`renderer.domElement`), not the CSS2D label layer, and calls `camera.updateMatrixWorld()` before every pick — otherwise clicks silently miss when the frame loop is throttled (e.g. on `file://`).
 - **Performance (GPU):** no post-processing — bloom (EffectComposer + UnrealBloomPass) was the single biggest GPU cost and it defeated MSAA, so the scene renders directly (real antialiasing, ~half the GPU work); the glow comes from emissive materials, halos and additive particles. Frame rate is adaptive: ~30 fps while interacting or the camera moves, ~12 fps once settled (all motion is dt-based so speeds don't change). Pixel ratio obeys a ~3.2M-pixel budget so 1440p/4K screens don't quadruple raster cost.
+- **Performance (idle = free):** the render loop is **on-demand**, not continuous — a settled scene draws zero frames (`renderer.render` isn't called at all) and only wakes within ~9s of an interaction, during a tween, or while the KV auto-writer runs. Measured idle 0 fps / active 31 fps. There is **no** `powerPreference:'high-performance'` (Chrome's low-power default keeps the discrete GPU asleep on laptops), no hidden-tab heartbeat, and no perpetual idle auto-rotate. Region builds call `renderer.compileAsync()` to warm shaders off-thread (kills first-frame stutter), and backdrop textures are cached, not re-uploaded per visit. The `idle-rest` harness gate guards all of this.
 - **Performance (CPU/compositor):** never put `backdrop-filter` on elements that move every frame (the 3D labels had it — a moving blur region forces a full CPU re-blur per frame), and never put `mix-blend-mode` layers over a canvas that repaints (full-screen re-composite). Hover raycasting is throttled to 20 Hz. The KV visualiser pools its meshes and labels — slider drags never allocate geometry.
 - **Hidden tabs:** `requestAnimationFrame` pauses when a tab is backgrounded; a 350 ms heartbeat keeps the canvas paintable. Don't gate content visibility on CSS entry animations — they also pause.
 - **Materials:** `MeshPhysicalMaterial` `transmission` is too heavy with bloom; clearcoat + a `RoomEnvironment` env-map gets the glass look cheaply.

@@ -863,7 +863,11 @@ scene.fog=new THREE.FogExp2(0x060709,0.0075);
 const camera=new THREE.PerspectiveCamera(44,W()/H(),0.1,500);
 camera.position.set(17,11,26);
 
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+// NO powerPreference:'high-performance' — since Chrome 80 the *default* is
+// 'low-power' specifically to keep the discrete GPU asleep on dual-GPU laptops.
+// This is an ambient explainer, not a million-splat scene; asking for the dGPU
+// spins the fan (and costs a ~1s GPU-switch hitch at launch) for no visual gain.
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
 renderer.setSize(W(),H());
 // resolution-aware pixel budget: cap total canvas pixels at ~3.2M so 1440p/4K
 // screens don't quadruple the raster cost (floor 0.6 keeps 4K acceptably sharp)
@@ -918,7 +922,22 @@ const raycaster=new THREE.Raycaster();
 const pointer=new THREE.Vector2();
 
 /* helpers */
-function disposeGroup(grp){if(!grp)return;grp.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)o.element.parentNode.removeChild(o.element);if(o.geometry)o.geometry.dispose();if(o.material){(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.dispose());}});scene.remove(grp);}
+// Texture cache: backdrop PNGs (Wall, Photonics) are loaded ONCE and reused on
+// every revisit — otherwise each region rebuild re-decoded + re-uploaded the
+// image and stranded the old GPU texture (a real leak that compounded per
+// session). Cached textures live for the app lifetime and are never disposed.
+const texCache=new Map(),__cachedTex=new Set();
+function getTex(url){let t=texCache.get(url);if(!t){t=texLoader.load(url);t.colorSpace=THREE.SRGBColorSpace;texCache.set(url,t);__cachedTex.add(t);}return t;}
+const __TEX_SLOTS=['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','alphaMap','envMap'];
+function disposeGroup(grp){if(!grp)return;grp.traverse(o=>{
+  if(o.isCSS2DObject&&o.element&&o.element.parentNode)o.element.parentNode.removeChild(o.element);
+  if(o.geometry)o.geometry.dispose();
+  if(o.material)(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{
+    // dispose per-group textures (m.dispose() does NOT free them) — but never the shared cached backdrops
+    __TEX_SLOTS.forEach(k=>{const t=m[k];if(t&&t.isTexture&&!__cachedTex.has(t))t.dispose();});
+    m.dispose();
+  });
+});scene.remove(grp);}
 function label(text,cls='',onClick=null){const d=document.createElement('div');d.className='lbl3d '+cls;d.innerHTML=text;if(onClick){d.addEventListener('pointerdown',e=>{e.stopPropagation();onClick();});}const o=new CSS2DObject(d);o.element=d;return o;}
 function glassMat(color,emi=0.05,opacity=0.9){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.15,roughness:0.22,clearcoat:1.0,clearcoatRoughness:0.18,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.25,transparent:true,opacity:Math.min(opacity+0.06,0.97)});}
 function solidMat(color,emi=0.1){return new THREE.MeshPhysicalMaterial({color:new THREE.Color(color),metalness:0.4,roughness:0.3,clearcoat:1,clearcoatRoughness:0.16,emissive:new THREE.Color(color),emissiveIntensity:emi,envMapIntensity:1.3});}
@@ -983,7 +1002,7 @@ renderer.domElement.addEventListener('pointermove',e=>{
   const obj=hits.length?hits[0].object:null;
   renderer.domElement.style.cursor=obj?'pointer':'grab';
   setHover(obj);
-  if(document.hidden)renderOnce();
+  wake(); // hovering keeps the scene awake so the highlight animates
 });
 renderer.domElement.addEventListener('pointerleave',()=>{setHover(null);renderer.domElement.style.cursor='grab';});
 renderer.domElement.addEventListener('pointerup',e=>{
@@ -1430,7 +1449,7 @@ const WDM=[0xff5d6c,0xff9f45,0xffe14d,0x7ee787,0x46c8e0,0x5aa9ff,0x9a8cff,0xff7a
 let photWDM=true;
 const texLoader=new THREE.TextureLoader();
 function addBackdrop(group,url,w,h,pos,opacity,scrimOp=0.34){
-  const tex=texLoader.load(url);tex.colorSpace=THREE.SRGBColorSpace;
+  const tex=getTex(url);   // cached + reused; never re-decoded on revisit
   const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),
     new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity,depthWrite:false,fog:false}));
   m.position.set(pos[0],pos[1],pos[2]);m.renderOrder=-10;group.add(m);
@@ -1795,9 +1814,12 @@ function enterRegion(r){
   else if(r==='kvcache'){buildKVCache();}
   setDock(r);
   renderRail(r);
-  controls.autoRotate=false;controls.autoRotateSpeed=0.3;
-  if(r==='map')setTimeout(()=>{if(region==='map'&&!camT.active)controls.autoRotate=true;},1400); // gentle idle orbit on the overview
-  requestAnimationFrame(()=>{renderOnce();setTimeout(renderOnce,60);}); // force first paint even if rAF throttled
+  controls.autoRotate=false; // rest-state model: no perpetual idle spin (it would keep the GPU awake forever)
+  wake(4200);                // animate the fly-in + let ambient motion breathe, then settle to rest
+  renderOnce();              // immediate first paint of the new region
+  // Warm the new region's shaders off the main thread (KHR_parallel_shader_compile)
+  // so the first real frame doesn't stutter. At launch this runs behind the loader.
+  if(renderer.compileAsync)renderer.compileAsync(scene,camera).then(()=>wake(300)).catch(()=>{});
   const hints={map:'<b>drag</b> to orbit the graph · <b>click</b> a node to enter',
     hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
     cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
@@ -1862,24 +1884,26 @@ tourBtn.addEventListener('click',startTour);
 let __frames=0,__lastErr='';
 function renderOnce(){try{scene.updateMatrixWorld(true);renderer.render(scene,camera);labelRenderer.render(scene,camera);}catch(e){__lastErr=e.message;}}
 let __lastRender=0;
-// Adaptive frame budget: ~30fps while the user is interacting or the camera is
-// moving, ~12fps once everything has settled (ambient particle drift doesn't
-// need more), ~7fps behind the welcome overlay. dt-based motion keeps speeds
-// identical at any rate.
-let __lastInteract=performance.now();
-const __mark=()=>{__lastInteract=performance.now();};
-['pointerdown','pointermove','wheel','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,__mark,{passive:true}));
-let __welEl=null;
-function frameBudget(now){
-  __welEl=__welEl||document.getElementById('welcome');
-  if(__welEl&&__welEl.classList.contains('show'))return 140;
-  if(camT.active||tweens.length||now-__lastInteract<2500)return 32;
-  return 83;
-}
+const FRAME_MS=33; // ~30fps cap WHILE ACTIVE. When idle we render ZERO frames — not slow ones.
+/* REST-STATE RENDER-ON-DEMAND (three.js-recommended: threejs.org/manual
+   "Rendering on Demand"). The loop only does work while "awake": within REST_MS
+   of the last user interaction, during a camera/object tween, or while the KV
+   auto-writer runs. Otherwise it just schedules the next rAF and returns — no
+   renderer.render, no CSS2D layout, no GPU/CPU churn. This is the real fix for
+   the idle fan: a settled scene costs nothing. Ambient motion (particles,
+   pulses, beams) is something the scene does WHILE you're engaged, never a
+   heater it runs for an empty room. */
+const REST_MS=9000;
+let awakeUntil=0;
+function wake(ms=REST_MS){const u=performance.now()+ms;if(u>awakeUntil)awakeUntil=u;}
+function isActive(now){return camT.active||tweens.length>0||now<awakeUntil||(region==='kvcache'&&kvr.auto);}
+['pointerdown','pointermove','wheel','keydown','touchstart','input','click'].forEach(ev=>window.addEventListener(ev,()=>wake(),{passive:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)wake(1200);}); // repaint a fresh frame when the tab returns
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now();
-  if(now-__lastRender<frameBudget(now))return;
+  if(!isActive(now))return;              // settled → paint nothing at all
+  if(now-__lastRender<FRAME_MS)return;   // ~30fps cap while active
   __lastRender=now;
   try{
   __frames++;
@@ -1932,14 +1956,16 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   countVisible(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)n++;});return n;},
   frames(){return __frames;},lastErr(){return __lastErr;},render(){renderOnce();},
   freeze(t){T.frozen=true;if(t!=null)T.now=t;renderOnce();},thaw(){T.frozen=false;},get frozen(){return T.frozen;},
+  sleep(){awakeUntil=0;},get awake(){return isActive(performance.now());},   // for the idle-rest gate
   go(r){enterRegion(r);},
-  setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}},
-  kvStep(){stepKVR();},kvCache(on){kvr.cache=on;updateKVR(false);},
+  setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}wake();},
+  kvStep(){stepKVR();wake();},kvCache(on){kvr.cache=on;updateKVR(false);wake();},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
-enterRegion('map');
+enterRegion('map');   // also fires compileAsync — the initial shader warm-up runs behind the loader
 animate();
-// keep the canvas painting even when the tab is backgrounded (rAF pauses when hidden)
-setInterval(()=>{if(document.hidden)renderOnce();},350);
+// (removed the 350ms hidden-tab heartbeat: it forced a full render every third of
+//  a second forever, even backgrounded — pure waste. rAF pausing when hidden is the
+//  correct behavior, and visibilitychange re-wakes us for a fresh frame on return.)
 
 /* ---------- WELCOME / ONBOARDING ---------- */
 const welcome=document.getElementById('welcome');
