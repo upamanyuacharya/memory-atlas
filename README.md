@@ -22,7 +22,7 @@ Five interlinked **regions** in one continuous 3D world — drag to orbit, click
 | **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged. |
 | **CXL** | A shared-memory fabric: four servers, a CXL switch, and a pool of memory modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
 | **Photonics** | Copper vs light: a copper wire whose signal dies mid-way vs a clickable laser firing wavelength-multiplexed light across the fibre. The laser is the bottleneck — click it. |
-| **The Wall** | A live KV-cache calculator rendered as a "memory tank": one GPU's 192 GB, weights filling the bottom, the KV cache filling the top. Push context length or users and watch it overflow — with GPUs-needed, $ cost and ms/token computed live. |
+| **The Wall** | A live KV-cache calculator rendered as GPU "memory tanks": one tank = one GPU's 192 GB. The blue block is the model (fixed); every chat adds one green slab that grows with conversation length. When the tank fills, the excess pours into more GPUs on the right — with GPUs-needed, $ cost and ms/token computed live. |
 
 ![HBM panel — who makes it, metrics, geography](docs/hbm-panel.png)
 
@@ -84,7 +84,7 @@ Everything lives in **`index.html`**: a `<style>` design system, an import map, 
 ### Engineering notes (learned the hard way)
 
 - **Raycasting** binds to the canvas (`renderer.domElement`), not the CSS2D label layer, and calls `camera.updateMatrixWorld()` before every pick — otherwise clicks silently miss when the frame loop is throttled (e.g. on `file://`).
-- **Performance:** frame rate is capped at ~30 fps and `pixelRatio` at 1.4, bloom is tuned low (0.26). This halves GPU load and keeps laptop fans quiet without visibly hurting the aesthetic.
+- **Performance:** no post-processing — bloom (EffectComposer + UnrealBloomPass) was the single biggest GPU cost and it defeated MSAA, so the scene renders directly (real antialiasing, ~half the GPU work); the glow comes from emissive materials, halos and additive particles. Frame rate is adaptive: ~30 fps while interacting or the camera moves, ~12 fps once settled, ~7 fps behind the welcome overlay (all motion is dt-based so speeds don't change). `pixelRatio` is capped at 1.25. The KV visualiser pools its meshes and labels — slider drags never allocate geometry.
 - **Hidden tabs:** `requestAnimationFrame` pauses when a tab is backgrounded; a 350 ms heartbeat keeps the canvas paintable. Don't gate content visibility on CSS entry animations — they also pause.
 - **Materials:** `MeshPhysicalMaterial` `transmission` is too heavy with bloom; clearcoat + a `RoomEnvironment` env-map gets the glass look cheaply.
 - **Logos:** only ~5 of these firms exist in icon CDNs; the rest get deterministic colour-tinted monograms. Don't add a `slug` unless `cdn.simpleicons.org/<slug>` returns 200.

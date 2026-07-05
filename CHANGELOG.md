@@ -2,6 +2,35 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.2.0] — 2026-07-05
+
+Performance overhaul + an intuitive KV-cache visualiser, from direct user feedback
+("performance is too slow", "the KV cache visualiser is not intuitive").
+
+### Performance
+- Removed post-processing entirely (EffectComposer + UnrealBloomPass) — it was the
+  single biggest GPU cost per frame and it defeated MSAA. The scene now renders
+  directly: real antialiasing, roughly half the GPU work. Glow comes from emissive
+  materials, halos and additive particles (emissives retuned to compensate).
+- Adaptive frame budget: ~30 fps while interacting or the camera is moving,
+  ~12 fps once everything settles, ~7 fps behind the welcome overlay. All motion
+  is dt-based so animation speeds are unchanged. Measured: 29 fps active / 12 idle.
+- `pixelRatio` cap lowered 1.4 → 1.25; `powerPreference: high-performance`.
+- The KV visualiser now pools its meshes, materials and labels — dragging the
+  sliders no longer allocates geometry (the old one rebuilt boxes + labels per tick).
+
+### The Wall — KV visualiser rethought
+- New mental model: **one tank = one GPU (192 GB); blue block = the model (fixed);
+  each green slab = ONE chat's memory (KV cache), growing with conversation length.**
+- When the tank fills, the excess visibly pours into ghost GPU tanks on the right
+  ("GPU 2 · 192 GB", …, "+ N more GPUs…"), the rim turns red, and the camera
+  gently reframes the row — the cost of scale is something you *watch happen*.
+- Headline labels track the camera so they never drift under the fixed UI.
+- Persistent legend ("THE MODEL · x GB", "N chats × y GB = z GB of KV cache") and a
+  rewritten live caption tying it together ("Longer chats × more users = more GPUs").
+- Fixed a transparent-sort bug where the glass tank depth-occluded its own contents
+  (glass is now depthWrite:false with late renderOrder).
+
 ## [1.1.0] — 2026-07-05
 
 The public-launch release: readability, design polish, SEO, and the move to

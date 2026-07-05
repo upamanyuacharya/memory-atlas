@@ -547,9 +547,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CSS2DRenderer,CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
-import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
-import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
-import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 
@@ -778,9 +775,9 @@ scene.fog=new THREE.FogExp2(0x060709,0.0075);
 const camera=new THREE.PerspectiveCamera(44,W()/H(),0.1,500);
 camera.position.set(17,11,26);
 
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
 renderer.setSize(W(),H());
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.4));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.25));
 renderer.toneMapping=THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure=1.0;
 appEl.appendChild(renderer.domElement);
@@ -795,10 +792,10 @@ const lr=labelRenderer.domElement;
 lr.style.position='absolute';lr.style.top='0';lr.style.left='0';lr.style.pointerEvents='none';
 appEl.appendChild(lr);
 
-const composer=new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene,camera));
-const bloom=new UnrealBloomPass(new THREE.Vector2(W(),H()),0.26,0.75,0.5);
-composer.addPass(bloom);
+// No post-processing: bloom (EffectComposer + UnrealBloomPass) was the single
+// biggest GPU cost and it defeated MSAA. Direct rendering = real antialiasing,
+// roughly half the GPU work per frame; the glow comes from emissive materials,
+// halos and additive particles instead.
 
 // IMPORTANT: controls + raycasting bound to the CANVAS (works on file://)
 const controls=new OrbitControls(camera,renderer.domElement);
@@ -1191,7 +1188,7 @@ function buildMap(){
   // nodes — premium rounded-cube modules with wireframe + glow ring + halo
   MAPNODES.forEach(n=>{
     const s=n.r*1.3;
-    const core=new THREE.Mesh(new RoundedBoxGeometry(s,s,s,6,s*0.18),solidMat(n.col,0.16));
+    const core=new THREE.Mesh(new RoundedBoxGeometry(s,s,s,6,s*0.18),solidMat(n.col,0.24)); // slightly hotter emissive now that bloom is gone
     core.position.set(...n.pos);core.rotation.set(0.42,0.6,0);g.add(core);
     core.userData.spin=0.14;
     core.add(new THREE.LineSegments(new THREE.EdgesGeometry(core.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.55})));
@@ -1370,58 +1367,119 @@ function buildAI(){
     const ocean=new THREE.Points(pg,new THREE.PointsMaterial({color:0x4a8fcf,size:0.1,transparent:true,opacity:0.32,blending:THREE.AdditiveBlending,depthWrite:false}));
     g.add(ocean);g.userData.ocean={pts:ocean,seeds};}
 
-  // === THE MEMORY TANK — one GPU's HBM (192 GB). Weights fill the bottom, KV cache fills the top. ===
+  // === THE MEMORY TANKS — GPU 1 is the hero; ghost GPUs appear when the work spills over. ===
+  // Intuition model: the blue block is THE MODEL (fixed). Every chat adds ONE
+  // green slab whose height = that conversation's KV cache. Slabs stack until
+  // the 192 GB tank is full — then the excess pours into more (ghost) GPUs.
   const TANKH=13,capGB=192,scale=TANKH/capGB,baseY=-6.5,ceilY=baseY+TANKH;
   const shellGeo=new RoundedBoxGeometry(3.8,TANKH,3.8,4,0.24);
-  const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x1a2c4a,metalness:0.1,roughness:0.25,transparent:true,opacity:0.26,clearcoat:1,envMapIntensity:1.4,emissive:0x5eead4,emissiveIntensity:0.03}));
-  shell.position.set(0,baseY+TANKH/2,0);g.add(shell);
-  shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x5eead4,transparent:true,opacity:0.9})));
-  pick(shell,'kv',()=>openNode('kv_econ'));
-  const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4}));rim.position.set(0,ceilY,0);g.add(rim);
-  const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);g.add(base);
+  function makeTank(x,ghost){
+    const t=new THREE.Group();t.position.set(x,0,0);
+    // depthWrite:false + late renderOrder: glass must never depth-occlude the fills inside it
+    const shell=new THREE.Mesh(shellGeo,new THREE.MeshPhysicalMaterial({color:0x1a2c4a,metalness:0.1,roughness:0.25,transparent:true,opacity:ghost?0.14:0.34,clearcoat:1,envMapIntensity:1.4,emissive:0x5eead4,emissiveIntensity:ghost?0.02:0.05,depthWrite:false}));
+    shell.renderOrder=5;
+    shell.position.set(0,baseY+TANKH/2,0);t.add(shell);
+    shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x9ffbe9,transparent:true,opacity:ghost?0.4:1})));
+    const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:ghost,opacity:ghost?0.4:1}));rim.position.set(0,ceilY,0);t.add(rim);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);t.add(base);
+    t.userData.shell=shell;t.userData.rim=rim;
+    return t;
+  }
+  const hero=makeTank(0,false);g.add(hero);
+  pick(hero.userData.shell,'kv',()=>openNode('kv_econ'));
+  const ghosts=[],gFills=[],gLbls=[];
+  const unitBox=new THREE.BoxGeometry(1,1,1);
+  const matW=solidMat('#46c8e0',0.12);matW.transparent=true;matW.opacity=0.92;
+  const matKV=solidMat('#7ee787',0.3);matKV.transparent=true;matKV.opacity=0.95;
+  const matHot=solidMat('#f6a345',0.32);matHot.transparent=true;matHot.opacity=0.95;
+  for(let i=0;i<3;i++){
+    const gt=makeTank(5.6*(i+1),true);gt.visible=false;g.add(gt);ghosts.push(gt);
+    const fill=new THREE.Mesh(unitBox,matHot);fill.visible=false;g.add(fill);gFills.push(fill);
+    const gl=label('','faint');gl.visible=false;gl.element.style.color='#f6a345';g.add(gl);gLbls.push(gl);
+  }
+  const wMesh=new THREE.Mesh(unitBox,matW);g.add(wMesh);
+  const lblW=label('','faint');lblW.element.style.transform='translate(-100%,-50%)';lblW.element.style.color='#46c8e0';g.add(lblW);
+  const lblKV=label('','faint');lblKV.element.style.transform='translate(0,-50%)';g.add(lblKV);
+  const spillLbl=label('↷ doesn\'t fit — spills to the next GPU','heat');spillLbl.visible=false;spillLbl.position.set(2.85,ceilY+0.55,0);spillLbl.element.style.transform='translate(0,-50%)';g.add(spillLbl);
+  const morLbl=label('','heat');morLbl.visible=false;morLbl.position.set(20.4,baseY+3,0);g.add(morLbl);
   // headline + how-to
-  const tTitle=label('Does one chat fit in a single GPU?','title');tTitle.position.set(0,ceilY+3.4,0);tTitle.element.style.transform='translate(-50%,-50%)';tTitle.element.style.fontSize='18px';g.add(tTitle);
-  const tSub=label('Weights fill the bottom. The KV cache — the AI\'s memory of the conversation — fills the top.','faint');tSub.position.set(0,ceilY+2.4,0);tSub.element.style.transform='translate(-50%,-50%)';g.add(tSub);
+  const tTitle=label('Can one GPU hold your AI service?','title');tTitle.position.set(0,ceilY+3.4,0);tTitle.element.style.transform='translate(-50%,-50%)';tTitle.element.style.fontSize='18px';g.add(tTitle);
+  const tSub=label('Blue = the model itself (fixed) · each green slab = <b style="color:#7ee787">one chat\'s memory</b>, growing with conversation length','faint');tSub.position.set(0,ceilY+2.4,0);tSub.element.style.transform='translate(-50%,-50%)';g.add(tSub);
   const tSub2=label('Drag the sliders below ↓','faint');tSub2.position.set(0,ceilY+1.7,0);tSub2.element.style.transform='translate(-50%,-50%)';tSub2.element.style.color='#5eead4';g.add(tSub2);
-  const ceilLab=label('one B200 = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
-  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(5.2,baseY+2.2,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
-  groups.ai.userData.tank={baseY,ceilY,scale,capGB,TANKH};
+  const ceilLab=label('one B200 GPU = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
+  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(-5.6,baseY+2.4,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
+  g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,lblKV,slabs:[],unitBox,matKV,matHot,ghosts,gFills,gLbls,morLbl,spillLbl,rim:hero.userData.rim,heads:[tTitle,tSub,tSub2],lastX:null};
   scene.add(g);
   updateKV();
-  flyTo(0,1,28, 0,0.6,0, 1.2);
+  const cx=g.userData.kvui.lastX||0;
+  flyTo(cx,1,28, cx,0.6,0, 1.2);
 }
 function updateKV(){
-  const g=groups.ai;if(!g)return;const t=g.userData.tank;if(!t)return;
-  [...g.children].filter(c=>c.userData.fill).forEach(c=>{g.remove(c);if(c.geometry)c.geometry.dispose();if(c.material)c.material.dispose();c.traverse(ch=>{if(ch.isCSS2DObject&&ch.element.parentNode)ch.element.parentNode.removeChild(ch.element);});});
-  const m=MODELS[kv.model];const val=kvGB(m,kv.ctx,kv.batch);
-  const wGB=m.W,totalGB=wGB+val,baseY=t.baseY,ceilY=t.ceilY,scale=t.scale,capGB=t.capGB,TANKH=t.TANKH;
+  const g=groups.ai;if(!g)return;const ui=g.userData.kvui;if(!ui)return;
+  const {baseY,ceilY,scale,capGB,TANKH}=ui;
+  const m=MODELS[kv.model];
+  const kvPer=kvGB(m,kv.ctx,1);                 // GB of KV cache per chat
+  const val=kvPer*kv.batch,wGB=m.W,totalGB=wGB+val;
   const overflow=totalGB>capGB;
-  const gw=fmt=>fmt<1000?fmt.toFixed(0):(fmt/1000).toFixed(1)+'k';
-  // weights fill (bottom)
-  const wH=Math.min(wGB,capGB)*scale;
-  const wB=new THREE.Mesh(new RoundedBoxGeometry(3.4,Math.max(wH,0.05),3.4,2,0.06),solidMat('#46c8e0',0.12));wB.position.set(0,baseY+wH/2,0);wB.material.transparent=true;wB.material.opacity=0.92;wB.userData.fill=true;g.add(wB);
-  const wl=label(`weights · ${wGB} GB`,'faint');wl.position.set(-2.45,baseY+Math.max(wH,0.6)/2,0);wl.element.style.transform='translate(-100%,-50%)';wl.element.style.color='#46c8e0';wB.add(wl);
-  // KV cache fill (on top, bounded by the tank)
-  const room=Math.max(0,ceilY-(baseY+wH));
-  const kvIn=Math.min(val*scale,room);
-  const kB=new THREE.Mesh(new RoundedBoxGeometry(3.4,Math.max(kvIn,0.05),3.4,2,0.06),solidMat(overflow?'#f6a345':'#7ee787',0.3));kB.position.set(0,baseY+wH+kvIn/2,0);kB.material.transparent=true;kB.material.opacity=0.95;kB.userData.fill=true;g.add(kB);
-  const kl=label(`KV cache · ${gw(val)} GB`,'title');kl.position.set(2.45,baseY+wH+Math.max(kvIn,0.7)/2,0);kl.element.style.transform='translate(0,-50%)';kl.element.style.color=overflow?'#f6a345':'#7ee787';kB.add(kl);
-  // overflow — spills out over the rim (bounded so it never flies off-screen)
-  if(overflow){
-    const overGB=totalGB-capGB;const overH=Math.min(overGB*scale,TANKH*1.05);
-    const oB=new THREE.Mesh(new RoundedBoxGeometry(3.6,Math.max(overH,0.12),3.6,2,0.06),solidMat('#ff6b5e',0.42));oB.position.set(0,ceilY+overH/2+0.18,0);oB.material.transparent=true;oB.material.opacity=0.9;oB.userData.fill=true;g.add(oB);
-    const ol=label(`↑ over by ${gw(overGB)} GB — won't fit!`,'heat');ol.position.set(2.45,ceilY+overH/2+0.18,0);ol.element.style.transform='translate(0,-50%)';oB.add(ol);
+  const gpusN=Math.max(1,Math.ceil(totalGB/capGB));
+  const f1=x=>x<10?(Math.round(x*10)/10).toString():x<1000?Math.round(x).toString():(x/1000).toFixed(1)+'k';
+  // — the model (blue, fixed) —
+  const wH=Math.min(wGB*scale,TANKH);
+  ui.wMesh.scale.set(3.35,Math.max(wH,0.06),3.35);
+  ui.wMesh.position.set(0,baseY+Math.max(wH,0.06)/2,0);
+  ui.lblW.element.innerHTML=`THE MODEL · ${wGB} GB`;
+  ui.lblW.position.set(-2.5,baseY+Math.max(Math.min(wH,TANKH)/2,0.35),0);
+  // — one slab per chat, stacked until the tank is full (pooled meshes, no realloc) —
+  const chunk=Math.max(1,Math.ceil(kv.batch/28));   // ≤28 slabs on screen; 1 slab = `chunk` chats
+  const nSlabs=Math.ceil(kv.batch/chunk);
+  const slabH=kvPer*chunk*scale;
+  let y=baseY+wH,shown=0;
+  for(let i=0;i<nSlabs&&y<ceilY-0.03;i++){
+    const h=Math.min(slabH,ceilY-y);
+    let mesh=ui.slabs[shown];
+    if(!mesh){mesh=new THREE.Mesh(ui.unitBox,ui.matKV);g.add(mesh);ui.slabs.push(mesh);}
+    mesh.visible=true;
+    mesh.material=overflow?ui.matHot:ui.matKV;
+    mesh.scale.set(3.35,Math.max(h-0.05,0.04),3.35);
+    mesh.position.set(0,y+h/2,0);
+    y+=slabH;shown++;
   }
+  for(let i=shown;i<ui.slabs.length;i++)ui.slabs[i].visible=false;
+  const stackTop=Math.min(baseY+wH+val*scale,ceilY);
+  ui.lblKV.element.innerHTML=`${kv.batch} chat${kv.batch>1?'s':''} × ${f1(kvPer)} GB = <b style="color:${overflow?'#f6a345':'#7ee787'}">${f1(val)} GB</b> of KV cache`;
+  ui.lblKV.position.set(2.5,Math.min((baseY+wH+stackTop)/2,ceilY-0.4),0);
+  // — spillover pours into ghost GPUs on the right —
+  let rem=totalGB-capGB;
+  ui.ghosts.forEach((gt,i)=>{
+    const on=rem>0;
+    gt.visible=on;ui.gFills[i].visible=on;ui.gLbls[i].visible=on;
+    if(on){
+      const gb=Math.min(rem,capGB),h=gb*scale;
+      ui.gFills[i].scale.set(3.35,Math.max(h,0.06),3.35);
+      ui.gFills[i].position.set(5.6*(i+1),baseY+h/2,0);
+      ui.gLbls[i].element.innerHTML=`GPU ${i+2} · ${f1(gb)} GB`;
+      ui.gLbls[i].position.set(5.6*(i+1),ceilY-0.75,0);
+    }
+    rem-=capGB;
+  });
+  ui.morLbl.visible=gpusN>4;
+  if(gpusN>4)ui.morLbl.element.innerHTML=`+ ${gpusN-4} more GPUs…`;
+  ui.spillLbl.visible=overflow;
+  ui.rim.material.color.set(overflow?0xff6b5e:0x5eead4);
+  // recenter the camera on the row of GPUs (skip the tween on first paint)
+  const wantX=Math.min(gpusN-1,3)*5.6/2;
+  ui.heads.forEach(h=>{h.position.x=wantX;});   // headlines track the camera so they never drift under the fixed UI
+  if(ui.lastX==null)ui.lastX=wantX;
+  else if(ui.lastX!==wantX){ui.lastX=wantX;tweenObj(controls.target,{x:wantX},0.9);tweenObj(camera.position,{x:wantX,z:overflow?31:28},0.9);}
   // live consequences
-  const gpusN=Math.max(1,Math.ceil(totalGB/192));
-  const msTok=totalGB/(gpusN*8);const tokSec=Math.round(1000/msTok);const costK=gpusN*35;
+  const msTok=totalGB/(gpusN*8);const costK=gpusN*35;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  const out=document.getElementById('kvOut');if(out){out.textContent=gw(val);out.style.color=overflow?'#f6a345':'#7ee787';}
+  const out=document.getElementById('kvOut');if(out){out.textContent=f1(val);out.style.color=overflow?'#f6a345':'#7ee787';}
   set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',costK<1000?('$'+costK+'k'):('$'+(costK/1000).toFixed(2)+'M'));
   const note=document.getElementById('kvNote');
   if(note){note.classList.toggle('ok',!overflow);
-    if(overflow)note.innerHTML=`This chat needs <b>${gw(totalGB)} GB</b> — more than one GPU holds (192 GB). It must be split across <b>${gpusN} GPUs</b> (~${costK<1000?'$'+costK+'k':'$'+(costK/1000).toFixed(1)+'M'}) or offloaded to CXL. <b>That's why long context with many users gets expensive fast.</b>`;
-    else note.innerHTML=`Fits one GPU: weights (${wGB} GB) + KV cache (${val.toFixed(0)} GB) = <b>${totalGB.toFixed(0)} of 192 GB</b>. Now push <b>context</b> or <b>users</b> up and watch the tank fill.`;
+    if(overflow)note.innerHTML=`${kv.batch} chat${kv.batch>1?'s':''} need <b>${f1(totalGB)} GB</b> — one GPU holds 192 GB, so this spills across <b>${gpusN} GPUs</b> (~${costK<1000?'$'+costK+'k':'$'+(costK/1000).toFixed(1)+'M'} of hardware) or offloads to CXL. <b>Longer chats × more users = more GPUs.</b>`;
+    else note.innerHTML=`Fits: the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} of 192 GB</b>. Push <b>context</b> or <b>users</b> up and watch it spill into more GPUs.`;
   }
 }
 
@@ -1543,12 +1601,26 @@ tourBtn.addEventListener('click',startTour);
    ANIMATE
    ========================================================================= */
 let __frames=0,__lastErr='';
-function renderOnce(){try{scene.updateMatrixWorld(true);composer.render();labelRenderer.render(scene,camera);}catch(e){__lastErr=e.message;}}
+function renderOnce(){try{scene.updateMatrixWorld(true);renderer.render(scene,camera);labelRenderer.render(scene,camera);}catch(e){__lastErr=e.message;}}
 let __lastRender=0;
+// Adaptive frame budget: ~30fps while the user is interacting or the camera is
+// moving, ~12fps once everything has settled (ambient particle drift doesn't
+// need more), ~7fps behind the welcome overlay. dt-based motion keeps speeds
+// identical at any rate.
+let __lastInteract=performance.now();
+const __mark=()=>{__lastInteract=performance.now();};
+['pointerdown','pointermove','wheel','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,__mark,{passive:true}));
+let __welEl=null;
+function frameBudget(now){
+  __welEl=__welEl||document.getElementById('welcome');
+  if(__welEl&&__welEl.classList.contains('show'))return 140;
+  if(camT.active||tweens.length||now-__lastInteract<2500)return 32;
+  return 83;
+}
 function animate(){
   requestAnimationFrame(animate);
   const now=performance.now();
-  if(now-__lastRender<32)return;   // cap ~30fps — halves GPU load, quiets the fan
+  if(now-__lastRender<frameBudget(now))return;
   __lastRender=now;
   try{
   __frames++;
@@ -1578,11 +1650,11 @@ function animate(){
     if(oc){const a=oc.pts.geometry.attributes.position.array;oc.seeds.forEach((s,i)=>{a[i*3]=s.x+Math.sin(tt*s.sp+s.ph)*0.5;a[i*3+1]=s.y+Math.cos(tt*s.sp*0.7+s.ph)*0.35;});oc.pts.geometry.attributes.position.needsUpdate=true;oc.pts.material.opacity=0.42+Math.sin(tt*0.6)*0.1;}
     groups.ai.rotation.y=Math.sin(tt*0.06)*0.03;
   }
-  composer.render();labelRenderer.render(scene,camera);
+  renderer.render(scene,camera);labelRenderer.render(scene,camera);
   }catch(err){__lastErr=err.message+' @ '+(err.stack||'').split('\n')[1];}
 }
 
-window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setSize(W(),H());composer.setSize(W(),H());labelRenderer.setSize(W(),H());});
+window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProjectionMatrix();renderer.setSize(W(),H());labelRenderer.setSize(W(),H());});
 
 /* BOOT */
 const lmsg=['Mapping the supply chain…','Stacking HBM dies…','Lighting the waveguides…','Wiring the CXL fabric…','Tracing the bottlenecks…'];
