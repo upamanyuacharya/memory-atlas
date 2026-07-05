@@ -287,7 +287,9 @@
   /* the Wall's fixed headline strip — DOM, so it can never collide with 3D labels */
   #wallHead{position:absolute;left:50%;top:136px;transform:translateX(-50%);z-index:22;text-align:center;pointer-events:none;max-width:min(92vw,900px)}
   #wallHead .wh-t{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.01em;text-shadow:0 2px 18px rgba(0,0,0,.8)}
-  #wallHead .wh-s{font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:6px;line-height:1.6;text-shadow:0 2px 12px rgba(0,0,0,.8)}
+  #wallHead .wh-s{font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:6px;line-height:1.6;text-shadow:0 2px 12px rgba(0,0,0,.8);white-space:nowrap}
+  #wallHead #whLearn{pointer-events:auto;font-family:var(--mono);font-size:12.5px;color:var(--heat);background:none;border:0;border-bottom:1px dashed rgba(246,163,69,.55);padding:0 0 1px;cursor:pointer}
+  #wallHead #whLearn:hover{color:#ffc276}
   @media (max-width:980px){#wallHead{top:160px}#wallHead .wh-t{font-size:18px}#wallHead .wh-s{display:none}}
   /* first-visit tour nudge (side card, not a takeover) */
   #tourNudge{position:fixed;right:24px;bottom:70px;z-index:30;width:250px;background:var(--glass);border:1px solid var(--hair-bright);border-radius:16px;padding:15px 16px;box-shadow:0 16px 50px rgba(0,0,0,.55);animation:nudgein .6s var(--ease)}
@@ -551,7 +553,7 @@
 <!-- The Wall's fixed headline (written by updateKV) -->
 <div id="wallHead" style="display:none">
   <div class="wh-t" id="whT"></div>
-  <div class="wh-s">blue = the model (fixed) · each green slab = <b style="color:#7ee787">one chat's memory</b> · <span style="color:#5eead4">drag the sliders ↓</span></div>
+  <div class="wh-s" id="whS"></div>
 </div>
 
 <!-- quiet tour nudge for first-time visitors (replaces the auto-opening welcome modal) -->
@@ -1186,7 +1188,7 @@ const RAIL={
     nodes:[['cxl_switch','The Interconnect War','#9a8cff'],['cxl_module','CXL Memory Module','#9a8cff'],['cxl','↑ CXL in the stack','#9a8cff']]},
   photonics:{kicker:'Region · 03',title:'Photonics',lede:'The copper wall vs light. Click the chips, links, and laser callout — companies and bottlenecks live inside each node.',
     nodes:[['phot_laser','The Laser Bottleneck','#f6a345'],['phot_cpo','Co-Packaged Optics','#7ee787'],['phot_transceiver','Optical Transceivers','#7ee787']]},
-  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'The tank is one GPU\'s <b>HBM</b> — the chokepoint layer from the Stack. Every extra user and every extra 1K of context claims more of it; when it overflows, you buy whole extra GPUs (more HBM, more CoWoS packaging). Drive the sliders below and watch the cost happen.',
+  ai:{kicker:'Region · 04',title:'The Memory Wall',lede:'The tank = one GPU\'s <b>HBM</b>, the Stack\'s chokepoint layer. Overflow it and you buy whole extra GPUs.',
     nodes:[['kv_econ','KV-Cache Economics','#f6a345'],['hbm','→ HBM (the prize)','#5eead4'],['cxl_switch','→ The Interconnect War','#9a8cff']]},
 };
 function renderRail(region){
@@ -1429,7 +1431,7 @@ const MODELS=[
 function kvGB(m,ctxK,b){return (m.kvTok*ctxK*1024*b)/1e9;}
 function buildAI(){
   const g=new THREE.Group();groups.ai=g;
-  addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.58);
+  addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.68);
   // subtle data-ocean atmosphere (the flood of context the GPU's memory must hold)
   {const n=300;const pg=new THREE.BufferGeometry();const pp=new Float32Array(n*3);const seeds=[];
     for(let i=0;i<n;i++){const x=(Math.random()-0.5)*46,y=1+(Math.random()-0.5)*12,z=-15+Math.random()*6;
@@ -1471,15 +1473,13 @@ function buildAI(){
     const gl=label('','faint');gl.visible=false;gl.element.style.color='#f6a345';g.add(gl);gLbls.push(gl);
   }
   const wMesh=new THREE.Mesh(unitBox,matW);g.add(wMesh);
+  // Anti-clutter rule: the scene only carries labels ANCHORED to objects.
+  // The answer + legend live in the fixed #wallHead strip; the arithmetic lives
+  // in the dock caption; the dock carries the numbers. Nothing is said twice.
   const lblW=label('','faint');lblW.element.style.transform='translate(-100%,-50%)';lblW.element.style.color='#46c8e0';g.add(lblW);
-  const lblKV=label('','faint');lblKV.element.style.transform='translate(0,-50%)';g.add(lblKV);
-  const spillLbl=label('↷ doesn\'t fit — spills to the next GPU','heat');spillLbl.visible=false;spillLbl.position.set(2.85,ceilY+0.55,0);spillLbl.element.style.transform='translate(0,-50%)';g.add(spillLbl);
-  const morLbl=label('','heat');morLbl.visible=false;morLbl.position.set(20.4,baseY+3,0);g.add(morLbl);
-  // headline lives in fixed DOM (#wallHead), not the 3D scene — it can never
-  // collide with the UI no matter where the camera pans
+  const morLbl=label('','heat');morLbl.visible=false;morLbl.position.set(16.8,ceilY+1.1,0);g.add(morLbl); // floats above GPU 4, never clips the screen edge
   const ceilLab=label('one B200 GPU = 192 GB →','faint');ceilLab.position.set(-2.55,ceilY,0);ceilLab.element.style.transform='translate(-100%,-50%)';ceilLab.element.style.color='#5eead4';g.add(ceilLab);
-  const learn=label('◆ what exactly is the KV cache? — click','node',()=>openNode('kv_econ'));learn.position.set(5.8,-0.8,0);learn.element.style.borderColor='rgba(246,163,69,.5)';learn.element.style.color='#f6a345';g.add(learn);
-  g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,lblKV,slabs:[],unitBox,matKV,matKV2,matHot,matHot2,ghosts,gFills,gLbls,morLbl,spillLbl,learn,rim:hero.userData.rim,lastX:null};
+  g.userData.kvui={baseY,ceilY,scale,capGB,TANKH,wMesh,lblW,ceilLab,slabs:[],unitBox,matKV,matKV2,matHot,matHot2,ghosts,gFills,gLbls,morLbl,rim:hero.userData.rim,lastX:null};
   scene.add(g);
   updateKV();
   const cx=g.userData.kvui.lastX||0;
@@ -1499,9 +1499,11 @@ function updateKV(){
   ui.wMesh.scale.set(3.35,Math.max(wH,0.06),3.35);
   ui.wMesh.position.set(0,baseY+Math.max(wH,0.06)/2,0);
   ui.lblW.element.innerHTML=`THE MODEL · ${wGB} GB`;
-  // outside-left normally; centered inside the blue block when the camera pans right for spillover
-  ui.lblW.element.style.transform=overflow?'translate(-50%,-50%)':'translate(-100%,-50%)';
-  ui.lblW.position.set(overflow?0:-2.5,baseY+Math.max(Math.min(wH,TANKH)/2,0.35),0);
+  ui.lblW.position.set(-2.5,baseY+Math.max(Math.min(wH,TANKH)/2,0.35),0);
+  // on spillover the camera pans and these outside-left anchors would clip behind
+  // the rail — and the ghost GPUs already communicate capacity. Hide, don't fight.
+  ui.lblW.visible=!overflow;
+  ui.ceilLab.visible=!overflow;
   // — one slab per chat, stacked until the tank is full (pooled meshes, no realloc) —
   const chunk=Math.max(1,Math.ceil(kv.batch/28));   // ≤28 slabs on screen; 1 slab = `chunk` chats
   const nSlabs=Math.ceil(kv.batch/chunk);
@@ -1518,9 +1520,6 @@ function updateKV(){
     y+=slabH;shown++;
   }
   for(let i=shown;i<ui.slabs.length;i++)ui.slabs[i].visible=false;
-  const stackTop=Math.min(baseY+wH+val*scale,ceilY);
-  ui.lblKV.element.innerHTML=`${kv.batch} chat${kv.batch>1?'s':''} × ${f1(kvPer)} GB = <b style="color:${overflow?'#f6a345':'#7ee787'}">${f1(val)} GB</b> of KV cache`;
-  ui.lblKV.position.set(2.5,Math.min((baseY+wH+stackTop)/2,ceilY-0.4),0);
   // — spillover pours into ghost GPUs on the right —
   let rem=totalGB-capGB;
   ui.ghosts.forEach((gt,i)=>{
@@ -1537,7 +1536,6 @@ function updateKV(){
   });
   ui.morLbl.visible=gpusN>4;
   if(gpusN>4)ui.morLbl.element.innerHTML=`+ ${gpusN-4} more GPUs…`;
-  ui.spillLbl.visible=overflow;
   ui.rim.material.color.set(overflow?0xff6b5e:0x5eead4);
   // recenter the camera on the row of GPUs (skip the tween on first paint)
   const wantX=Math.min(gpusN-1,3)*5.6/2;
@@ -1547,8 +1545,10 @@ function updateKV(){
   if(whT)whT.innerHTML=overflow
     ?`Serving this needs <b style="color:#f6a345">${gpusN} × B200 GPUs</b> · ~${costK0<1000?'$'+costK0+'k':'$'+(costK0/1000).toFixed(1)+'M'} of hardware`
     :`This serves on <b style="color:#7ee787">ONE B200 GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
-  // keep the explainer pill out of the ghosts' way: right side when it fits, screen-left when spilling
-  ui.learn.position.set(overflow?wantX-7.6:5.8,-0.8,0);
+  // dynamic legend: the per-chat number lives here now, not in a floating scene label
+  const whS=document.getElementById('whS');
+  if(whS)whS.innerHTML=`blue = model (${wGB} GB) · <b style="color:${overflow?'#f6a345':'#7ee787'}">green slab = one chat</b> (${f1(kvPer)} GB @ ${kv.ctx}K) · <button id="whLearn">what's a KV cache?</button>`;
+  const wl=document.getElementById('whLearn');if(wl)wl.onclick=()=>openNode('kv_econ');
   if(ui.lastX==null)ui.lastX=wantX;
   else if(ui.lastX!==wantX){ui.lastX=wantX;tweenObj(controls.target,{x:wantX},0.9);tweenObj(camera.position,{x:wantX,z:overflow?31:28},0.9);}
   // live consequences
@@ -1558,8 +1558,9 @@ function updateKV(){
   set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',costK<1000?('$'+costK+'k'):('$'+(costK/1000).toFixed(2)+'M'));
   const note=document.getElementById('kvNote');
   if(note){note.classList.toggle('ok',!overflow);
-    if(overflow)note.innerHTML=`${kv.batch} chat${kv.batch>1?'s':''} need <b>${f1(totalGB)} GB</b> — one GPU holds 192 GB, so this spills across <b>${gpusN} GPUs</b> (~${costK<1000?'$'+costK+'k':'$'+(costK/1000).toFixed(1)+'M'} of hardware) or offloads to CXL. <b>Longer chats × more users = more GPUs.</b>`;
-    else note.innerHTML=`Fits: the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} of 192 GB</b>. Push <b>context</b> or <b>users</b> up and watch it spill into more GPUs.`;
+    // the caption carries ONLY the arithmetic — GPU count and cost live in the headline
+    if(overflow)note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} GB</b> · one GPU holds 192 GB · <b>longer chats × more users = more GPUs</b>`;
+    else note.innerHTML=`the model (${wGB} GB) + ${kv.batch} chat${kv.batch>1?'s':''} (${f1(val)} GB) = <b>${f1(totalGB)} of 192 GB</b> · push <b>context</b> or <b>users</b> and watch it spill`;
   }
 }
 

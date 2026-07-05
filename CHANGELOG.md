@@ -2,6 +2,29 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.3.1] — 2026-07-05
+
+Declutter pass on The Wall ("isn't this way too cluttered?"). New rule: one message
+per zone — headline strip = the answer + legend, 3D scene = only labels anchored to
+objects, caption = the arithmetic, dock = the controls. Nothing is said twice.
+
+### Removed from the scene
+- The "doesn't fit — spills to the next GPU" pill (the headline, red rim and visible
+  ghost tanks already say it).
+- The floating "N chats × y GB = z GB of KV cache" pill (its numbers moved into the
+  legend and caption; the dock shows the total).
+- The floating "what exactly is the KV cache?" pill — now an inline link in the
+  fixed legend, where it can never clip.
+- "THE MODEL · x GB" and "one B200 GPU = 192 GB →" hide during spillover, when the
+  panned camera would clip them behind the rail.
+
+### Changed
+- Legend is now dynamic and single-line: model size, per-chat GB at the current
+  context, and the KV-cache link.
+- Caption carries only the arithmetic; GPU count + cost live in the headline only.
+- "+N more GPUs" floats above GPU 4 instead of clipping at the screen edge.
+- The Wall's sidebar copy cut to two lines; backdrop scrim darkened.
+
 ## [1.3.0] — 2026-07-05
 
 CPU fix + Wall v2, from direct user feedback ("framerate still super low, CPU goes
