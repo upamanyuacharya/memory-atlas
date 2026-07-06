@@ -14,11 +14,11 @@ It's a single self-contained HTML file. No build step, no backend, no sign-up.
 
 ## What's inside
 
-Six interlinked **regions** in one continuous 3D world. The landing page is the map itself — a **▾ START HERE** pointer marks the story's first stop, and the **journey bar** at the bottom (or the ← / → arrow keys) walks you through all 26 stops in order, zero to expert. Click any glowing node at any time to open its file; the journey continues from wherever you wander.
+Six interlinked **regions** in one continuous 3D world. The landing page is the map itself — a **▾ START HERE** pointer marks the story's first stop, and the **journey bar** at the bottom (or **N** / **P**) walks you through all 26 stops in order, zero to expert. **WASD / arrow keys glide the camera** around any scene; drag orbits, scroll zooms. Click any glowing node at any time to open its file; the journey continues from wherever you wander. (On a phone, a swipe-away sheet warns you the atlas is built for desktop.)
 
 | Region | What it shows |
 |---|---|
-| **Map** | The full knowledge graph — every topic in the atlas as a node. Five hardware-miniature hubs in story order (the Wall → KV Cache → the Stack → CXL → Photonics), satellite nodes for all 15 deep topics, labelled relationship edges, and a **gold investor row** along the bottom that opens the Intel tabs directly. |
+| **Map** | The full knowledge graph — every topic in the atlas as a miniature of its real hardware. Five hubs in story order (the Wall → KV Cache → the Stack → CXL → Photonics), 15 satellite models (dies, an HBM stack, a DIMM, switch silicon, an M.2 stick, a 2U server, a laser TO-can, a CPO package, a pluggable transceiver, a mini memory tank…), labelled relationship edges, and a **gold-ingot investor row** along the bottom that opens the Intel tabs directly. |
 | **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged — each carrying a recognizable mini of its real hardware (HBM die stack, DIMM, M.2 stick…). |
 | **CXL** | A shared-memory fabric: four 2U rack servers, real CXL switch silicon on its substrate, and a pool of RAM modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
 | **Photonics** | Copper vs light: a DAC copper run whose signal dies mid-way vs a laser TO-can firing wavelength-multiplexed light down a clad fibre into a real GPU package (compute die + HBM stacks). The laser is the bottleneck — click it. |
@@ -40,7 +40,7 @@ The money is structural, not a sidebar: four **gold nodes** on the map (with gol
 
 ### The journey
 
-A 26-stop zero-to-expert spine through the whole atlas, driven by the persistent bottom bar (**Next ▶** / **◀**, or the arrow keys). It starts with the problem (LLM decode is memory-bound — the GPU waits ~1,200× longer on memory than on math), then walks every stack layer, every deep node and the four investor tabs, teaching in the flow: region stops float a caption card, node stops lead their reading page with an "ON THE JOURNEY" block. Wander freely — the pointer re-syncs to wherever you actually are. Khan Academy pedagogy: stakes first, plain English before jargon, one clear action at a time.
+A 26-stop zero-to-expert spine through the whole atlas, driven by the persistent bottom bar (**Next ▶** / **◀**, or **N** / **P** on the keyboard — the arrows are for gliding). It starts with the problem (LLM decode is memory-bound — the GPU waits ~1,200× longer on memory than on math), then walks every stack layer, every deep node and the four investor tabs, teaching in the flow: region stops float a caption card, node stops lead their reading page with an "ON THE JOURNEY" block. Wander freely — the pointer re-syncs to wherever you actually are. Khan Academy pedagogy: stakes first, plain English before jargon, one clear action at a time.
 
 ![CXL fabric](docs/cxl.png)
 ![The Wall overflowing](docs/wall-overflow.png)

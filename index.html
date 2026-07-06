@@ -120,6 +120,10 @@
   #rail .ksec .ln{flex:1;height:1px;background:var(--hair)}
   #rail h2{font-family:var(--display);font-size:23px;font-weight:600;letter-spacing:-.01em;line-height:1.1;margin-bottom:8px}
   #rail .lede{font-size:14.5px;color:var(--ink-dim);line-height:1.6;margin-bottom:15px}
+  /* the rail's own START HERE — the same pill that floats on the map, recreated */
+  .railStartBtn{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:12.5px;font-weight:700;letter-spacing:.16em;color:#04110e;
+    background:var(--accent);border:0;border-radius:999px;padding:9px 18px;cursor:pointer;box-shadow:0 8px 26px rgba(94,234,212,.35);transition:all .3s var(--ease)}
+  .railStartBtn:hover{transform:translateY(-1px);background:#8ff5e3;box-shadow:0 12px 34px rgba(94,234,212,.5)}
   .toc{display:flex;flex-direction:column;gap:3px}
   .toc button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:transparent;border:0;border-radius:11px;padding:9px 10px;cursor:pointer;transition:all .3s var(--ease);color:var(--ink-dim)}
   .toc button:hover{background:rgba(255,255,255,.045);color:var(--ink);transform:translateX(2px)}
@@ -313,6 +317,15 @@
   #wallHead #whLearn:hover{color:#ffc276}
   @media (max-width:980px){#wallHead{top:160px}#wallHead .wh-t{font-size:18px}#wallHead .wh-s{display:none}}
   @keyframes nudgein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  /* mobile heads-up bottom sheet — swipe down (or tap) to dismiss and proceed */
+  #mobileNote{position:fixed;left:10px;right:10px;bottom:10px;z-index:58;background:var(--glass);border:1px solid var(--hair-bright);
+    border-radius:18px;padding:12px 16px 16px;box-shadow:0 -10px 60px rgba(0,0,0,.6);backdrop-filter:blur(14px);
+    animation:nudgein .5s var(--ease);transition:transform .35s var(--ease),opacity .35s;touch-action:pan-y}
+  #mobileNote.gone{transform:translateY(130%)!important;opacity:0}
+  #mobileNote .mn-grip{width:44px;height:4px;border-radius:2px;background:rgba(255,255,255,.28);margin:0 auto 10px}
+  #mobileNote .mn-t{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:5px}
+  #mobileNote .mn-d{font-size:13.5px;color:var(--ink-dim);line-height:1.55;margin-bottom:12px}
+  #mobileNote #mnGo{width:100%;font-family:var(--mono);font-size:13px;font-weight:700;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:12px;cursor:pointer}
 
   /* ---------------- WELCOME / ONBOARDING ---------------- */
   #welcome{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:24px;
@@ -535,7 +548,7 @@
       <button id="wTour" class="wbtn primary">▶&nbsp; Walk the journey<span class="wsub">recommended — Next takes you stop by stop, zero → expert</span></button>
       <button id="wExplore" class="wbtn ghost">I'll explore on my own&nbsp;→</button>
     </div>
-    <div class="wfoot">No sign-up. <b>Next ▶</b> (or <b>→</b>) walks you through every stop · <b>click</b> any glowing node to dig in · everything links out to real sources.<br>
+    <div class="wfoot">No sign-up. <b>Next ▶</b> (or <b>N</b>) walks you through every stop · <b>WASD / arrows</b> glide around · <b>click</b> any glowing node to dig in.<br>
     Educational structural analysis, not investment advice. Built by <a href="https://upamanyuacharya.com" target="_blank" rel="noopener">Upamanyu Acharya</a> · <a href="https://github.com/upamanyuacharya/memory-atlas" target="_blank" rel="noopener">open source on GitHub</a>.</div>
   </div></div>
 </div>
@@ -571,15 +584,15 @@
 
 <div id="hint"><b>drag</b> to orbit · <b>scroll</b> to zoom · <b>click</b> any node to open its file</div>
 
-<!-- JOURNEY BAR — the persistent spine. ◀ ▶ (or arrow keys) walk every stop of the atlas in order. -->
+<!-- JOURNEY BAR — the persistent spine. ◀ ▶ (or N / P) walk every stop; WASD/arrows glide the camera. -->
 <div id="journey"><div class="shell"><div class="core">
   <button id="jHome" title="Back to the map">⌂&nbsp;Map</button>
-  <button id="jPrev" title="Previous stop (←)">◀</button>
+  <button id="jPrev" title="Previous stop (P)">◀</button>
   <div id="jMid">
     <div id="jTitle"></div>
     <div id="jBar"><i id="jFill"></i></div>
   </div>
-  <button id="jNext" title="Next stop (→)">Next&nbsp;▶</button>
+  <button id="jNext" title="Next stop (N)">Next&nbsp;▶</button>
   <button id="jIntel" title="Investor Intelligence — the shortlist, by layer, by country, roadmap">◎&nbsp;Investor</button>
 </div></div></div>
 <!-- journey caption: the guided-tour teaching, shown in the flow, dismissable -->
@@ -1396,17 +1409,46 @@ function closeModals(){closeIntel();}
 document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
 watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
 watchModal.querySelector('.wmclose').addEventListener('click',closeIntel);
+/* Keyboard (v1.9.0):
+   - WASD + arrow keys GLIDE the camera around the current scene (held, smooth,
+     handled in the animate loop via panKeys)
+   - the journey moved off the arrows: N = next stop, P = previous (PageDn/Up too)
+   - Esc backs out of whatever is open
+   Form controls are never hijacked. */
+const panKeys=new Set();
+const PAN_CODES=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyW','KeyA','KeyS','KeyD'];
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(watchModal.classList.contains('on'))closeIntel();
     else if(panel.classList.contains('open'))closePanel();
   }
-  // ←/→ walk the journey from anywhere (but never steal keys from form controls)
   const tag=e.target&&e.target.tagName;
   if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
-  if(e.key==='ArrowRight'){e.preventDefault();jGo(jI+1);}
-  else if(e.key==='ArrowLeft'){e.preventDefault();jGo(jI-1);}
+  if(PAN_CODES.includes(e.code)){e.preventDefault();panKeys.add(e.code);wake();return;}
+  if(e.key==='n'||e.key==='N'||e.key==='PageDown'){e.preventDefault();jGo(jI+1);}
+  else if(e.key==='p'||e.key==='P'||e.key==='PageUp'){e.preventDefault();jGo(jI-1);}
 });
+window.addEventListener('keyup',e=>panKeys.delete(e.code));
+window.addEventListener('blur',()=>panKeys.clear());
+// the glide itself — runs inside the frame loop so it's smooth while held
+function stepPan(dt){
+  if(!panKeys.size)return;
+  if(document.body.classList.contains('reading')||watchModal.classList.contains('on'))return;
+  let px=0,py=0;
+  if(panKeys.has('ArrowLeft')||panKeys.has('KeyA'))px-=1;
+  if(panKeys.has('ArrowRight')||panKeys.has('KeyD'))px+=1;
+  if(panKeys.has('ArrowUp')||panKeys.has('KeyW'))py+=1;
+  if(panKeys.has('ArrowDown')||panKeys.has('KeyS'))py-=1;
+  if(!px&&!py)return;
+  const sp=13*dt,rig=RIGS[region]||RIGS.map;
+  // pan camera + target together in the world plane, leashed to the region's rig
+  const nx=THREE.MathUtils.clamp(controls.target.x+px*sp,rig.tgt[0]-26,rig.tgt[0]+26);
+  const ny=THREE.MathUtils.clamp(controls.target.y+py*sp,rig.tgt[1]-15,rig.tgt[1]+15);
+  const dx=nx-controls.target.x,dy=ny-controls.target.y;
+  controls.target.x=nx;controls.target.y=ny;
+  camera.position.x+=dx;camera.position.y+=dy;
+  wake();
+}
 
 // small helper css class injected
 const st=document.createElement('style');st.textContent='.kmini{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}';document.head.appendChild(st);
@@ -1416,7 +1458,7 @@ const st=document.createElement('style');st.textContent='.kmini{font-family:var(
    ========================================================================= */
 const railcore=document.getElementById('railcore');
 const RAIL={
-  map:{kicker:'The Atlas',title:'One connected world',lede:'Every topic in the atlas is a node on this graph — big hubs, their satellite topics, and the <b style="color:#f0c674">gold row</b> where the money lives. Start at <b>▾ START HERE</b>, then let <b>Next ▶</b> below (or <b>→</b>) walk you stop by stop. Click anything to read it.',
+  map:{kicker:'The Atlas',title:'One connected world',lede:'Every topic in the atlas is a node on this graph — big hubs, their satellite topics, and the <b style="color:#f0c674">gold row</b> where the money lives. Glide around with <b>WASD</b> / <b>arrow keys</b>, click anything to read it, and let <b>Next ▶</b> below (or <b>N</b>) walk you stop by stop.<br><button id="railStart" class="railStartBtn">▾&nbsp;&nbsp;START HERE</button>',
     toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['kvcache','The KV Cache','how it works','#5aa9ff'],['ai','The Memory Wall','why it all exists','#f6a345']]},
   hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, <b>where its chokepoint comes from</b> (or why it has none), and the metrics to watch. The ◆ flags mark the layers where supply is genuinely gated.',toc:null},
   cxl:{kicker:'Region · 02',title:'CXL Fabric',lede:'Coherent memory over PCIe — expansion, pooling, and sharing. Click the switch, hosts, or modules; toggle the capability below.',
@@ -1440,6 +1482,7 @@ function renderRail(region){
     html+=`<div class="toc">`+r.toc.map(t=>`<button data-go="${t[0]}"><span class="dot" style="background:${t[3]}"></span><span class="nm">${t[1]}</span><span class="meta">${t[2]}</span></button>`).join('')+`</div>`;
   }
   railcore.innerHTML=html;
+  const rs=railcore.querySelector('#railStart');if(rs)rs.addEventListener('click',()=>jGo(1));
   railcore.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.layer);focusLayer(b.dataset.layer);railcore.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-node]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.node);railcore.querySelectorAll('[data-node]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>enterRegion(b.dataset.go)));
@@ -1482,8 +1525,8 @@ const MAPSATS=[
   ['cxl_switch',5.4,-6.5,'cxl',-1,'The Interconnect War'],
   ['cxl_module',8.0,-7.4,'cxl',-1,'CXL Module'],
   ['cxl_host',10.6,-6.5,'cxl',-1,'A Compute Host'],
-  ['phot_laser',12.0,-2.2,'photonics',-1,'The Laser Bottleneck'],
-  ['phot_cpo',14.7,-3.1,'photonics',-1,'Co-Packaged Optics'],
+  ['phot_laser',11.7,-2.8,'photonics',-1,'The Laser Bottleneck'],
+  ['phot_cpo',15.1,-3.7,'photonics',-1,'Co-Packaged Optics'],
   ['phot_transceiver',16.8,-1.7,'photonics',1,'Transceivers'],
 ];
 // the 7 stack layers arch over the Stack hub, labels alternating above/below
@@ -1499,6 +1542,51 @@ const MAPGOLD=[ // [tab, label, x, hub the gold thread climbs to]
   ['road','Roadmap 2025→30',8.2,'cxl'],
 ];
 const GOLDY=-9.2;
+// v1.9.0: every satellite is a miniature of its real hardware, not a sphere
+function satMini(id){
+  switch(id){
+    case 'reg':return dieModel(1.2,0xd7e3f2);
+    case 'sram':return dieModel(1.45,0xbff7ef);
+    case 'hbm':return hbmStackModel(0.5,0x5eead4);
+    case 'ddr':{const d=dimmStick();d.scale.setScalar(0.46);return d;}
+    case 'cxl':return switchChipModel(0.48,0x9a8cff);
+    case 'ssd':return m2Model(1.05);
+    case 'net':return miniSwitchModel(0.9,0xf6a345);
+    case 'cxl_switch':return switchChipModel(0.52,0x9a8cff);
+    case 'cxl_module':{const d=dimmStick();d.scale.setScalar(0.46);return d;}
+    case 'cxl_host':return serverModel(0.55,0x7ee787);
+    case 'phot_laser':return laserCanModel(0.7);
+    case 'phot_cpo':{ // a CPO package: substrate + compute die + optics chiplets + fibre stub
+      const g=new THREE.Group();
+      const sub=new THREE.Mesh(new RoundedBoxGeometry(1.25,0.1,1.0,2,0.03),solidMat('#1f7a4d',0.14));g.add(sub);
+      const die=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.09,0.5),new THREE.MeshStandardMaterial({color:0x101319,metalness:0.5,roughness:0.35,emissive:0x7ee787,emissiveIntensity:0.18}));die.position.y=0.1;g.add(die);
+      [-0.42,0.42].forEach(x=>{const o=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.08,0.34),new THREE.MeshStandardMaterial({color:0x2a3344,metalness:0.6,roughness:0.3,emissive:0x5eead4,emissiveIntensity:0.4}));o.position.set(x,0.09,0);g.add(o);});
+      const fib=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,0.7,8),new THREE.MeshStandardMaterial({color:0xbfd6e8,metalness:0.2,roughness:0.4,emissive:0x5eead4,emissiveIntensity:0.25}));
+      fib.rotation.z=Math.PI/2;fib.position.set(0.95,0.09,0);g.add(fib);
+      return g;}
+    case 'phot_transceiver':{ // a pluggable module: steel body, gold edge fingers, black latch
+      const g=new THREE.Group();
+      const body=new THREE.Mesh(new RoundedBoxGeometry(1.15,0.26,0.5,2,0.06),new THREE.MeshStandardMaterial({color:0x9aa7b8,metalness:0.85,roughness:0.35}));g.add(body);
+      const cap=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.3,0.54),new THREE.MeshStandardMaterial({color:0x14181f,metalness:0.4,roughness:0.5}));cap.position.x=0.46;g.add(cap);
+      const gold=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.16,0.42),new THREE.MeshStandardMaterial({color:0xd9a441,metalness:0.92,roughness:0.3,emissive:0x3a2a06,emissiveIntensity:0.35}));gold.position.x=-0.62;g.add(gold);
+      const led=new THREE.Mesh(new THREE.SphereGeometry(0.045,8,8),new THREE.MeshBasicMaterial({color:0x7ee787}));led.position.set(0.34,0.16,0.18);g.add(led);
+      return g;}
+    case 'kv_how':{ // the query cube looking at one stored K/V pair
+      const g=new THREE.Group();
+      const q=new THREE.Mesh(new RoundedBoxGeometry(0.4,0.4,0.4,2,0.07),new THREE.MeshStandardMaterial({color:0xd9a441,emissive:0xd9a441,emissiveIntensity:0.55,metalness:0.4,roughness:0.35}));q.position.x=-0.42;g.add(q);
+      const k=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.15,0.42),new THREE.MeshStandardMaterial({color:0x5eead4,emissive:0x5eead4,emissiveIntensity:0.45}));k.position.set(0.3,0.16,0);g.add(k);
+      const v=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.15,0.42),new THREE.MeshStandardMaterial({color:0x5aa9ff,emissive:0x5aa9ff,emissiveIntensity:0.45}));v.position.set(0.3,-0.16,0);g.add(v);
+      g.scale.setScalar(1.3);return g;}
+    case 'kv_econ':{ // a mini memory tank: glass shell, blue model block, green KV slab
+      const g=new THREE.Group();
+      const shell=new THREE.Mesh(new RoundedBoxGeometry(0.7,1.0,0.7,2,0.08),glassMat('#f6a345',0.05,0.22));
+      shell.material.depthWrite=false;shell.renderOrder=PHASE.GLASS;g.add(shell);
+      const model=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.42,0.56),new THREE.MeshStandardMaterial({color:0x46c8e0,emissive:0x46c8e0,emissiveIntensity:0.3,transparent:true,opacity:0.9}));model.position.y=-0.24;g.add(model);
+      const kv=new THREE.Mesh(new THREE.BoxGeometry(0.56,0.2,0.56),new THREE.MeshStandardMaterial({color:0x7ee787,emissive:0x7ee787,emissiveIntensity:0.4,transparent:true,opacity:0.9}));kv.position.y=0.09;g.add(kv);
+      return g;}
+    default:return null;
+  }
+}
 function buildMap(){
   const g=new THREE.Group();groups.map=g;
   const pos={};MAPNODES.forEach(n=>pos[n.id]=new THREE.Vector3(...n.pos));
@@ -1561,27 +1649,34 @@ function buildMap(){
     const sl=label(n.sub,'faint');sl.position.set(n.pos[0],n.pos[1]-n.r-0.85,n.pos[2]);g.add(sl);
     g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
   });
-  // ---- satellites: every deep topic, hanging off its hub. Click → read it here. ----
+  // ---- satellites: every deep topic as a miniature of its real hardware ----
   MAPSATS.forEach(([id,x,y,hub,side,short])=>{
     const node=findNode(id);if(!node)return;
     const c=new THREE.Color(node.col),hp=pos[hub];
     const spoke=new THREE.Line(new THREE.BufferGeometry().setFromPoints([hp.clone(),new THREE.Vector3(x,y,0)]),
       new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.2}));
     g.add(spoke);
-    const dot=new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16),
+    const mini=satMini(id)||new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16),
       new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.55,metalness:0.3,roughness:0.4}));
-    dot.position.set(x,y,0);g.add(dot);
-    const halo=new THREE.Mesh(new THREE.SphereGeometry(0.56,12,12),
-      new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.09,side:THREE.BackSide}));
+    mini.position.set(x,y,0);mini.rotation.set(0.55,0.55,0);g.add(mini); // tipped toward camera so flat parts show their faces
+    g.userData.sats=g.userData.sats||[];g.userData.sats.push(mini);
+    const halo=new THREE.Mesh(new THREE.SphereGeometry(0.78,12,12),
+      new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.1,side:THREE.BackSide}));
     halo.position.set(x,y,0);g.add(halo);
-    pick(hitProxy(dot,2.2,2.2,2.2),id,()=>openNode(id));
-    const lb=label(short||node.name,'sat',()=>openNode(id));lb.position.set(x,y+side*0.85,0);g.add(lb);
+    pick(hitProxy(mini,2.3,1.9,2.3),id,()=>openNode(id));
+    const lb=label(short||node.name,'sat',()=>openNode(id));lb.position.set(x,y+side*0.95,0);g.add(lb);
   });
   // ---- the money row: gold nodes → Investor Intelligence (the point of the map) ----
   MAPGOLD.forEach(([tab,nm,x,hub])=>{
-    const oct=new THREE.Mesh(new THREE.OctahedronGeometry(0.55,0),
-      new THREE.MeshStandardMaterial({color:0xd9a441,emissive:0xd9a441,emissiveIntensity:0.4,metalness:0.85,roughness:0.3}));
-    oct.position.set(x,GOLDY,0);g.add(oct);
+    // a small stack of gold ingots — the money, unmistakably
+    const goldM=new THREE.MeshStandardMaterial({color:0xd9a441,emissive:0xd9a441,emissiveIntensity:0.35,metalness:0.9,roughness:0.28});
+    const ingot=(w,h)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(w*0.62,w,h,4,1),goldM.clone());m.rotation.y=Math.PI/4;return m;};
+    const oct=new THREE.Group();
+    const b1=ingot(0.5,0.3);b1.position.set(-0.26,-0.15,0.05);oct.add(b1);
+    const b2=ingot(0.5,0.3);b2.position.set(0.28,-0.15,-0.08);b2.rotation.y=Math.PI/4+0.5;oct.add(b2);
+    const b3=ingot(0.5,0.3);b3.position.set(0,0.16,0);b3.rotation.y=Math.PI/4+0.22;oct.add(b3);
+    oct.position.set(x,GOLDY,0);oct.rotation.x=0.3;g.add(oct);
+    oct.userData.mats=[b1.material,b2.material,b3.material];
     g.userData.golds=g.userData.golds||[];g.userData.golds.push(oct);
     const ring=new THREE.Mesh(new THREE.TorusGeometry(0.92,0.035,10,48),
       new THREE.MeshBasicMaterial({color:0xf0c674,transparent:true,opacity:0.4}));
@@ -2108,7 +2203,7 @@ function enterRegion(r){
   // Warm the new region's shaders off the main thread (KHR_parallel_shader_compile)
   // so the first real frame doesn't stutter. At launch this runs behind the loader.
   if(renderer.compileAsync)renderer.compileAsync(scene,camera).then(()=>wake(300)).catch(()=>{});
-  const hints={map:'<b>Next ▶</b> below (or <b>→</b>) walks the journey · <b>click</b> any node to read it',
+  const hints={map:'<b>WASD / arrows</b> glide · <b>N</b> = next stop · <b>click</b> any node to read it',
     hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
     cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
     photonics:'<b>click</b> a chip or the laser callout · toggle WDM below',
@@ -2124,7 +2219,7 @@ document.getElementById('nav').addEventListener('click',e=>{const b=e.target.clo
    Free exploration re-syncs the pointer, so Next always continues from where
    the reader actually is. */
 const JOURNEY=[
-  {r:'map',t:'The map — the whole story on one graph',cap:'Welcome. Every layer, bottleneck and company in the AI memory chain is a node on this graph — the <b>gold row</b> is the money. Click anything to read it, or keep hitting <b>Next ▶</b> (or press <b>→</b>) and the atlas walks you from zero to expert, stop by stop.'},
+  {r:'map',t:'The map — the whole story on one graph',cap:'Welcome. Every layer, bottleneck and company in the AI memory chain is a node on this graph — the <b>gold row</b> is the money. Glide around with <b>WASD</b> or the <b>arrow keys</b>, click anything to read it, or keep hitting <b>Next ▶</b> (or press <b>N</b>) and the atlas walks you from zero to expert, stop by stop.'},
   {r:'ai',n:'kv_econ',t:'Start with the problem',cap:'AI is bottlenecked by <b>memory</b>, not math. To write each word, a GPU re-reads the entire model from memory — and sits idle ~1,200× waiting on it. That one fact is what this whole map is about.'},
   {r:'ai',t:'The Wall, live',cap:'One glass tank = one GPU\'s memory. The blue block is the model; every chat adds a green slab that grows with the conversation. <b>Drag the sliders below</b> — when the tank overflows, you\'re buying whole extra GPUs.'},
   {r:'kvcache',t:'Watch the cache being written',cap:'This is the thing filling those tanks. The gold cube is the word being written; the beams look back at every stored key/value pair. <b>Toggle the cache off</b> below to see the waste it prevents.'},
@@ -2228,12 +2323,13 @@ function animate(){
   try{
   __frames++;
   const dt0=Math.min(clock.getDelta(),0.05),dt=T.frozen?0:dt0;T.now+=dt;const tt=T.now;
-  stepTweens(dt);controls.update();
+  stepTweens(dt);stepPan(dt0);controls.update();
 
   if(region==='map'&&groups.map){
     (groups.map.userData.cores||[]).forEach(c=>{c.rotation.y+=dt*c.userData.spin;if(c.userData.ring)c.userData.ring.rotation.z+=dt*0.25;});
     (groups.map.userData.pulses||[]).forEach(p=>{p.t+=dt*p.sp;if(p.t>1)p.t-=1;p.mesh.position.copy(p.curve.getPoint(p.t));});
-    (groups.map.userData.golds||[]).forEach((o,i)=>{o.rotation.y+=dt*0.7;o.material.emissiveIntensity=0.4+Math.sin(tt*1.6+i*1.3)*0.18;});
+    (groups.map.userData.golds||[]).forEach((o,i)=>{o.rotation.y+=dt*0.7;const e=0.35+Math.sin(tt*1.6+i*1.3)*0.16;(o.userData.mats||[]).forEach(m=>m.emissiveIntensity=e);});
+    (groups.map.userData.sats||[]).forEach((s,i)=>{s.rotation.y+=dt*0.22;});
   }
   else if(region==='hierarchy'&&groups.hier){
     (groups.hier.userData.flows||[]).forEach(f=>{const a=f.pts.geometry.attributes.position.array;f.seeds.forEach((s,k)=>{s.t+=dt*f.sp*0.5;if(s.t>1)s.t-=1;a[k*3]=s.sx;a[k*3+1]=f.yT-(f.yT-f.yB)*s.t;a[k*3+2]=s.sz;});f.pts.geometry.attributes.position.needsUpdate=true;});
@@ -2280,6 +2376,7 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   sleep(){awakeUntil=0;},get awake(){return isActive(performance.now());},   // for the idle-rest gate
   go(r){enterRegion(r);},
   jGo(i){jGo(i);},get jI(){return jI;},get jLen(){return JOURNEY.length;},   // journey harness hooks
+  get camX(){return controls.target.x;},get camY(){return controls.target.y;}, // glide harness hooks
   setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}wake();},
   kvStep(){stepKVR();wake();},kvCache(on){kvr.cache=on;updateKVR(false);wake();},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
@@ -2303,6 +2400,28 @@ const ghLink=document.createElement('a');ghLink.id='ghLink';ghLink.href='https:/
 // v1.8.0: the landing IS the map — no takeover modal, no nudge. The ▾ START HERE
 // pointer and the journey bar are the onboarding.
 setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);},1500);
+
+/* ---------- MOBILE HEADS-UP (v1.9.0) ----------
+   Phones get a swipeable bottom sheet saying the atlas is built for desktop —
+   easy to flick away and proceed. Once per session. */
+(function(){
+  const small=Math.min(window.innerWidth,window.innerHeight)<600; // phones either orientation; tablets are fine
+  const coarse=window.matchMedia&&matchMedia('(pointer:coarse)').matches;
+  let seen=false;try{seen=sessionStorage.getItem('atlas_mobile_ok')==='1';}catch(e){}
+  if(!(small&&coarse)||seen)return;
+  const n=document.createElement('div');n.id='mobileNote';
+  n.innerHTML=`<div class="mn-grip"></div>
+    <div class="mn-t">Heads up — built for desktop</div>
+    <div class="mn-d">This is a 3D atlas with a lot of reading. It works on a phone, but it's at its best on a big screen with a mouse. Swipe this away to continue.</div>
+    <button id="mnGo">Proceed anyway →</button>`;
+  document.body.appendChild(n);
+  const dismiss=()=>{n.classList.add('gone');try{sessionStorage.setItem('atlas_mobile_ok','1');}catch(e){}setTimeout(()=>n.remove(),420);};
+  n.querySelector('#mnGo').addEventListener('click',dismiss);
+  let y0=null;
+  n.addEventListener('touchstart',e=>{y0=e.touches[0].clientY;n.style.transition='none';},{passive:true});
+  n.addEventListener('touchmove',e=>{if(y0==null)return;const dy=Math.max(0,e.touches[0].clientY-y0);n.style.transform=`translateY(${dy}px)`;},{passive:true});
+  n.addEventListener('touchend',e=>{const dy=y0==null?0:e.changedTouches[0].clientY-y0;n.style.transition='';if(dy>60)dismiss();else n.style.transform='';y0=null;});
+})();
 </script>
 </body>
 </html>

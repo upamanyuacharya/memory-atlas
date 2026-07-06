@@ -2,6 +2,45 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.9.0] — 2026-07-07
+
+Hands on the map. Second round of reader feedback, same day.
+
+### Added — WASD / arrow-key glide
+- Holding **WASD or the arrow keys** now glides the camera around the current
+  scene (smooth, frame-loop driven, leashed to each region's rig so you can't
+  get lost). Works in every region, pauses while reading or in a modal.
+- The journey therefore moved off the arrows: **N** = next stop, **P** =
+  previous (PageDown/Up too), plus the ◀ ▶ buttons as before. All on-screen
+  copy updated.
+
+### Added — START HERE, everywhere it's mentioned
+- The rail's lede no longer just *names* the START HERE pill — it **is** one:
+  the same bouncing accent pill, recreated as a real button that starts the
+  journey.
+
+### Added — mobile heads-up sheet
+- Phones (coarse pointer + short viewport) get a bottom sheet on load:
+  *"Heads up — built for desktop"*, with a grip bar you can **swipe down to
+  dismiss** or a "Proceed anyway →" button. Once per session; never shown on
+  desktop or tablets.
+
+### Changed — every map node is now a real model
+- All 15 satellites swapped their spheres for **hardware miniatures** from the
+  v1.7.0 procedural library: silicon dies, an HBM stack, a DIMM, switch chips,
+  an M.2 stick, a fabric switch, a 2U server, a laser TO-can — plus three new
+  minis: a **CPO package** (substrate, compute die, optics chiplets, fibre
+  stub), a **pluggable transceiver** (steel body, gold fingers, latch, LED)
+  and a **mini memory tank** for KV economics. Satellites slowly rotate and
+  are tipped toward the camera so flat parts read.
+- The gold investor nodes became **stacks of gold ingots** (4-sided frustum
+  bars) with a pulsing glow — the money is unmistakable.
+
+### Harness
+- New **glide behavioral gate** (KeyD/ArrowLeft/KeyW must move the camera
+  target; release stops it) and the journey gate now asserts arrows do NOT
+  navigate while **N** does. All baselines re-blessed.
+
 ## [1.8.0] — 2026-07-07
 
 The reader's cut. Built directly from first-user feedback (a non-technical

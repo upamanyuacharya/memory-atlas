@@ -224,15 +224,43 @@ const STATES = [
       await p.waitForTimeout(700);
       s = await p.evaluate(() => ({ on: document.getElementById('watchModal').classList.contains('on'), txt: document.getElementById('wmBody').textContent.slice(0, 400) }));
       if (!s.on) throw 'investor step did not open the Intel modal';
-      // arrow key advances
+      // N advances the journey; arrows must NOT (they glide the camera now)
       await p.evaluate(() => window.__atlas.jGo(0));
       await p.waitForTimeout(900);
       await p.keyboard.press('ArrowRight');
+      await p.waitForTimeout(300);
+      let ji = await p.evaluate(() => window.__atlas.jI);
+      if (ji !== 0) throw `ArrowRight moved the journey pointer to ${ji} — arrows should glide, not navigate`;
+      await p.keyboard.press('n');
       await p.waitForTimeout(1400);
-      const ji = await p.evaluate(() => window.__atlas.jI);
-      if (ji !== 1) throw `ArrowRight moved pointer to ${ji}, expected 1`;
+      ji = await p.evaluate(() => window.__atlas.jI);
+      if (ji !== 1) throw `N moved pointer to ${ji}, expected 1`;
       await p.evaluate(() => { window.__atlas.jGo(0); });
       await p.waitForTimeout(900);
+      const err = await p.evaluate(() => window.__atlas.lastErr());
+      if (err) throw `lastErr: ${err}`;
+    },
+  },
+  {
+    // Behavioral: WASD / arrow keys glide the camera around the scene (leashed
+    // to the region rig), and release stops the glide.
+    name: 'glide',
+    behavioral: true,
+    setup: async p => { await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1600); },
+    dom: async p => {
+      const x0 = await p.evaluate(() => window.__atlas.camX);
+      await p.keyboard.down('KeyD'); await p.waitForTimeout(600); await p.keyboard.up('KeyD');
+      const x1 = await p.evaluate(() => window.__atlas.camX);
+      if (!(x1 > x0 + 0.8)) throw `KeyD did not glide right (x ${x0.toFixed(1)} → ${x1.toFixed(1)})`;
+      await p.keyboard.down('ArrowLeft'); await p.waitForTimeout(600); await p.keyboard.up('ArrowLeft');
+      const x2 = await p.evaluate(() => window.__atlas.camX);
+      if (!(x2 < x1 - 0.8)) throw `ArrowLeft did not glide left (x ${x1.toFixed(1)} → ${x2.toFixed(1)})`;
+      const y0 = await p.evaluate(() => window.__atlas.camY);
+      await p.keyboard.down('KeyW'); await p.waitForTimeout(500); await p.keyboard.up('KeyW');
+      const y1 = await p.evaluate(() => window.__atlas.camY);
+      if (!(y1 > y0 + 0.5)) throw `KeyW did not glide up (y ${y0.toFixed(1)} → ${y1.toFixed(1)})`;
+      await p.evaluate(() => window.__atlas.go('map')); // reset the pose for later gates
+      await p.waitForTimeout(1500);
       const err = await p.evaluate(() => window.__atlas.lastErr());
       if (err) throw `lastErr: ${err}`;
     },
