@@ -82,9 +82,17 @@ const STATES = [
     name: 'map',
     setup: async p => { await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1700); },
     dom: async p => {
-      const s = await p.evaluate(() => ({ css2d: window.__atlas.countCSS2D(), region: window.__atlas.region }));
+      const s = await p.evaluate(() => ({
+        css2d: window.__atlas.countCSS2D(), region: window.__atlas.region,
+        sats: document.querySelectorAll('.lbl3d.sat').length,
+        gold: document.querySelectorAll('.lbl3d.gold').length,
+        start: !!document.querySelector('.lbl3d.starthere'),
+      }));
       if (s.region !== 'map') throw `region=${s.region}`;
       if (s.css2d < 10) throw `only ${s.css2d} labels`;
+      if (s.sats < 15) throw `only ${s.sats} satellite topics on the map (expected 15)`;
+      if (s.gold !== 4) throw `${s.gold} gold investor nodes (expected 4)`;
+      if (!s.start) throw 'START HERE pointer missing';
     },
     px: png => { if (lumaStddev(png, [0.35, 0.2, 0.75, 0.8]) < 8) throw 'centre crop looks blank'; },
   },
@@ -97,11 +105,15 @@ const STATES = [
     dom: async p => {
       const s = await p.evaluate(() => ({
         open: document.getElementById('panel').classList.contains('open'),
+        reading: document.body.classList.contains('reading'),
+        back: !!document.querySelector('#panel .pback'),
         h2: (document.querySelector('#phead h2') || {}).textContent,
         eli: !!document.querySelector('.pblk.eli'),
         why: document.body.textContent.includes('WHERE THE CHOKEPOINT COMES FROM'),
       }));
       if (!s.open) throw 'panel not open';
+      if (!s.reading) throw 'reading mode not engaged (body.reading missing)';
+      if (!s.back) throw 'panel back button missing';
       if (s.h2 !== 'HBM3E / HBM4') throw `h2=${s.h2}`;
       if (!s.eli) throw 'plain-english block missing';
       if (!s.why) throw 'chokepoint-why block missing';
@@ -193,6 +205,39 @@ const STATES = [
     },
   },
   {
+    // Behavioral: the journey spine actually drives the app — stepping opens
+    // regions, reading panels and the investor tabs, and Home returns to the map.
+    name: 'journey',
+    behavioral: true,
+    setup: async p => { await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1400); },
+    dom: async p => {
+      const len = await p.evaluate(() => window.__atlas.jLen);
+      if (len < 20) throw `journey too short (${len} steps) — topics missing`;
+      // step 1: the problem (reading mode over The Wall)
+      await p.evaluate(() => window.__atlas.jGo(1));
+      await p.waitForTimeout(1600);
+      let s = await p.evaluate(() => ({ region: window.__atlas.region, open: document.getElementById('panel').classList.contains('open'), h2: (document.querySelector('#phead h2') || {}).textContent }));
+      if (s.region !== 'ai') throw `step 1 region=${s.region}`;
+      if (!s.open || !/KV-Cache Economics/.test(s.h2)) throw `step 1 panel: open=${s.open} h2=${s.h2}`;
+      // an investor step opens the Intel modal on the right tab
+      const gold = await p.evaluate(() => { window.__atlas.jGo(21); return null; });
+      await p.waitForTimeout(700);
+      s = await p.evaluate(() => ({ on: document.getElementById('watchModal').classList.contains('on'), txt: document.getElementById('wmBody').textContent.slice(0, 400) }));
+      if (!s.on) throw 'investor step did not open the Intel modal';
+      // arrow key advances
+      await p.evaluate(() => window.__atlas.jGo(0));
+      await p.waitForTimeout(900);
+      await p.keyboard.press('ArrowRight');
+      await p.waitForTimeout(1400);
+      const ji = await p.evaluate(() => window.__atlas.jI);
+      if (ji !== 1) throw `ArrowRight moved pointer to ${ji}, expected 1`;
+      await p.evaluate(() => { window.__atlas.jGo(0); });
+      await p.waitForTimeout(900);
+      const err = await p.evaluate(() => window.__atlas.lastErr());
+      if (err) throw `lastErr: ${err}`;
+    },
+  },
+  {
     // Behavioral: prove the loop renders ZERO frames while idle (the fan fix),
     // and that it WAKES on interaction. This is the regression guard for the
     // rest-state model — a reintroduced continuous loop fails here loudly.
@@ -233,7 +278,7 @@ await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'domcontentloaded' });
 await page.waitForTimeout(2800);
 // determinism: pause CSS animations/transitions too — the owned clock only governs the canvas
 await page.addStyleTag({ content: '*{animation-play-state:paused!important;transition:none!important}' });
-await page.evaluate(() => { try { localStorage.setItem('atlas_seen', '1'); } catch (e) {} const n = document.getElementById('tourNudge'); if (n) n.remove(); });
+await page.evaluate(() => { try { localStorage.setItem('atlas_seen', '1'); } catch (e) {} });
 
 let failed = 0;
 for (const st of STATES) {

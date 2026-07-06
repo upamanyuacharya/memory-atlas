@@ -138,15 +138,24 @@
   .toc button.seen .nm::after{content:" ✓";color:var(--accent);font-size:11px}
   .toc button.seen{color:var(--ink)}
 
-  /* ---------------- FRACTAL DETAIL PANEL (right) ---------------- */
-  #panel{position:absolute;right:24px;top:90px;z-index:25;width:min(560px,calc(100vw - 48px));max-height:calc(100vh - 130px);
-    opacity:0;transform:translateX(24px) scale(.98);pointer-events:none;transition:all .55s var(--ease)}
-  #panel.open{opacity:1;transform:none;pointer-events:auto;box-shadow:0 30px 90px rgba(0,0,0,.7)}
-  /* dim the rest of the scene so the reading panel is the focus */
-  #panelScrim{position:fixed;inset:0;z-index:23;background:radial-gradient(55% 80% at 28% 50%,rgba(4,6,10,.14),rgba(4,6,10,.68));opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
-  #panelScrim.on{opacity:1}
-  #panel .core{padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 162px)}
-  #panel .phead{padding:20px 22px 16px;position:relative;flex:none;border-bottom:1px solid var(--hair)}
+  /* ---------------- READING MODE (fractal detail panel) ----------------
+     v1.8.0: text is the focus. The panel opens as a centred reading column;
+     the 3D world dims and blurs into the background (see body.reading #app). */
+  #panel{position:absolute;left:50%;top:84px;z-index:25;width:min(720px,calc(100vw - 32px));max-height:calc(100vh - 186px);
+    opacity:0;transform:translate(-50%,20px) scale(.985);pointer-events:none;transition:all .55s var(--ease)}
+  #panel.open{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto;box-shadow:0 40px 110px rgba(0,0,0,.75)}
+  /* the 3D world recedes while reading — one composite, cheap while the scene rests */
+  #app{transition:filter .6s var(--ease),transform .6s var(--ease)}
+  body.reading #app{filter:brightness(.3) saturate(.55) blur(3px);transform:scale(1.02)}
+  body.reading #rail,body.reading #hint,body.reading #wallHead,body.reading #footlinks{opacity:.12;transition:opacity .5s var(--ease)}
+  #panelScrim{position:fixed;inset:0;z-index:23;background:radial-gradient(60% 75% at 50% 46%,rgba(4,6,10,.2),rgba(4,6,10,.72));opacity:0;pointer-events:none;transition:opacity .5s var(--ease)}
+  #panelScrim.on{opacity:1;pointer-events:auto;cursor:pointer}
+  #panel .core{padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 186px)}
+  #panel .phead{padding:18px 24px 16px;position:relative;flex:none;border-bottom:1px solid var(--hair)}
+  #panel .pback{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--ink-dim);
+    background:rgba(255,255,255,.05);border:1px solid var(--hair);border-radius:999px;padding:7px 14px;margin-bottom:13px;cursor:pointer;transition:all .3s var(--ease)}
+  #panel .pback:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.09);transform:translateX(-2px)}
+  #panel .pbody p{font-size:15px;line-height:1.7}
   #panel .phead .tier{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
   #panel .phead .tier .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 12px currentColor}
   #panel .phead h2{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:-.02em;line-height:1.06;margin:11px 0 6px}
@@ -168,6 +177,10 @@
   .pblk.eli .kmini{color:var(--accent);margin-bottom:7px}
   .pblk.eli p{margin-bottom:0;color:#d8e4f1;font-size:15.5px}
   .pblk.eli p em{color:var(--accent);font-style:normal;font-weight:500}
+  /* the journey's teaching for the current stop, leading the reading page */
+  .pblk.jour{background:linear-gradient(120deg,rgba(94,234,212,.08),rgba(154,140,255,.06));border:1px solid rgba(94,234,212,.28);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+  .pblk.jour .kmini{margin-bottom:7px}
+  .pblk.jour p{margin-bottom:0;color:#e2ecf7;font-size:15.5px}
   .share-bar{display:flex;height:30px;border-radius:9px;overflow:hidden;margin:5px 0 9px;border:1px solid var(--hair)}
   .share-bar .sg{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:#04110e;font-weight:700;min-width:0;overflow:hidden;white-space:nowrap}
   .share-leg{display:flex;flex-wrap:wrap;gap:13px}
@@ -248,7 +261,7 @@
   .cosrc:hover{color:var(--accent);border-color:var(--hair-bright);background:rgba(94,234,212,.06)}
 
   /* ---------------- BOTTOM CONTROL DOCK ---------------- */
-  #dock{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:25;pointer-events:auto;transition:opacity .4s var(--ease)}
+  #dock{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);z-index:25;pointer-events:auto;transition:opacity .4s var(--ease)} /* sits above the journey bar */
   #dock .core{display:flex;gap:14px;align-items:center;padding:13px 18px;flex-wrap:wrap;justify-content:center;max-width:min(92vw,840px)}
   .dlabel{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
   .seg{display:flex;background:rgba(255,255,255,.04);border-radius:11px;padding:3px;gap:2px}
@@ -273,15 +286,16 @@
   #kvNote b{color:var(--heat)}
   #kvNote.ok b{color:var(--accent)}
   /* the Wall's dock is the main instrument — make it big and unmissable */
-  #dock.ai .core{gap:18px;padding:17px 24px;max-width:min(94vw,1000px)}
-  #dock.ai .dlabel{font-size:13.5px;color:var(--ink)}
-  #dock.ai .seg button{font-size:15px;padding:12px 19px}
-  #dock.ai .slider-wrap{min-width:300px}
-  #dock.ai .slider-wrap input[type=range]{height:6px}
-  #dock.ai .slider-wrap input[type=range]::-webkit-slider-thumb{width:20px;height:20px}
-  #dock.ai .slider-wrap .sv{font-size:15px;min-width:92px}
-  #dock.ai .kvo .kvo-v{font-size:21px}
-  #dock.ai .kvo .kvo-l{font-size:10.5px}
+  #dock.ai{bottom:76px} /* snug against the journey bar — the tanks need the vertical room */
+  #dock.ai .core{gap:14px;padding:12px 20px;max-width:min(94vw,1000px)}
+  #dock.ai .dlabel{font-size:13px;color:var(--ink)}
+  #dock.ai .seg button{font-size:14px;padding:10px 16px}
+  #dock.ai .slider-wrap{min-width:280px}
+  #dock.ai .slider-wrap input[type=range]{height:5px}
+  #dock.ai .slider-wrap input[type=range]::-webkit-slider-thumb{width:18px;height:18px}
+  #dock.ai .slider-wrap .sv{font-size:14px;min-width:88px}
+  #dock.ai .kvo .kvo-v{font-size:19px}
+  #dock.ai .kvo .kvo-l{font-size:10px}
   /* hover cards on the model buttons — real examples of each class */
   .seg button[data-tip]{position:relative}
   .seg button[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 12px);left:50%;transform:translateX(-50%);width:300px;white-space:normal;font-family:var(--sans);font-size:13.5px;line-height:1.5;text-align:left;text-transform:none;letter-spacing:0;color:#d8e4f1;background:#0d1118;border:1px solid var(--hair-bright);border-radius:12px;padding:12px 14px;box-shadow:0 14px 44px rgba(0,0,0,.6);pointer-events:none;z-index:60}
@@ -298,16 +312,7 @@
   #wallHead #whLearn{pointer-events:auto;font-family:var(--mono);font-size:12.5px;color:var(--heat);background:none;border:0;border-bottom:1px dashed rgba(246,163,69,.55);padding:0 0 1px;cursor:pointer}
   #wallHead #whLearn:hover{color:#ffc276}
   @media (max-width:980px){#wallHead{top:160px}#wallHead .wh-t{font-size:18px}#wallHead .wh-s{display:none}}
-  /* first-visit tour nudge (side card, not a takeover) */
-  #tourNudge{position:fixed;right:24px;bottom:70px;z-index:30;width:250px;background:var(--glass);border:1px solid var(--hair-bright);border-radius:16px;padding:15px 16px;box-shadow:0 16px 50px rgba(0,0,0,.55);animation:nudgein .6s var(--ease)}
   @keyframes nudgein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  #tourNudge .tn-t{font-family:var(--display);font-size:16px;font-weight:600;margin-bottom:4px}
-  #tourNudge .tn-d{font-size:13px;color:var(--ink-dim);line-height:1.5;margin-bottom:11px}
-  #tourNudge .tn-row{display:flex;gap:8px}
-  #tourNudge #tnStart{flex:1;font-family:var(--mono);font-size:12.5px;font-weight:600;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:9px 12px;cursor:pointer;transition:all .3s var(--ease)}
-  #tourNudge #tnStart:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(94,234,212,.4)}
-  #tourNudge #tnSkip{width:34px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:13px}
-  #tourNudge #tnSkip:hover{color:var(--ink)}
 
   /* ---------------- WELCOME / ONBOARDING ---------------- */
   #welcome{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:24px;
@@ -341,7 +346,7 @@
   #footlinks{position:fixed;left:24px;bottom:24px;z-index:30;display:flex;gap:8px;align-items:center}
   #introReopen,#ghLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;transition:all .3s var(--ease);text-decoration:none}
   #introReopen:hover,#ghLink:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
-  @media (max-width:980px){#footlinks{left:16px;bottom:16px}#ghLink{display:none}}
+  @media (max-width:980px){#footlinks{left:16px;bottom:72px}#ghLink{display:none}} /* clears the full-width journey bar */
 
   /* ---------------- 3D LABELS ---------------- */
   /* NO backdrop-filter here: these labels move every rendered frame, and a moving
@@ -355,13 +360,37 @@
   .lbl3d.node:hover{border-color:var(--hair-bright);transform:scale(1.06)}
   .lbl3d.edge{font-size:13px;color:var(--ink-dim);background:rgba(8,11,17,.62);border:0;letter-spacing:.03em}
 
-  /* ---------------- GUIDED TOUR + CTAs ---------------- */
-  .cta-row{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap;pointer-events:auto}
-  .tourBtn{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:10px 18px;cursor:pointer;display:flex;align-items:center;gap:9px;box-shadow:0 8px 28px rgba(94,234,212,.32);transition:all .35s var(--ease)}
-  .tourBtn:hover{transform:translateY(-2px);box-shadow:0 12px 36px rgba(94,234,212,.45)}
-  .tourBtn .tb-sub{font-size:10px;opacity:.7;border-left:1px solid rgba(4,17,14,.3);padding-left:9px}
-  .watchBtn{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;color:#0a0820;background:linear-gradient(120deg,var(--violet),#b7a8ff);border:0;border-radius:999px;padding:10px 18px;cursor:pointer;font-weight:600;box-shadow:0 8px 26px rgba(154,140,255,.32);transition:all .35s var(--ease)}
-  .watchBtn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(154,140,255,.5)}
+  /* ---------------- JOURNEY BAR + CAPTION ---------------- */
+  /* ---------------- JOURNEY BAR (the persistent spine, bottom centre) ---------------- */
+  #journey{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:48;pointer-events:auto;max-width:96vw}
+  #journey .core{display:flex;align-items:center;gap:8px;padding:8px 10px}
+  #journey button{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;border-radius:999px;cursor:pointer;transition:all .3s var(--ease);
+    background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);padding:10px 14px;white-space:nowrap}
+  #journey button:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.09)}
+  #journey button:disabled{opacity:.32;cursor:default;transform:none}
+  #journey #jNext{background:var(--accent);color:#04110e;border-color:transparent;font-weight:700;padding:10px 20px;box-shadow:0 8px 26px rgba(94,234,212,.3)}
+  #journey #jNext:hover{color:#04110e;transform:translateY(-1px);box-shadow:0 12px 34px rgba(94,234,212,.45)}
+  #journey #jIntel{background:linear-gradient(120deg,#c9973a,#f0c674);color:#211603;border-color:transparent;font-weight:700;box-shadow:0 8px 24px rgba(217,164,65,.3)}
+  #journey #jIntel:hover{color:#211603;transform:translateY(-1px);box-shadow:0 12px 32px rgba(217,164,65,.45)}
+  #jMid{min-width:230px;max-width:38vw;padding:0 4px}
+  #jTitle{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;color:var(--ink-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #jTitle b{color:var(--accent);font-weight:700}
+  #jBar{height:3px;border-radius:2px;background:rgba(255,255,255,.09);margin-top:6px;overflow:hidden}
+  #jFill{display:block;height:100%;width:0;border-radius:2px;background:linear-gradient(90deg,var(--accent),var(--violet),var(--heat));transition:width .45s var(--ease)}
+  /* journey caption — the guided-tour teaching, delivered in the flow */
+  #jCap{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);z-index:47;width:min(560px,92vw);
+    background:var(--glass);border:1px solid var(--hair-bright);border-radius:16px;padding:15px 40px 15px 18px;
+    box-shadow:0 18px 60px rgba(0,0,0,.6);backdrop-filter:blur(12px);animation:nudgein .5s var(--ease)}
+  #jCap #jCapT{font-size:14.5px;line-height:1.62;color:#cdd8e8}
+  #jCap #jCapT b{color:var(--ink)}
+  #jCap #jCapX{position:absolute;top:9px;right:9px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-faint);cursor:pointer;font-size:12px;line-height:1}
+  #jCap #jCapX:hover{color:var(--ink)}
+  @media (max-width:980px){
+    #jMid{min-width:0;flex:1}
+    #journey{left:10px;right:10px;bottom:10px;transform:none;max-width:none}
+    #journey .core{justify-content:space-between}
+    #jCap{bottom:78px}
+  }
 
   /* ---------------- WATCHLIST MODAL ---------------- */
   #watchModal,#roadModal{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
@@ -422,30 +451,19 @@
   .tl-co .logo{width:22px;height:22px;border-radius:6px;font-size:9px}
   .tl-co .logo img{width:13px;height:13px}
   .tl-co .tk{font-size:9.5px;color:var(--accent)}
-  #tour{position:absolute;left:50%;bottom:104px;transform:translateX(-50%) translateY(14px);z-index:28;width:min(580px,92vw);opacity:0;pointer-events:none;transition:all .55s var(--ease)}
-  #tour.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
-  #tour .core{padding:19px 22px}
-  #tour .trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
-  #tour .tstep{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent)}
-  #tour .tprog{display:flex;gap:5px}
-  #tour .tprog i{width:20px;height:4px;border-radius:2px;background:rgba(255,255,255,.12);transition:background .4s var(--ease)}
-  #tour .tprog i.on{background:var(--accent)}
-  #tour h3{font-family:var(--display);font-size:21px;font-weight:600;margin-bottom:7px;letter-spacing:-.01em}
-  #tour p{font-size:15px;line-height:1.65;color:#cdd8e8;margin-bottom:15px}
-  #tour .tnav{display:flex;gap:8px;align-items:center}
-  #tour .tnav button{font-family:var(--mono);font-size:12px;border-radius:999px;padding:9px 16px;cursor:pointer;border:1px solid var(--hair);background:rgba(255,255,255,.04);color:var(--ink-dim);transition:all .3s var(--ease)}
-  #tour .tnav button:hover{color:var(--ink);border-color:var(--hair-bright)}
-  #tour .tnav .next{background:var(--accent);color:#04110e;border-color:transparent;font-weight:600;margin-left:auto}
-  #tour .tnav .next:hover{color:#04110e;transform:translateY(-1px)}
-  #tour .tnav .next:disabled{opacity:.38;cursor:not-allowed;transform:none}
-  .tq{margin:2px 0 15px;background:rgba(94,234,212,.055);border:1px solid rgba(94,234,212,.2);border-radius:13px;padding:14px 15px}
-  .tq-ask{font-size:14.5px;color:var(--ink);font-weight:500;margin-bottom:11px;line-height:1.5}
-  .tq-opt{display:block;width:100%;text-align:left;font-family:var(--sans);font-size:14.5px;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:all .25s var(--ease)}
-  .tq-opt:last-child{margin-bottom:0}
-  .tq-opt:hover{background:rgba(255,255,255,.09);color:var(--ink);border-color:var(--hair-bright);transform:translateX(2px)}
-  .tq-fb{font-size:14.5px;line-height:1.58}
-  .tq-fb.right{color:var(--accent)}
-  .tq-fb.wrong{color:#cdd8e8}
+  /* ---------------- MAP GRAPH LABELS (satellites · gold · start-here) ---------------- */
+  .lbl3d.sat{font-size:11px;padding:3px 9px;color:var(--ink-dim);background:rgba(8,11,17,.74);border-color:rgba(255,255,255,.07);
+    cursor:pointer;pointer-events:auto;box-shadow:none;transition:all .25s var(--ease)}
+  .lbl3d.sat:hover{color:var(--ink);border-color:var(--hair-bright);transform:scale(1.08)}
+  .lbl3d.gold{font-size:12px;font-weight:600;padding:5px 12px;color:#f0c674;background:rgba(20,14,4,.85);border-color:rgba(217,164,65,.45);
+    cursor:pointer;pointer-events:auto;transition:all .25s var(--ease)}
+  .lbl3d.gold:hover{color:#ffe1a0;border-color:rgba(240,198,116,.8);transform:scale(1.07);box-shadow:0 0 24px rgba(217,164,65,.25)}
+  .lbl3d.goldband{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:rgba(240,198,116,.75);background:none;border:0;box-shadow:none}
+  .lbl3d.starthere{background:none;border:0;box-shadow:none;padding:0;pointer-events:auto;cursor:pointer}
+  .lbl3d.starthere .pill{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.16em;color:#04110e;
+    background:var(--accent);border-radius:999px;padding:8px 16px;box-shadow:0 8px 30px rgba(94,234,212,.45);animation:bob 1.6s ease-in-out infinite}
+  .lbl3d.starthere:hover .pill{background:#8ff5e3}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 
   /* ---------------- HINT ---------------- */
   #hint{position:absolute;right:24px;bottom:24px;z-index:20;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);text-align:right;line-height:1.8;pointer-events:none;transition:opacity .4s}
@@ -468,18 +486,18 @@
     #nav{position:static;transform:none;order:3;width:100%;overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;scrollbar-width:none}
     #nav::-webkit-scrollbar{display:none}
     /* reading panel becomes a bottom sheet on small screens */
-    #panel{left:12px;right:12px;top:auto;bottom:12px;width:auto;max-height:72vh;transform:translateY(24px) scale(.99)}
-    #panel .core{max-height:calc(72vh - 12px)}
+    #panel{left:12px;right:12px;top:auto;bottom:68px;width:auto;max-height:70vh;transform:translateY(24px) scale(.99)}
+    #panel.open{transform:none}
+    #panel .core{max-height:calc(70vh - 12px)}
     #panel .phead h2{font-size:26px}
     #hint{display:none}
     #kvNote{font-size:12px;max-width:94vw}
-    #tour{bottom:12px;width:calc(100vw - 24px)}
+    #dock{bottom:64px}
     .statrow{grid-template-columns:1fr 1fr}
     .mitem .mk{width:46%}
   }
   @media (max-width:560px){
     #brand .badge{display:none}
-    .cta-row .tb-sub{display:none}
     #panel .phead h2{font-size:23px}
     .pblk p{font-size:15px}
   }
@@ -514,10 +532,10 @@
     <p class="wlede">Every AI you use — ChatGPT, Gemini, Grok — runs on a stack of hardware controlled by a handful of companies. This is a living 3D map of that stack: <b>who makes what, where the bottlenecks are, and which companies actually matter.</b></p>
     <p class="wreassure">It looks complicated. It isn't. Give it three minutes.</p>
     <div class="wcta">
-      <button id="wTour" class="wbtn primary">▶&nbsp; Take the 3-minute tour<span class="wsub">recommended — we'll walk you through it</span></button>
+      <button id="wTour" class="wbtn primary">▶&nbsp; Walk the journey<span class="wsub">recommended — Next takes you stop by stop, zero → expert</span></button>
       <button id="wExplore" class="wbtn ghost">I'll explore on my own&nbsp;→</button>
     </div>
-    <div class="wfoot">No sign-up. <b>Drag</b> to look around · <b>click</b> any glowing node to dig in · everything links out to real sources.<br>
+    <div class="wfoot">No sign-up. <b>Next ▶</b> (or <b>→</b>) walks you through every stop · <b>click</b> any glowing node to dig in · everything links out to real sources.<br>
     Educational structural analysis, not investment advice. Built by <a href="https://upamanyuacharya.com" target="_blank" rel="noopener">Upamanyu Acharya</a> · <a href="https://github.com/upamanyuacharya/memory-atlas" target="_blank" rel="noopener">open source on GitHub</a>.</div>
   </div></div>
 </div>
@@ -527,10 +545,6 @@
   <div id="brand">
     <span class="badge"><span class="pulse"></span>Interactive Atlas · AI Hardware Supply Chain</span>
     <h1>The Memory <i>Atlas</i></h1>
-    <div class="cta-row">
-      <button id="tourBtn" class="tourBtn">▶&nbsp; Take the guided tour <span class="tb-sub">zero → expert</span></button>
-      <button id="intelBtn" class="watchBtn">◎&nbsp; Investor intelligence</button>
-    </div>
   </div>
   <div id="nav">
     <button class="navbtn active" data-region="map"><span class="ico"></span>Map</button>
@@ -557,20 +571,24 @@
 
 <div id="hint"><b>drag</b> to orbit · <b>scroll</b> to zoom · <b>click</b> any node to open its file</div>
 
-<!-- GUIDED TOUR CARD -->
-<div id="tour"><div class="shell"><div class="core"></div></div></div>
+<!-- JOURNEY BAR — the persistent spine. ◀ ▶ (or arrow keys) walk every stop of the atlas in order. -->
+<div id="journey"><div class="shell"><div class="core">
+  <button id="jHome" title="Back to the map">⌂&nbsp;Map</button>
+  <button id="jPrev" title="Previous stop (←)">◀</button>
+  <div id="jMid">
+    <div id="jTitle"></div>
+    <div id="jBar"><i id="jFill"></i></div>
+  </div>
+  <button id="jNext" title="Next stop (→)">Next&nbsp;▶</button>
+  <button id="jIntel" title="Investor Intelligence — the shortlist, by layer, by country, roadmap">◎&nbsp;Investor</button>
+</div></div></div>
+<!-- journey caption: the guided-tour teaching, shown in the flow, dismissable -->
+<div id="jCap" style="display:none"><button id="jCapX">✕</button><div id="jCapT"></div></div>
 
 <!-- The Wall's fixed headline (written by updateKV) -->
 <div id="wallHead" style="display:none">
   <div class="wh-t" id="whT"></div>
   <div class="wh-s" id="whS"></div>
-</div>
-
-<!-- quiet tour nudge for first-time visitors (replaces the auto-opening welcome modal) -->
-<div id="tourNudge" style="display:none">
-  <div class="tn-t">First time here?</div>
-  <div class="tn-d">A 3-minute guided tour takes you zero → expert.</div>
-  <div class="tn-row"><button id="tnStart">▶&nbsp;Start the tour</button><button id="tnSkip">✕</button></div>
 </div>
 
 <!-- INVESTOR INTELLIGENCE MODAL (tabs: by layer · by country · roadmap) -->
@@ -1101,12 +1119,12 @@ function stepTweens(dt){
    content clears the fixed UI. No builder or pass may hand-roll a pose.
    ========================================================================= */
 const RIGS={
-  map:      {pos:[-2.2,0.5,37],  tgt:[-2.2,-1.2,0]},  // panned left so the graph clears the rail
+  map:      {pos:[-5.4,-0.5,36.5],tgt:[-5.4,-1.1,0]}, // panned left so the full graph clears the rail
   hierarchy:{pos:[15,6,21],      tgt:[0,0,0]},
-  cxl:      {pos:[-1.2,1.2,28.5],tgt:[-1.2,0.9,0]},   // pulled back so the headline clears the nav
+  cxl:      {pos:[-1.2,-0.8,30.5],tgt:[-1.2,-1.25,0]}, // raised + pulled back so the pool labels clear the dock band
   photonics:{pos:[-1.4,1,31],    tgt:[-1.4,-0.2,0]},  // panned so the GPU chip clears the rail
-  ai:       {pos:[0,1,28],       tgt:[0,0.6,0]},
-  kvcache:  {pos:[-2.6,0.8,25],  tgt:[-2.6,-2.4,0]},  // panned so the sentence clears the rail
+  ai:       {pos:[0,0.5,29],     tgt:[0,0.1,0]},      // raised so the tanks clear the dock band
+  kvcache:  {pos:[-2.6,0,25],    tgt:[-2.6,-3.2,0]},  // raised so the sentence clears the note strip
 };
 function camEnter(r,{dx=0}={}){const g=RIGS[r];flyTo(g.pos[0]+dx,g.pos[1],g.pos[2], g.tgt[0]+dx,g.tgt[1],g.tgt[2], 1.2);}
 function camGlide(r,{dx=0,dz=0}={}){const g=RIGS[r];tweenObj(controls.target,{x:g.tgt[0]+dx},0.9);tweenObj(camera.position,{x:g.pos[0]+dx,z:g.pos[2]+dz},0.9);}
@@ -1160,8 +1178,8 @@ const pbody=document.getElementById('pbody');
 const panelScrim=document.createElement('div');panelScrim.id='panelScrim';document.body.appendChild(panelScrim);
 panelScrim.addEventListener('click',()=>closePanel());
 let panelTab='overview',panelNode=null;
-document.addEventListener('click',e=>{if(e.target.closest('.pclose'))closePanel();});
-function closePanel(){panel.classList.remove('open');panelScrim.classList.remove('on');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);}
+document.addEventListener('click',e=>{if(e.target.closest('.pclose')||e.target.closest('.pback'))closePanel();});
+function closePanel(){panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);}
 
 function hueFromName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return h;}
 function monoStyle(n){const h=hueFromName(n);return `background:linear-gradient(140deg,hsl(${h},44%,24%),hsl(${(h+24)%360},40%,17%));color:hsl(${h},78%,80%)`;}
@@ -1177,8 +1195,8 @@ function sevWord(s){return ['—','Low','Moderate','High','Severe','Critical'][s
 const visited=new Set();
 function updateExplored(){
   const rp=document.getElementById('railprog');
-  if(rp)rp.innerHTML=`<div class="rp-top"><span>Your progress</span><span class="rp-n">${visited.size} / 8 layers</span></div>
-    <div class="rp-bar"><div class="rp-fill" style="width:${Math.round(visited.size/8*100)}%"></div></div>`;
+  if(rp)rp.innerHTML=`<div class="rp-top"><span>Your progress</span><span class="rp-n">${visited.size} / ${HIER.length} layers</span></div>
+    <div class="rp-bar"><div class="rp-fill" style="width:${Math.round(visited.size/HIER.length*100)}%"></div></div>`;
   document.querySelectorAll('#railcore [data-layer]').forEach(b=>b.classList.toggle('seen',visited.has(b.dataset.layer)));
 }
 function openNode(id){
@@ -1188,10 +1206,12 @@ function openNode(id){
     return;
   }
   if(HIER.some(h=>h.id===id)){visited.add(id);updateExplored();}
+  jSync(s=>s.n===id); // free reading moves the journey pointer here too
   panelNode=node;panelTab='overview';
   const c=node.col;
   const tagLine=node.cap?`${node.cap} · ${node.bw} · ${node.lat}`:node.kind;
   phead.innerHTML=`
+    <button class="pback">←&nbsp; Back to the 3D view</button>
     <button class="pclose">✕</button>
     <div class="tier" style="color:${c}"><span class="dot" style="background:${c}"></span>${node.kind}</div>
     <h2>${node.name}</h2>
@@ -1201,11 +1221,16 @@ function openNode(id){
   ptabs.querySelectorAll('.ptab').forEach(b=>b.addEventListener('click',()=>{panelTab=b.dataset.tab;ptabs.querySelectorAll('.ptab').forEach(x=>x.classList.toggle('on',x===b));renderPanelBody();}));
   renderPanelBody();
   panel.classList.add('open');panelScrim.classList.add('on');
+  document.body.classList.add('reading'); // text is the focus; the 3D recedes
 }
 function renderPanelBody(){
   const node=panelNode;if(!node)return;
   let html='';
   if(panelTab==='overview'){
+    // if this node is the current journey stop, its teaching leads the page
+    const js=JOURNEY[jI];
+    if(js&&js.n===node.id&&js.cap)
+      html+=`<div class="pblk jour"><div class="kmini" style="color:var(--accent)">ON THE JOURNEY · ${jI+1}/${JOURNEY.length}</div><p>${js.cap}</p></div>`;
     if(node.stats){
       html+=`<div class="statrow">`+node.stats.map(s=>`<div class="stat"><div class="l">${s[0]}</div><div class="v" style="font-size:13.5px">${s[1]}</div></div>`).join('')+`</div>`;
     }else{
@@ -1365,23 +1390,22 @@ function renderRoad(){
 }
 let intelTab='short';
 function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;}
-function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');}
+function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);}
 function closeIntel(){watchModal.classList.remove('on');}
 function closeModals(){closeIntel();}
-document.getElementById('intelBtn').addEventListener('click',()=>openIntel('short'));
 document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
 watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
 watchModal.querySelector('.wmclose').addEventListener('click',closeIntel);
 window.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(watchModal.classList.contains('on'))closeIntel();
-    else if(typeof tour!=='undefined'&&tour.active)endTour();
     else if(panel.classList.contains('open'))closePanel();
   }
-  if(typeof tour!=='undefined'&&tour.active){
-    if(e.key==='ArrowRight'){tour.i<TOUR.length-1?setStep(tour.i+1):endTour();}
-    else if(e.key==='ArrowLeft'&&tour.i>0)setStep(tour.i-1);
-  }
+  // ←/→ walk the journey from anywhere (but never steal keys from form controls)
+  const tag=e.target&&e.target.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT')return;
+  if(e.key==='ArrowRight'){e.preventDefault();jGo(jI+1);}
+  else if(e.key==='ArrowLeft'){e.preventDefault();jGo(jI-1);}
 });
 
 // small helper css class injected
@@ -1392,7 +1416,7 @@ const st=document.createElement('style');st.textContent='.kmini{font-family:var(
    ========================================================================= */
 const railcore=document.getElementById('railcore');
 const RAIL={
-  map:{kicker:'The Atlas',title:'One connected world',lede:'Every layer of the AI memory stack, the two technologies bending it (CXL &amp; photonics), and the wall that forces it all — drawn as one graph. Drag to fly through it; click any node to open its file.',
+  map:{kicker:'The Atlas',title:'One connected world',lede:'Every topic in the atlas is a node on this graph — big hubs, their satellite topics, and the <b style="color:#f0c674">gold row</b> where the money lives. Start at <b>▾ START HERE</b>, then let <b>Next ▶</b> below (or <b>→</b>) walk you stop by stop. Click anything to read it.',
     toc:[['hierarchy','The Memory Stack','8 layers','#5eead4'],['cxl','CXL Fabric','pool &amp; share','#9a8cff'],['photonics','Photonics','light &gt; copper','#7ee787'],['kvcache','The KV Cache','how it works','#5aa9ff'],['ai','The Memory Wall','why it all exists','#f6a345']]},
   hierarchy:{kicker:'Region · 01',title:'The Memory Stack',lede:'Fast &amp; tiny &amp; costly at the top, vast &amp; slow &amp; cheap at the bottom. Click any slab to see who makes it, <b>where its chokepoint comes from</b> (or why it has none), and the metrics to watch. The ◆ flags mark the layers where supply is genuinely gated.',toc:null},
   cxl:{kicker:'Region · 02',title:'CXL Fabric',lede:'Coherent memory over PCIe — expansion, pooling, and sharing. Click the switch, hosts, or modules; toggle the capability below.',
@@ -1415,9 +1439,7 @@ function renderRail(region){
   }else if(r.toc){
     html+=`<div class="toc">`+r.toc.map(t=>`<button data-go="${t[0]}"><span class="dot" style="background:${t[3]}"></span><span class="nm">${t[1]}</span><span class="meta">${t[2]}</span></button>`).join('')+`</div>`;
   }
-  html+=`<button class="rail-intel" id="railIntel">◎ Investor Intelligence<span>the shortlist · by layer · by country · roadmap</span></button>`;
   railcore.innerHTML=html;
-  const ri=railcore.querySelector('#railIntel');if(ri)ri.addEventListener('click',()=>openIntel('short'));
   railcore.querySelectorAll('[data-layer]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.layer);focusLayer(b.dataset.layer);railcore.querySelectorAll('[data-layer]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-node]').forEach(b=>b.addEventListener('click',()=>{openNode(b.dataset.node);railcore.querySelectorAll('[data-node]').forEach(x=>x.classList.toggle('on',x===b));}));
   railcore.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>enterRegion(b.dataset.go)));
@@ -1432,21 +1454,51 @@ let groups={};
 
 function clearScene(){__seed=1234;hovered=null;Object.values(groups).forEach(disposeGroup);groups={};pickables=[];}
 
-/* ---------- MAP (knowledge graph overview) ---------- */
+/* ---------- MAP (v1.8.0 — the full "second brain" knowledge graph) ----------
+   Every topic in the atlas is a node here: 5 theme hubs (miniature hardware
+   models) zig-zagging left→right in STORY ORDER, satellite nodes for every deep
+   topic (click one → it opens in reading mode right over the map), and a gold
+   investor row along the bottom (click → the Investor Intelligence tabs).
+   The journey bar at the bottom walks the exact same order. */
 const MAPNODES=[
-  {id:'hierarchy',name:'The Memory Stack',col:'#5eead4',pos:[0,4,0],r:2.1,sub:'8 layers · SRAM → network'},
-  {id:'cxl',name:'CXL Fabric',col:'#9a8cff',pos:[-8.6,-1.4,0.5],r:1.7,sub:'pool · share · disaggregate'},
-  {id:'ai',name:'The Memory Wall',col:'#f6a345',pos:[8.6,-1.4,0.5],r:1.7,sub:'why the stack exists'},
-  {id:'photonics',name:'Photonics',col:'#7ee787',pos:[0,-7,-0.5],r:1.7,sub:'light replaces copper'},
+  {id:'ai',       name:'The Memory Wall', col:'#f6a345',pos:[-13.8,3.4,0], r:1.4,sub:'the problem — start here'},
+  {id:'kvcache',  name:'The KV Cache',    col:'#5aa9ff',pos:[-7.2,-3.0,0.3],r:1.3,sub:'the memory hog, word by word'},
+  {id:'hierarchy',name:'The Memory Stack',col:'#5eead4',pos:[0.4,3.9,0],  r:1.7,sub:'7 layers · registers → network'},
+  {id:'cxl',      name:'CXL Fabric',      col:'#9a8cff',pos:[8.0,-3.0,0.3],r:1.3,sub:'pool & share memory'},
+  {id:'photonics',name:'Photonics',       col:'#7ee787',pos:[14.6,3.4,0], r:1.4,sub:'light replaces copper'},
 ];
-const MAPEDGES=[
-  ['hierarchy','ai','HBM holds the KV cache'],
-  ['hierarchy','cxl','overflow spills to CXL'],
-  ['hierarchy','photonics','memory disaggregation',0.6],
-  ['cxl','photonics','optical CXL'],
-  ['ai','cxl','KV offload',4.2,0.24],
-  ['ai','photonics','rack-scale fabric'],
+const MAPEDGES=[ // [a,b,label,bump,tPos] — the relationship sentences between hubs
+  ['ai','kvcache','blame the cache',-2.2,0.28],
+  ['kvcache','hierarchy','the cache lives in HBM',-1.1,0.6],
+  ['hierarchy','cxl','overflow spills to CXL',-1.1,0.42],
+  ['cxl','photonics','optical CXL',-1.6,0.3],
+  ['ai','hierarchy','buys GPUs for their HBM',2.2,0.35],
+  ['hierarchy','photonics','memory disaggregation',2.2,0.62],
 ];
+// satellite topics — [nodeId, x, y, hubId, labelSide(+1 above / −1 below), shortLabel?]
+const MAPSATS=[
+  ['kv_econ',-13.6,-1.4,'ai',-1,'KV Economics'],
+  ['kv_how',-7.2,-6.7,'kvcache',-1,'How the cache works'],
+  ['cxl_switch',5.4,-6.5,'cxl',-1,'The Interconnect War'],
+  ['cxl_module',8.0,-7.4,'cxl',-1,'CXL Module'],
+  ['cxl_host',10.6,-6.5,'cxl',-1,'A Compute Host'],
+  ['phot_laser',12.0,-2.2,'photonics',-1,'The Laser Bottleneck'],
+  ['phot_cpo',14.7,-3.1,'photonics',-1,'Co-Packaged Optics'],
+  ['phot_transceiver',16.8,-1.7,'photonics',1,'Transceivers'],
+];
+// the 7 stack layers arch over the Stack hub, labels alternating above/below
+HIER.forEach((h,i)=>{
+  const t=i/(HIER.length-1);
+  MAPSATS.push([h.id, 0.4+(t-0.5)*15.2, 7.8+1.5*(1-Math.pow(t*2-1,2)), 'hierarchy', i%2?-1:1]);
+});
+// the money row — gold nodes open the Investor Intelligence tabs (deliberately loud)
+const MAPGOLD=[ // [tab, label, x, hub the gold thread climbs to]
+  ['short','The Shortlist',-8.2,'hierarchy'],
+  ['watch','Tickers by Layer',-2.8,'hierarchy'],
+  ['geo','Country Risk',2.8,'photonics'],
+  ['road','Roadmap 2025→30',8.2,'cxl'],
+];
+const GOLDY=-9.2;
 function buildMap(){
   const g=new THREE.Group();groups.map=g;
   const pos={};MAPNODES.forEach(n=>pos[n.id]=new THREE.Vector3(...n.pos));
@@ -1475,6 +1527,17 @@ function buildMap(){
     }else if(n.id==='cxl'){mini.add(switchChipModel(1.05,0x9a8cff));}
     else if(n.id==='ai'){const card=gpuCardModel(0.78,0xf6a345);card.position.y=-0.1;mini.add(card);
       card.userData.pcb.add(new THREE.LineSegments(new THREE.EdgesGeometry(card.userData.pcb.geometry,30),new THREE.LineBasicMaterial({color:0xf6a345,transparent:true,opacity:0.5})));}
+    else if(n.id==='kvcache'){ // gold query cube looking back at stored K/V pairs
+      const q=new THREE.Mesh(new RoundedBoxGeometry(0.55,0.55,0.55,2,0.09),
+        new THREE.MeshStandardMaterial({color:0xd9a441,emissive:0xd9a441,emissiveIntensity:0.55,metalness:0.4,roughness:0.35}));
+      q.position.x=-1.05;mini.add(q);
+      for(let i=0;i<3;i++){
+        const k=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.17,0.5),new THREE.MeshStandardMaterial({color:0x5eead4,emissive:0x5eead4,emissiveIntensity:0.45,metalness:0.3,roughness:0.4}));
+        k.position.set(-0.1+i*0.64,0.24,0);mini.add(k);
+        const v=new THREE.Mesh(new THREE.BoxGeometry(0.42,0.17,0.5),new THREE.MeshStandardMaterial({color:0x5aa9ff,emissive:0x5aa9ff,emissiveIntensity:0.45,metalness:0.3,roughness:0.4}));
+        v.position.set(-0.1+i*0.64,-0.24,0);mini.add(v);
+      }
+    }
     else if(n.id==='photonics'){
       const can=laserCanModel(1.1);can.position.x=-1.1;mini.add(can);
       const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.6,10),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:0.65,blending:THREE.AdditiveBlending,depthWrite:false}));
@@ -1498,6 +1561,42 @@ function buildMap(){
     const sl=label(n.sub,'faint');sl.position.set(n.pos[0],n.pos[1]-n.r-0.85,n.pos[2]);g.add(sl);
     g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
   });
+  // ---- satellites: every deep topic, hanging off its hub. Click → read it here. ----
+  MAPSATS.forEach(([id,x,y,hub,side,short])=>{
+    const node=findNode(id);if(!node)return;
+    const c=new THREE.Color(node.col),hp=pos[hub];
+    const spoke=new THREE.Line(new THREE.BufferGeometry().setFromPoints([hp.clone(),new THREE.Vector3(x,y,0)]),
+      new THREE.LineBasicMaterial({color:c,transparent:true,opacity:0.2}));
+    g.add(spoke);
+    const dot=new THREE.Mesh(new THREE.SphereGeometry(0.3,16,16),
+      new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.55,metalness:0.3,roughness:0.4}));
+    dot.position.set(x,y,0);g.add(dot);
+    const halo=new THREE.Mesh(new THREE.SphereGeometry(0.56,12,12),
+      new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.09,side:THREE.BackSide}));
+    halo.position.set(x,y,0);g.add(halo);
+    pick(hitProxy(dot,2.2,2.2,2.2),id,()=>openNode(id));
+    const lb=label(short||node.name,'sat',()=>openNode(id));lb.position.set(x,y+side*0.85,0);g.add(lb);
+  });
+  // ---- the money row: gold nodes → Investor Intelligence (the point of the map) ----
+  MAPGOLD.forEach(([tab,nm,x,hub])=>{
+    const oct=new THREE.Mesh(new THREE.OctahedronGeometry(0.55,0),
+      new THREE.MeshStandardMaterial({color:0xd9a441,emissive:0xd9a441,emissiveIntensity:0.4,metalness:0.85,roughness:0.3}));
+    oct.position.set(x,GOLDY,0);g.add(oct);
+    g.userData.golds=g.userData.golds||[];g.userData.golds.push(oct);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.92,0.035,10,48),
+      new THREE.MeshBasicMaterial({color:0xf0c674,transparent:true,opacity:0.4}));
+    ring.position.set(x,GOLDY,0);ring.rotation.x=Math.PI*0.42;g.add(ring);
+    pick(hitProxy(oct,2.2,2.2,2.2),'intel_'+tab,()=>openIntel(tab));
+    const lb=label(nm,'gold',()=>openIntel(tab));lb.position.set(x,GOLDY-1.25,0);g.add(lb);
+    // a gold thread climbs from the money to the tech it prices
+    const hp=pos[hub];const mid=new THREE.Vector3((x+hp.x)/2,(GOLDY+hp.y)/2-1.4,0);
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(x,GOLDY,0),mid,hp.clone()),24,0.02,6,false),
+      new THREE.MeshBasicMaterial({color:0xd9a441,transparent:true,opacity:0.2})));
+  });
+  const gb=label('◎ INVESTOR INTELLIGENCE — follow the money','goldband');gb.position.set(0.4,GOLDY-2.3,0);g.add(gb);
+  // ---- the journey's front door ----
+  const sh=label('<span class="pill">▾ &nbsp;START HERE</span>','starthere',()=>jGo(1));
+  sh.position.set(-13.8,3.4+1.4+2.9,0);g.add(sh);
   scene.add(g);
   camEnter('map');
 }
@@ -2002,13 +2101,14 @@ function enterRegion(r){
   else if(r==='kvcache'){buildKVCache();}
   setDock(r);
   renderRail(r);
+  jSync(s=>s.r===r&&!s.n&&!s.intel); // free navigation moves the journey pointer too
   controls.autoRotate=false; // rest-state model: no perpetual idle spin (it would keep the GPU awake forever)
   wake(4200);                // animate the fly-in + let ambient motion breathe, then settle to rest
   renderOnce();              // immediate first paint of the new region
   // Warm the new region's shaders off the main thread (KHR_parallel_shader_compile)
   // so the first real frame doesn't stutter. At launch this runs behind the loader.
   if(renderer.compileAsync)renderer.compileAsync(scene,camera).then(()=>wake(300)).catch(()=>{});
-  const hints={map:'<b>drag</b> to orbit the graph · <b>click</b> a node to enter',
+  const hints={map:'<b>Next ▶</b> below (or <b>→</b>) walks the journey · <b>click</b> any node to read it',
     hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
     cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
     photonics:'<b>click</b> a chip or the laser callout · toggle WDM below',
@@ -2018,53 +2118,85 @@ function enterRegion(r){
 }
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(!b)return;enterRegion(b.dataset.region);});
 
-/* ---------- GUIDED TOUR (zero → expert) ---------- */
-const TOUR=[
-  {region:'ai',node:'kv_econ',title:'1 · Start with the problem',text:'AI is bottlenecked by <b>memory</b>, not compute. To write each word, a GPU re-reads the entire model from memory — and sits idle ~1,200× waiting on it. Drag the sliders below: bigger context explodes the memory needed.',
-   q:{ask:'Quick gut check before we dive in — what do you think limits how fast an AI writes each word?',opts:[
-     ['The math it has to do',false,'Reasonable guess — but modern GPUs do the math almost absurdly fast. That\'s not the limit.'],
-     ['Fetching the data from memory',true,'Exactly right. The GPU finishes the math ~1,200× faster than it can fetch the data — so it sits and waits on memory. That one fact is what this whole map is about.'],
-     ['Its internet connection',false,'Nope — it\'s all happening inside one machine, on one chip. The hold-up is memory.']
-   ]}},
-  {region:'hierarchy',node:'hbm',title:'2 · The prize — HBM',text:'The answer is <b>HBM</b>: ultra-fast memory stacked onto the GPU. Just three firms make it (SK Hynix, Samsung, Micron) and it sells out a year ahead. This one component is the centre of gravity of the entire AI trade.'},
-  {region:'hierarchy',node:'hbm',title:'3 · The real chokepoint',text:'Tap <b>"Who makes it"</b> in the panel. HBM is gated from below by TSMC\'s <b>CoWoS</b> packaging (booked to 2027), ASML\'s EUV monopoly, and Japan\'s grip on materials (Ajinomoto\'s 95% ABF). The bottleneck is packaging, not the chip.'},
-  {region:'cxl',node:'cxl_switch',title:'4 · When HBM runs out — CXL',text:'When a model outgrows one GPU\'s memory, <b>CXL</b> pools memory across the rack — and sets off the standards war: NVIDIA\'s NVLink vs the open UALink camp. <b>Astera Labs</b> is the pure-play that wins whichever way it breaks.'},
-  {region:'photonics',node:'phot_laser',title:'5 · Breaking the wall — light',text:'To wire memory and GPUs together at rack scale, copper gives way to <b>light</b>. The bottleneck shifts to the <b>laser</b> — fewer than five makers, with NVIDIA locking up ~$4B of Lumentum & Coherent supply through 2027.'},
-  {region:'map',node:null,title:'6 · Now you can read the map',text:'You\'ve walked the whole chain: the wall → HBM → the chokepoints → CXL → photonics. Click any node to go deeper, and click a <b>company</b> to see every layer it touches. The floor is yours.'}
+/* ---------- THE JOURNEY (v1.8.0 — replaces the detached tour card) ----------
+   One ordered spine through every stop of the atlas. The bottom bar (and ←/→)
+   walks it; captions carry the teaching, delivered in the flow with the visual.
+   Free exploration re-syncs the pointer, so Next always continues from where
+   the reader actually is. */
+const JOURNEY=[
+  {r:'map',t:'The map — the whole story on one graph',cap:'Welcome. Every layer, bottleneck and company in the AI memory chain is a node on this graph — the <b>gold row</b> is the money. Click anything to read it, or keep hitting <b>Next ▶</b> (or press <b>→</b>) and the atlas walks you from zero to expert, stop by stop.'},
+  {r:'ai',n:'kv_econ',t:'Start with the problem',cap:'AI is bottlenecked by <b>memory</b>, not math. To write each word, a GPU re-reads the entire model from memory — and sits idle ~1,200× waiting on it. That one fact is what this whole map is about.'},
+  {r:'ai',t:'The Wall, live',cap:'One glass tank = one GPU\'s memory. The blue block is the model; every chat adds a green slab that grows with the conversation. <b>Drag the sliders below</b> — when the tank overflows, you\'re buying whole extra GPUs.'},
+  {r:'kvcache',t:'Watch the cache being written',cap:'This is the thing filling those tanks. The gold cube is the word being written; the beams look back at every stored key/value pair. <b>Toggle the cache off</b> below to see the waste it prevents.'},
+  {r:'kvcache',n:'kv_how',t:'How the KV cache works'},
+  {r:'hierarchy',t:'The memory stack — 7 layers',cap:'Fast, tiny and costly at the top; vast, slow and cheap at the bottom. Slab width = capacity, particle speed = bandwidth, ◆ = a genuine supply chokepoint. The next stops walk every layer.'},
+  {r:'hierarchy',n:'reg',t:'Registers — where the math happens'},
+  {r:'hierarchy',n:'sram',t:'L1/L2 SRAM — on-chip scratch paper'},
+  {r:'hierarchy',n:'hbm',t:'HBM — the prize',cap:'If you remember one stop, make it this one. Just three firms make HBM and it sells out a year ahead — gated from below by TSMC\'s CoWoS packaging, ASML\'s EUV monopoly and Ajinomoto\'s 95% grip on ABF. The bottleneck is packaging, not the chip. Tap <b>"Who makes it"</b> in the panel.'},
+  {r:'hierarchy',n:'ddr',t:'Host DDR5 — the big, slower pool'},
+  {r:'hierarchy',n:'cxl',t:'CXL memory — the escape valve'},
+  {r:'hierarchy',n:'ssd',t:'NVMe SSD — weights at rest'},
+  {r:'hierarchy',n:'net',t:'Network / fabric — racks become one computer'},
+  {r:'cxl',t:'The CXL fabric, live',cap:'When a model outgrows one GPU\'s memory, CXL lets many servers borrow from <b>one shared pool</b>. Toggle Expansion / Pooling / Sharing below and watch the memory move.'},
+  {r:'cxl',n:'cxl_switch',t:'The interconnect war',cap:'NVLink vs UALink vs CXL — whoever wins decides which chipmakers get the design wins for years. <b>Astera Labs</b> is the pure-play that wins whichever way it breaks.'},
+  {r:'cxl',n:'cxl_module',t:'The CXL memory module'},
+  {r:'cxl',n:'cxl_host',t:'A compute host — the customer'},
+  {r:'photonics',t:'Copper vs light',cap:'Copper dies after ~1 metre and runs hot; light travels far and carries ~10× the data. At rack scale, optics is taking over — watch both lanes run.'},
+  {r:'photonics',n:'phot_laser',t:'The laser bottleneck',cap:'Silicon cannot make light. Every optical link starts with an indium-phosphide laser — fewer than five firms make them at volume, and NVIDIA locked up ~$4B of Lumentum & Coherent supply through 2027.'},
+  {r:'photonics',n:'phot_cpo',t:'Co-packaged optics'},
+  {r:'photonics',n:'phot_transceiver',t:'Optical transceivers'},
+  {intel:'short',t:'The investor shortlist',cap:'Now the money. These are the names that structurally define the map — chokepoint monopolies, scale players and pure-plays — and exactly why each one matters.'},
+  {intel:'watch',t:'Every ticker, by layer'},
+  {intel:'geo',t:'Where the single points of failure live'},
+  {intel:'road',t:'The roadmap — what ships when'},
+  {r:'map',t:'You can read the map now',cap:'You\'ve walked the whole chain: the wall → the cache → HBM → the chokepoints → CXL → photonics → the money. Click any node to go deeper — and click a <b>company</b> to see every layer it touches. The floor is yours.'},
 ];
-let tour={active:false,i:0,answered:{}};
-const tourEl=document.getElementById('tour'),tourBtn=document.getElementById('tourBtn');
-function startTour(){tour.active=true;tour.answered={};tourEl.classList.add('on');tourBtn.style.display='none';document.getElementById('hint').style.opacity='0';setStep(0);}
-function endTour(){tour.active=false;tourEl.classList.remove('on');tourBtn.style.display='';document.getElementById('hint').style.opacity='';}
-function setStep(i){
-  tour.i=Math.max(0,Math.min(TOUR.length-1,i));const s=TOUR[tour.i];
-  enterRegion(s.region);
-  if(s.node)setTimeout(()=>{openNode(s.node);if(s.region==='hierarchy')focusLayer(s.node);},680);
-  renderTour();
-}
-function renderTour(){
-  const s=TOUR[tour.i];const ans=tour.answered[tour.i];
-  let qhtml='';
-  if(s.q){
-    if(!ans){qhtml=`<div class="tq"><div class="tq-ask">${s.q.ask}</div>`+s.q.opts.map((o,k)=>`<button class="tq-opt" data-k="${k}">${o[0]}</button>`).join('')+`</div>`;}
-    else{const o=s.q.opts[ans.k];qhtml=`<div class="tq"><div class="tq-fb ${o[1]?'right':'wrong'}">${o[1]?'✓ ':'→ '}${o[2]}</div></div>`;}
+let jI=0,jNavigating=false;
+const jTitleEl=document.getElementById('jTitle'),jFillEl=document.getElementById('jFill'),
+      jCapEl=document.getElementById('jCap'),jCapTEl=document.getElementById('jCapT');
+function jGo(i){
+  jI=(i%JOURNEY.length+JOURNEY.length)%JOURNEY.length; // Next past the end restarts
+  const s=JOURNEY[jI];
+  jNavigating=true;
+  closeIntel();
+  if(s.intel){openIntel(s.intel);}
+  else{
+    const move=region!==s.r;
+    if(move)enterRegion(s.r);
+    if(s.n)setTimeout(()=>{jNavigating=true;openNode(s.n);if(s.r==='hierarchy')focusLayer(s.n);jNavigating=false;},move?700:0);
+    else closePanel();
   }
-  const gated=s.q&&!ans;
-  tourEl.querySelector('.core').innerHTML=`
-    <div class="trow"><span class="tstep">STEP ${tour.i+1} / ${TOUR.length}</span>
-      <div class="tprog">${TOUR.map((_,k)=>`<i class="${k<=tour.i?'on':''}"></i>`).join('')}</div></div>
-    <h3>${s.title}</h3><p>${s.text}</p>${qhtml}
-    <div class="tnav">
-      <button id="tExit">Exit</button>
-      ${tour.i>0?'<button id="tPrev">← Back</button>':''}
-      <button class="next" id="tNext"${gated?' disabled':''}>${tour.i<TOUR.length-1?'Next →':'Finish ✓'}</button>
-    </div>`;
-  if(gated)tourEl.querySelectorAll('.tq-opt').forEach(b=>b.addEventListener('click',()=>{tour.answered[tour.i]={k:+b.dataset.k};renderTour();}));
-  tourEl.querySelector('#tExit').onclick=endTour;
-  const p=tourEl.querySelector('#tPrev');if(p)p.onclick=()=>setStep(tour.i-1);
-  const n=tourEl.querySelector('#tNext');if(n&&!gated)n.onclick=()=>{tour.i<TOUR.length-1?setStep(tour.i+1):endTour();};
+  jNavigating=false;
+  renderJourney(true);
+  wake();
 }
-tourBtn.addEventListener('click',startTour);
+function renderJourney(showCap){
+  const s=JOURNEY[jI];
+  jTitleEl.innerHTML=`<b>${jI+1}/${JOURNEY.length}</b> · ${s.t}`;
+  jFillEl.style.width=(jI/(JOURNEY.length-1)*100)+'%';
+  document.getElementById('jPrev').disabled=jI===0;
+  document.getElementById('jNext').innerHTML=jI===JOURNEY.length-1?'Restart&nbsp;↺':'Next&nbsp;▶';
+  // node steps carry their caption INSIDE the reading panel; the floating card is
+  // only for region-level steps — and it stacks above the dock, never over it
+  if(showCap&&s.cap&&!s.n){
+    jCapTEl.innerHTML=s.cap;jCapEl.style.display='block';
+    const dockEl=document.getElementById('dock');
+    jCapEl.style.bottom=(dockEl&&dockEl.style.display!=='none')?(dockEl.offsetHeight+106)+'px':'86px';
+  }
+  else jCapEl.style.display='none';
+}
+// free exploration re-syncs the pointer (called from openNode / enterRegion / openIntel)
+function jSync(pred){
+  if(jNavigating)return;
+  const k=JOURNEY.findIndex(pred);
+  if(k>=0&&k!==jI){jI=k;renderJourney(false);}
+}
+document.getElementById('jNext').addEventListener('click',()=>jGo(jI+1));
+document.getElementById('jPrev').addEventListener('click',()=>jGo(jI-1));
+document.getElementById('jHome').addEventListener('click',()=>{closePanel();closeIntel();enterRegion('map');});
+document.getElementById('jIntel').addEventListener('click',()=>openIntel('short'));
+document.getElementById('jCapX').addEventListener('click',()=>{jCapEl.style.display='none';});
+renderJourney(false);
 
 /* =========================================================================
    ANIMATE
@@ -2101,6 +2233,7 @@ function animate(){
   if(region==='map'&&groups.map){
     (groups.map.userData.cores||[]).forEach(c=>{c.rotation.y+=dt*c.userData.spin;if(c.userData.ring)c.userData.ring.rotation.z+=dt*0.25;});
     (groups.map.userData.pulses||[]).forEach(p=>{p.t+=dt*p.sp;if(p.t>1)p.t-=1;p.mesh.position.copy(p.curve.getPoint(p.t));});
+    (groups.map.userData.golds||[]).forEach((o,i)=>{o.rotation.y+=dt*0.7;o.material.emissiveIntensity=0.4+Math.sin(tt*1.6+i*1.3)*0.18;});
   }
   else if(region==='hierarchy'&&groups.hier){
     (groups.hier.userData.flows||[]).forEach(f=>{const a=f.pts.geometry.attributes.position.array;f.seeds.forEach((s,k)=>{s.t+=dt*f.sp*0.5;if(s.t>1)s.t-=1;a[k*3]=s.sx;a[k*3+1]=f.yT-(f.yT-f.yB)*s.t;a[k*3+2]=s.sz;});f.pts.geometry.attributes.position.needsUpdate=true;});
@@ -2146,6 +2279,7 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   freeze(t){T.frozen=true;if(t!=null)T.now=t;renderOnce();},thaw(){T.frozen=false;},get frozen(){return T.frozen;},
   sleep(){awakeUntil=0;},get awake(){return isActive(performance.now());},   // for the idle-rest gate
   go(r){enterRegion(r);},
+  jGo(i){jGo(i);},get jI(){return jI;},get jLen(){return JOURNEY.length;},   // journey harness hooks
   setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}wake();},
   kvStep(){stepKVR();wake();},kvCache(on){kvr.cache=on;updateKVR(false);wake();},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
@@ -2155,25 +2289,20 @@ animate();
 //  a second forever, even backgrounded — pure waste. rAF pausing when hidden is the
 //  correct behavior, and visibilitychange re-wakes us for a fresh frame on return.)
 
-/* ---------- WELCOME / ONBOARDING ---------- */
+/* ---------- WELCOME (kept behind "? What is this" only — nothing auto-opens) ---------- */
 const welcome=document.getElementById('welcome');
 function showWelcome(){welcome.classList.add('show');}
 function hideWelcome(){welcome.classList.remove('show');try{localStorage.setItem('atlas_seen','1');}catch(e){}}
-document.getElementById('wTour').addEventListener('click',()=>{hideWelcome();setTimeout(()=>{if(typeof startTour==='function')startTour();},260);});
+document.getElementById('wTour').addEventListener('click',()=>{hideWelcome();setTimeout(()=>jGo(1),260);});
 document.getElementById('wExplore').addEventListener('click',hideWelcome);
 welcome.addEventListener('click',e=>{if(e.target===welcome)hideWelcome();});
 const footlinks=document.createElement('div');footlinks.id='footlinks';document.body.appendChild(footlinks);
 const introBtn=document.createElement('button');introBtn.id='introReopen';introBtn.innerHTML='?&nbsp; What is this';introBtn.addEventListener('click',showWelcome);footlinks.appendChild(introBtn);
 const ghLink=document.createElement('a');ghLink.id='ghLink';ghLink.href='https://github.com/upamanyuacharya/memory-atlas';ghLink.target='_blank';ghLink.rel='noopener';ghLink.textContent='GitHub';footlinks.appendChild(ghLink);
 
-setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);
-  let seen=false;try{seen=localStorage.getItem('atlas_seen')==='1';}catch(e){}
-  // First visit: no takeover modal — a quiet side nudge; the full intro stays behind "? What is this"
-  if(!seen){const n=document.getElementById('tourNudge');if(n){n.style.display='block';
-    const done=()=>{n.remove();try{localStorage.setItem('atlas_seen','1');}catch(e){}};
-    document.getElementById('tnStart').addEventListener('click',()=>{done();startTour();});
-    document.getElementById('tnSkip').addEventListener('click',done);}}
-},1500);
+// v1.8.0: the landing IS the map — no takeover modal, no nudge. The ▾ START HERE
+// pointer and the journey bar are the onboarding.
+setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.classList.add('gone');setTimeout(()=>l.remove(),750);},1500);
 </script>
 </body>
 </html>

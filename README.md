@@ -14,11 +14,11 @@ It's a single self-contained HTML file. No build step, no backend, no sign-up.
 
 ## What's inside
 
-Six interlinked **regions** in one continuous 3D world — drag to orbit, click any glowing node to open its file:
+Six interlinked **regions** in one continuous 3D world. The landing page is the map itself — a **▾ START HERE** pointer marks the story's first stop, and the **journey bar** at the bottom (or the ← / → arrow keys) walks you through all 26 stops in order, zero to expert. Click any glowing node at any time to open its file; the journey continues from wherever you wander.
 
 | Region | What it shows |
 |---|---|
-| **Map** | A knowledge graph of the four themes as miniature hardware models — a memory-stack totem, CXL switch silicon, a GPU card, a laser firing light — joined by labelled relationship edges ("HBM holds the KV cache", "optical CXL"…). Click a node to fly in. |
+| **Map** | The full knowledge graph — every topic in the atlas as a node. Five hardware-miniature hubs in story order (the Wall → KV Cache → the Stack → CXL → Photonics), satellite nodes for all 15 deep topics, labelled relationship edges, and a **gold investor row** along the bottom that opens the Intel tabs directly. |
 | **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged — each carrying a recognizable mini of its real hardware (HBM die stack, DIMM, M.2 stick…). |
 | **CXL** | A shared-memory fabric: four 2U rack servers, real CXL switch silicon on its substrate, and a pool of RAM modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
 | **Photonics** | Copper vs light: a DAC copper run whose signal dies mid-way vs a laser TO-can firing wavelength-multiplexed light down a clad fibre into a real GPU package (compute die + HBM stacks). The laser is the bottleneck — click it. |
@@ -27,20 +27,20 @@ Six interlinked **regions** in one continuous 3D world — drag to orbit, click 
 
 ![HBM panel — who makes it, metrics, geography](docs/hbm-panel.png)
 
-Every clickable object opens a **fractal reading panel** — Overview · Who makes it · Metrics · Geography — with a plain-English intro before any jargon, market-share bars where there's an oligopoly, a bottleneck-severity meter, real source links, and **company cards** that link both ways: click a company and see every other node in the atlas it touches.
+Every clickable object opens **reading mode** — the file takes centre stage as a large reading column while the 3D world dims and blurs into the background (a "← Back to the 3D view" button, ✕, Esc or a click outside all return you). Each file is fractal — Overview · Who makes it · Metrics · Geography — with a plain-English intro before any jargon, market-share bars where there's an oligopoly, a bottleneck-severity meter, real source links, and **company cards** that link both ways: click a company and see every other node in the atlas it touches.
 
 ### Investor Intelligence
 
-A dedicated command centre with four tabs:
+The money is structural, not a sidebar: four **gold nodes** on the map (with gold threads climbing to the tech they price), a persistent gold **◎ Investor** button in the journey bar, and the journey's final stops all land here — a command centre with four tabs:
 
 - **The shortlist** — the names that structurally define the map (chokepoint monopolies, scale players, pure-plays) and why.
 - **By layer** — every public ticker in the chain, grouped by where it sits, dotted by chokepoint severity.
 - **By country** — where each critical step physically happens, ordered by single-point-of-failure risk (Taiwan, Korea, the Netherlands, Japan…).
 - **Roadmap** — 2025 → 2030: what ships when, and who benefits.
 
-### Guided tour
+### The journey
 
-A 6-step zero-to-expert walkthrough that starts with the problem (LLM decode is memory-bound — the GPU waits ~1,200× longer on memory than on math), opens the right nodes as it goes, and quizzes you Socratically along the way. Khan Academy pedagogy: stakes first, plain English before jargon, one clear action at a time.
+A 26-stop zero-to-expert spine through the whole atlas, driven by the persistent bottom bar (**Next ▶** / **◀**, or the arrow keys). It starts with the problem (LLM decode is memory-bound — the GPU waits ~1,200× longer on memory than on math), then walks every stack layer, every deep node and the four investor tabs, teaching in the flow: region stops float a caption card, node stops lead their reading page with an "ON THE JOURNEY" block. Wander freely — the pointer re-syncs to wherever you actually are. Khan Academy pedagogy: stakes first, plain English before jargon, one clear action at a time.
 
 ![CXL fabric](docs/cxl.png)
 ![The Wall overflowing](docs/wall-overflow.png)

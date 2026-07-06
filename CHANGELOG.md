@@ -2,6 +2,62 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.8.0] — 2026-07-07
+
+The reader's cut. Built directly from first-user feedback (a non-technical
+reader): *"I see the visual first but I don't know where to start"*, *"I
+accidentally click things and don't know how to go back"*, *"the guided tour
+is fine but removed from the visual itself"*. Three structural changes follow.
+
+### Changed — the landing IS the map
+- **No popup, no nudge.** Nothing auto-opens on load anymore. The welcome
+  intro survives only behind "? What is this".
+- **The full knowledge graph.** The Map region now carries *every* topic in
+  the atlas as a node — 5 theme hubs (miniature hardware models, zig-zagging
+  left→right in story order, KV Cache promoted to its own hub), 15 satellite
+  topics (all 7 stack layers + every deep node) hanging off their hubs, and
+  relationship edges with plain-sentence labels.
+- **▾ START HERE** — a bobbing pointer over The Memory Wall hub (the story's
+  first stop). Clicking it starts the journey.
+
+### Added — the journey (replaces the detached tour card)
+- A persistent **journey bar** at the bottom centre: `⌂ Map · ◀ · step/26 +
+  progress · Next ▶ · ◎ Investor`. **26 ordered stops** cover every region,
+  every stack layer, every deep node and all four Investor Intelligence tabs.
+- **← / → arrow keys** walk the same spine from anywhere (form controls are
+  never hijacked).
+- The old tour's teaching (and its voice) lives on as **journey captions**:
+  region stops float a dismissable card stacked above the dock; node stops
+  lead their reading page with an "ON THE JOURNEY · n/26" block.
+- **Free exploration re-syncs the pointer** — click any node or tab and Next
+  continues from where you actually are, not where the script thinks you are.
+
+### Changed — reading mode (text is the focus)
+- Clicking a node no longer opens a side panel: the file opens as a **centred
+  reading column** while the whole 3D world **dims, desaturates and blurs into
+  the background** (`body.reading #app` filter — costs nothing at rest thanks
+  to render-on-demand).
+- A prominent **"← Back to the 3D view"** button heads every page (plus ✕,
+  scrim-click and Esc) — the "how do I go back?" problem, answered four ways.
+- Satellites open their file **directly over the map** — no region jump needed.
+
+### Changed — the investor layer is now structural
+- **4 gold nodes** (octahedra + gold threads climbing to the tech they price)
+  sit in their own row at the bottom of the graph: The Shortlist · Tickers by
+  Layer · Country Risk · Roadmap 2025→30 — each opens its Intel tab directly.
+- A persistent gold **◎ Investor** button lives in the journey bar; the last
+  four journey stops walk all four tabs.
+- The duplicate top-bar and rail buttons are gone (the top CTA row and the
+  rail's Investor block were the two "no one clicks this" placements).
+
+### Harness
+- New **journey behavioral gate**: steps must open the right region/panel/tab,
+  ArrowRight must advance the pointer, and the graph must carry ≥15 satellite
+  labels, exactly 4 gold nodes and the START HERE pointer.
+- Reading-mode assertions (body.reading + back button) added to `stack-hbm`;
+  camera rigs re-tuned (CXL pool, Wall tanks, KV sentence all clear the moved
+  dock band); all baselines re-blessed.
+
 ## [1.7.0] — 2026-07-06
 
 Real hardware, not primitives. A /last30days research sweep (12-month window)
