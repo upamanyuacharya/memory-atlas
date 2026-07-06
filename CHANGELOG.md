@@ -2,6 +2,47 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [1.7.0] — 2026-07-06
+
+Real hardware, not primitives. A /last30days research sweep (12-month window)
+on 3D assets for Three.js education scenes converged on a clear verdict: AI
+mesh generators fail hardest on manufactured rectilinear objects (the Aircada
+"3D slop autopsy"), downloads break the single-file property, and the winning
+move for a scene like this is detailed **procedural models** — licence-clean,
+tiny, and stylistically coherent.
+
+### Added — procedural hardware model library
+- **Model builders** (each sub-assembly is a merged BufferGeometry = ONE draw
+  call): GPU card (PCB, gold fingers, shroud, twin fans, fin stack, lit accent),
+  HBM die stack (interposer, logic die, 8 DRAM dies with glowing TSV gaps),
+  CXL switch silicon (substrate, ball grid, lid, glowing die seam, lanes),
+  2U rack server (drive bays, status LEDs, rack ears), laser TO-can (gold
+  header, pins, window ring), M.2 NVMe stick, mini fabric switch, silicon die.
+- **Map**: the four theme nodes are now miniatures of the real thing — a
+  memory-stack totem, CXL switch silicon, a GPU card, a laser firing light —
+  in place of the old rounded cubes.
+- **Stack**: every layer carries a recognizable mini of its hardware on the
+  slab (die, HBM stack, DIMM, CXL module, M.2 stick, fabric switch). The
+  width-∝-capacity slab encoding is untouched — the miniatures identify, the
+  slabs still teach.
+- **CXL**: the abstract icosahedron is now real switch silicon; the four hosts
+  are 2U rack servers with drive bays and capability-reactive status LEDs.
+- **Photonics**: the GPU is a real package (compute die + 6 HBM stacks on a
+  substrate), the switch is a lidded ASIC, the laser is a proper TO-can, the
+  fibre gained glass cladding + metal ferrules, the copper run gained DAC
+  connector shells.
+- **The Wall**: the hero tank now stands on an SXM-style GPU module board
+  (gold edge connectors, under-board fin block) — one tank = one GPU, literally.
+
+### Design contract
+- Conceptual regions (KV Cache word-by-word, the Wall's tank arithmetic, the
+  Stack's slab encoding) stay abstract on purpose — realism is reserved for
+  the physical objects; the abstractions ARE the pedagogy.
+- Hover now lifts the whole assembly (hit-proxy pattern), not the invisible
+  hit box.
+- All 8 verification gates pass, including idle-rest (render-on-demand does
+  zero work when settled); baselines re-blessed for the new visuals.
+
 ## [1.6.0] — 2026-07-06
 
 The real idle-fan fix. A Codex adversarial review plus a /last30days sweep of

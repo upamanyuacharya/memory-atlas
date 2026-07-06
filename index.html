@@ -606,6 +606,7 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {CSS2DRenderer,CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 /* =========================================================================
    CONTENT MODEL  — the "second brain". Nodes + companies + relationships.
@@ -953,6 +954,137 @@ function glassify(mesh){mesh.material.transparent=true;mesh.material.depthWrite=
 function fxPoints(geom,color,size,opacity){const p=new THREE.Points(geom,new THREE.PointsMaterial({color,size,transparent:true,opacity,blending:THREE.AdditiveBlending,depthWrite:false}));p.renderOrder=PHASE.FX;return p;}
 function logPct(v,min,max){const lv=Math.log10(Math.max(v,min)),a=Math.log10(min),b=Math.log10(max);return Math.max(5,Math.min(100,((lv-a)/(b-a))*100));}
 
+/* =========================================================================
+   PROCEDURAL HARDWARE MODEL LIBRARY (v1.7.0)
+   Recognizable miniatures of the real objects — GPU cards, HBM die stacks,
+   CXL switch silicon, rack servers, laser TO-cans, fibre with ferrules —
+   built from merged BufferGeometries so each sub-assembly costs ONE draw
+   call. Procedural (no downloads) keeps the single-file property, zero
+   licence risk, and one coherent material language across the atlas.
+   ========================================================================= */
+const M={
+  pcbDark:()=>new THREE.MeshStandardMaterial({color:0x0c1016,metalness:0.5,roughness:0.48}),
+  pcbGreen:(c=0x14532d)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),metalness:0.3,roughness:0.55}),
+  gold:()=>new THREE.MeshStandardMaterial({color:0xd9a441,metalness:0.95,roughness:0.28,emissive:0x3a2a06,emissiveIntensity:0.3}),
+  silver:()=>new THREE.MeshStandardMaterial({color:0x8fa3bb,metalness:0.92,roughness:0.32}),
+  chip:()=>new THREE.MeshStandardMaterial({color:0x141a24,metalness:0.5,roughness:0.42}),
+  die:(glow=0x5eead4,e=0.3)=>new THREE.MeshStandardMaterial({color:0x0e1626,metalness:0.78,roughness:0.2,emissive:new THREE.Color(glow),emissiveIntensity:e}),
+  glow:(c,e=0.8)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),emissive:new THREE.Color(c),emissiveIntensity:e,metalness:0.2,roughness:0.4}),
+};
+// many boxes → ONE geometry → ONE draw call (fins, ports, chips, pins, blades)
+function mergedBoxes(parts,mat){
+  const gs=parts.map(p=>{const g=new THREE.BoxGeometry(p.w,p.h,p.d);
+    if(p.ry)g.rotateY(p.ry);if(p.rz)g.rotateZ(p.rz);if(p.rx)g.rotateX(p.rx);
+    g.translate(p.x||0,p.y||0,p.z||0);return g;});
+  const merged=mergeGeometries(gs);gs.forEach(g=>g.dispose());
+  return new THREE.Mesh(merged,mat);
+}
+// invisible pickable proxy: whole assembly clickable + hover lifts the model
+function hitProxy(grp,w,h,d,y=0){
+  const hit=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  hit.position.y=y;hit.userData.hoverTarget=grp;grp.add(hit);grp.userData.hit=hit;return hit;
+}
+
+/* HBM die stack — interposer, base logic die, 8 DRAM dies with glowing gaps */
+function hbmStackModel(s=1,glow=0x5eead4){
+  const g=new THREE.Group();
+  const inter=new THREE.Mesh(new THREE.BoxGeometry(1.3*s,0.06*s,1.3*s),M.gold());inter.position.y=0.03*s;g.add(inter);
+  const logic=new THREE.Mesh(new THREE.BoxGeometry(1.14*s,0.1*s,1.14*s),M.die(glow,0.4));logic.position.y=0.12*s;g.add(logic);
+  const dies=[],gaps=[];const t=0.11*s,gp=0.028*s;let y=0.17*s+t/2;
+  for(let i=0;i<8;i++){dies.push({w:1.1*s,h:t,d:1.1*s,y});gaps.push({w:1.0*s,h:gp,d:1.0*s,y:y+t/2+gp/2});y+=t+gp;}
+  gaps.pop();
+  g.add(mergedBoxes(dies,M.chip()));
+  g.add(mergedBoxes(gaps,M.glow(glow,0.9)));
+  g.userData.h=y;return g;
+}
+
+/* GPU card — PCB, gold fingers, shroud, twin fans, fin stack, lit accent */
+function gpuCardModel(s=1,accent=0xf6a345){
+  const g=new THREE.Group();
+  const pcb=new THREE.Mesh(new RoundedBoxGeometry(3.4*s,1.6*s,0.1*s,2,0.04*s),M.pcbDark());g.add(pcb);g.userData.pcb=pcb;
+  const fingers=[];for(let i=0;i<12;i++)fingers.push({w:0.16*s,h:0.18*s,d:0.12*s,x:-1.1*s+i*0.2*s,y:-0.88*s});
+  g.add(mergedBoxes(fingers,M.gold()));
+  const shroud=new THREE.Mesh(new RoundedBoxGeometry(3.3*s,1.34*s,0.34*s,3,0.09*s),M.chip());shroud.position.z=0.24*s;g.add(shroud);
+  // twin fans: rim torus ×2 + merged blades + hubs
+  [-0.82,0.82].forEach(fx=>{
+    const rim=new THREE.Mesh(new THREE.TorusGeometry(0.52*s,0.05*s,10,36),M.silver());rim.position.set(fx*s,0,0.43*s);g.add(rim);
+    const blades=[];for(let b=0;b<7;b++)blades.push({w:0.42*s,h:0.1*s,d:0.03*s,x:fx*s+Math.cos(b/7*Math.PI*2)*0.26*s,y:Math.sin(b/7*Math.PI*2)*0.26*s,z:0.43*s,rz:b/7*Math.PI*2+0.6});
+    g.add(mergedBoxes(blades,M.chip()));
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(0.13*s,0.13*s,0.06*s,14),M.die(accent,0.5));hub.rotation.x=Math.PI/2;hub.position.set(fx*s,0,0.43*s);g.add(hub);
+  });
+  const fins=[];for(let i=0;i<9;i++)fins.push({w:3.2*s,h:0.05*s,d:0.2*s,y:-0.6*s+i*0.15*s,z:-0.12*s});
+  g.add(mergedBoxes(fins,M.silver()));
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(3.24*s,0.06*s,0.05*s),M.glow(accent,1.0));strip.position.set(0,0.72*s,0.42*s);g.add(strip);
+  const bracket=new THREE.Mesh(new THREE.BoxGeometry(0.08*s,1.5*s,0.5*s),M.silver());bracket.position.set(-1.72*s,0,0.2*s);g.add(bracket);
+  return g;
+}
+
+/* 2U rack server — chassis, faceplate, drive bays, status LEDs, rack ears */
+function serverModel(s=1,accent=0x7ee787){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new RoundedBoxGeometry(2.6*s,1.1*s,2.2*s,3,0.07*s),M.chip());g.add(body);
+  const face=new THREE.Mesh(new THREE.BoxGeometry(2.44*s,0.94*s,0.08*s),M.pcbDark());face.position.z=1.12*s;g.add(face);
+  const bays=[];for(let r=0;r<2;r++)for(let c=0;c<4;c++)bays.push({w:0.5*s,h:0.3*s,d:0.06*s,x:-0.87*s+c*0.58*s,y:0.22*s-r*0.44*s,z:1.17*s});
+  g.add(mergedBoxes(bays,M.silver()));
+  const leds=[];for(let r=0;r<2;r++)for(let c=0;c<4;c++)leds.push({w:0.07*s,h:0.07*s,d:0.03*s,x:-1.04*s+c*0.58*s,y:0.32*s-r*0.44*s,z:1.22*s});
+  const lit=mergedBoxes(leds,M.glow(accent,1.2));g.add(lit);g.userData.lit=lit;
+  const ears=[];[-1.36,1.36].forEach(x=>ears.push({w:0.09*s,h:1.1*s,d:0.34*s,x:x*s,z:1.0*s}));
+  g.add(mergedBoxes(ears,M.silver()));
+  const vents=[];for(let i=0;i<5;i++)vents.push({w:2.3*s,h:0.03*s,d:0.02*s,y:-0.42*s+i*0.09*s,z:1.17*s});
+  g.add(mergedBoxes(vents,new THREE.MeshBasicMaterial({color:0x05070c})));
+  return g;
+}
+
+/* CXL switch silicon — substrate, gold ball grid, lid, glowing die seam, lanes */
+function switchChipModel(s=1,glow=0x9a8cff){
+  const g=new THREE.Group();
+  const sub=new THREE.Mesh(new RoundedBoxGeometry(2.5*s,0.14*s,2.5*s,2,0.04*s),M.pcbGreen(0x123524));g.add(sub);
+  const balls=[];for(let r=0;r<7;r++)for(let c=0;c<7;c++)balls.push({w:0.1*s,h:0.06*s,d:0.1*s,x:-0.99*s+c*0.33*s,y:-0.1*s,z:-0.99*s+r*0.33*s});
+  g.add(mergedBoxes(balls,M.gold()));
+  const seam=new THREE.Mesh(new THREE.BoxGeometry(1.95*s,0.1*s,1.95*s),M.glow(glow,0.9));seam.position.y=0.12*s;g.add(seam);g.userData.glowMat=seam.material;
+  const lid=new THREE.Mesh(new RoundedBoxGeometry(1.8*s,0.22*s,1.8*s,2,0.06*s),M.silver());lid.position.y=0.24*s;g.add(lid);
+  const mark=new THREE.Mesh(new THREE.BoxGeometry(0.66*s,0.015*s,0.66*s),M.die(glow,0.55));mark.position.y=0.36*s;g.add(mark);
+  const lanes=[];for(let i=0;i<6;i++){lanes.push({w:0.07*s,h:0.03*s,d:0.5*s,x:-0.55*s+i*0.22*s,y:0.09*s,z:1.45*s});lanes.push({w:0.07*s,h:0.03*s,d:0.5*s,x:-0.55*s+i*0.22*s,y:0.09*s,z:-1.45*s});}
+  g.add(mergedBoxes(lanes,M.gold()));
+  return g;
+}
+
+/* laser TO-can — gold header, pins, can body, emitting window (tip kept for pulse) */
+function laserCanModel(s=1){
+  const g=new THREE.Group();
+  const header=new THREE.Mesh(new THREE.CylinderGeometry(0.55*s,0.55*s,0.16*s,20),M.gold());header.rotation.z=-Math.PI/2;header.position.x=-0.55*s;g.add(header);
+  const pins=[];for(let i=0;i<3;i++)pins.push({w:0.3*s,h:0.05*s,d:0.05*s,x:-0.85*s,y:-0.16*s+i*0.16*s});
+  g.add(mergedBoxes(pins,M.gold()));
+  const can=new THREE.Mesh(new THREE.CylinderGeometry(0.38*s,0.42*s,0.8*s,18),new THREE.MeshStandardMaterial({color:0x2a1016,metalness:0.6,roughness:0.3,emissive:0xff4d6d,emissiveIntensity:0.55}));
+  can.rotation.z=-Math.PI/2;can.position.x=-0.05*s;g.add(can);g.userData.body=can;
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.3*s,0.045*s,10,24),M.silver());ring.rotation.y=Math.PI/2;ring.position.x=0.36*s;g.add(ring);
+  return g;
+}
+
+/* M.2 NVMe stick + mini fabric switch — glyph-scale models for the Stack */
+function m2Model(s=1){
+  const g=new THREE.Group();
+  const pcb=new THREE.Mesh(new THREE.BoxGeometry(1.7*s,0.07*s,0.55*s),M.pcbGreen(0x0f2f4a));g.add(pcb);
+  g.add(mergedBoxes([{w:0.42*s,h:0.07*s,d:0.42*s,x:-0.45*s,y:0.06*s},{w:0.3*s,h:0.06*s,d:0.34*s,x:0.05*s,y:0.055*s},{w:0.3*s,h:0.06*s,d:0.34*s,x:0.42*s,y:0.055*s}],M.chip()));
+  const fing=[];for(let i=0;i<6;i++)fing.push({w:0.07*s,h:0.05*s,d:0.14*s,x:0.62*s+0.06*s,y:0,z:-0.16*s+i*0.065*s});
+  g.add(mergedBoxes(fing,M.gold()));
+  return g;
+}
+function miniSwitchModel(s=1,glow=0x5aa9ff){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new RoundedBoxGeometry(1.7*s,0.42*s,0.9*s,2,0.05*s),M.chip());g.add(body);
+  const ports=[];for(let i=0;i<6;i++)ports.push({w:0.16*s,h:0.12*s,d:0.05*s,x:-0.62*s+i*0.25*s,y:-0.04*s,z:0.46*s});
+  g.add(mergedBoxes(ports,M.glow(glow,1.1)));
+  return g;
+}
+/* plain silicon die (registers / SRAM glyphs) */
+function dieModel(s=1,glow=0xd7e3f2){
+  const g=new THREE.Group();
+  const sub=new THREE.Mesh(new THREE.BoxGeometry(0.9*s,0.08*s,0.9*s),M.pcbGreen(0x123524));g.add(sub);
+  const die=new THREE.Mesh(new THREE.BoxGeometry(0.6*s,0.1*s,0.6*s),M.die(glow,0.35));die.position.y=0.09*s;g.add(die);
+  return g;
+}
+
 /* camera tween */
 const camT={active:false};const tweens=[];
 function flyTo(px,py,pz,tx,ty,tz,dur=1.1){camT.fp=camera.position.clone();camT.tp=new THREE.Vector3(px,py,pz);camT.ft=controls.target.clone();camT.tt=new THREE.Vector3(tx,ty,tz);camT.t=0;camT.dur=dur;camT.active=true;}
@@ -991,7 +1123,9 @@ let downXY=null;
 function onDown(e){downXY={x:e.clientX,y:e.clientY};renderer.domElement.style.cursor='grabbing';}
 // hover affordance — pointer cursor + gentle lift on anything clickable
 let hovered=null;
-function setHover(obj){if(obj===hovered)return;if(hovered)tweenObj(hovered.scale,{x:1,y:1,z:1},0.18);hovered=obj;if(hovered)tweenObj(hovered.scale,{x:1.07,y:1.07,z:1.07},0.18);}
+// hit proxies carry userData.hoverTarget → the visible assembly lifts, not the invisible box
+const hoverTgt=o=>o&&(o.userData.hoverTarget||o);
+function setHover(obj){if(obj===hovered)return;if(hovered)tweenObj(hoverTgt(hovered).scale,{x:1,y:1,z:1},0.18);hovered=obj;if(hovered)tweenObj(hoverTgt(hovered).scale,{x:1.07,y:1.07,z:1.07},0.18);}
 let __lastPick=0;
 renderer.domElement.addEventListener('pointermove',e=>{
   if(downXY){renderer.domElement.style.cursor='grabbing';return;}
@@ -1327,20 +1461,39 @@ function buildMap(){
     const pulse=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshBasicMaterial({color:0x9fb6d8}));
     g.add(pulse);g.userData.pulses=g.userData.pulses||[];g.userData.pulses.push({mesh:pulse,curve,t:srand(),sp:0.18+srand()*0.12});
   });
-  // nodes — premium rounded-cube modules with wireframe + glow ring + halo
+  // nodes — miniature models of the real thing (v1.7.0): a memory-stack totem,
+  // CXL switch silicon, a GPU card, a laser firing light — each with ring + halo
+  function mapMini(n){
+    const mini=new THREE.Group();
+    if(n.id==='hierarchy'){ // shrinking slab totem — echoes the Stack region encoding
+      const cols=[0x5aa9ff,0x46c8e0,0x5eead4,0x9ffbe9];
+      [[2.3,-0.85],[1.75,-0.28],[1.25,0.29],[0.8,0.86]].forEach(([w,y],i)=>{
+        const slab=new THREE.Mesh(new RoundedBoxGeometry(w,0.42,w*0.72,3,0.09),solidMat('#'+cols[i].toString(16).padStart(6,'0'),0.2));
+        slab.position.y=y;mini.add(slab);
+        slab.add(new THREE.LineSegments(new THREE.EdgesGeometry(slab.geometry,32),new THREE.LineBasicMaterial({color:cols[i],transparent:true,opacity:0.5})));
+      });
+    }else if(n.id==='cxl'){mini.add(switchChipModel(1.05,0x9a8cff));}
+    else if(n.id==='ai'){const card=gpuCardModel(0.78,0xf6a345);card.position.y=-0.1;mini.add(card);
+      card.userData.pcb.add(new THREE.LineSegments(new THREE.EdgesGeometry(card.userData.pcb.geometry,30),new THREE.LineBasicMaterial({color:0xf6a345,transparent:true,opacity:0.5})));}
+    else if(n.id==='photonics'){
+      const can=laserCanModel(1.1);can.position.x=-1.1;mini.add(can);
+      const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,2.6,10),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:0.65,blending:THREE.AdditiveBlending,depthWrite:false}));
+      beam.renderOrder=PHASE.FX;beam.rotation.z=Math.PI/2;beam.position.x=0.9;mini.add(beam);
+      const tip=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,14),new THREE.MeshBasicMaterial({color:0xff9aab}));tip.position.x=-0.45;mini.add(tip);
+    }
+    return mini;
+  }
   MAPNODES.forEach(n=>{
-    const s=n.r*1.3;
-    const core=new THREE.Mesh(new RoundedBoxGeometry(s,s,s,6,s*0.18),solidMat(n.col,0.24)); // slightly hotter emissive now that bloom is gone
-    core.position.set(...n.pos);core.rotation.set(0.42,0.6,0);g.add(core);
+    const core=mapMini(n);
+    core.position.set(...n.pos);core.rotation.set(0.3,0.55,0);g.add(core);
     core.userData.spin=0.14;
-    core.add(new THREE.LineSegments(new THREE.EdgesGeometry(core.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.55})));
     // glowing orbital ring
     const ring=new THREE.Mesh(new THREE.TorusGeometry(n.r*1.75,0.05,14,72),new THREE.MeshBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.55}));
     ring.position.set(...n.pos);ring.rotation.x=Math.PI*0.46;ring.rotation.y=0.3;g.add(ring);core.userData.ring=ring;
     // soft halo
     const halo=new THREE.Mesh(new THREE.SphereGeometry(n.r*1.5,24,24),new THREE.MeshBasicMaterial({color:new THREE.Color(n.col),transparent:true,opacity:0.05,side:THREE.BackSide}));
     halo.position.set(...n.pos);g.add(halo);
-    pick(core,n.id,()=>enterRegion(n.id));
+    pick(hitProxy(core,n.r*2.3,n.r*1.9,n.r*2.3),n.id,()=>enterRegion(n.id));
     const tl=label(n.name,'node',()=>enterRegion(n.id));tl.position.set(n.pos[0],n.pos[1]+n.r+1.0,n.pos[2]);g.add(tl);
     const sl=label(n.sub,'faint');sl.position.set(n.pos[0],n.pos[1]-n.r-0.85,n.pos[2]);g.add(sl);
     g.userData.cores=g.userData.cores||[];g.userData.cores.push(core);
@@ -1365,6 +1518,18 @@ function buildHierarchy(){
     const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geo,32),new THREE.LineBasicMaterial({color:new THREE.Color(l.col),transparent:true,opacity:0.4}));
     slab.add(edges);
     pick(slab,l.id,()=>{openNode(l.id);focusLayer(l.id);});
+    // v1.7.0: each layer carries a miniature of the real hardware on its slab —
+    // a die, an HBM stack, a DIMM, a CXL module, an M.2 stick, a fabric switch
+    const glyph=(id=>{switch(id){
+      case 'reg':return dieModel(1.0,0xd7e3f2);
+      case 'sram':return dieModel(1.25,0xbff7ef);
+      case 'hbm':return hbmStackModel(0.5,0x5eead4);
+      case 'ddr':{const dm=dimmStick();dm.scale.setScalar(0.42);dm.position.y=0.26;const grp=new THREE.Group();grp.add(dm);return grp;}
+      case 'cxl':return switchChipModel(0.42,0x9a8cff);
+      case 'ssd':return m2Model(0.95);
+      case 'net':return miniSwitchModel(0.85,0xf6a345);
+      default:return null;}})(l.id);
+    if(glyph){glyph.position.set(-w/2+1.0,0.78,d/2-1.1);glyph.rotation.y=0.5;slab.add(glyph);}
     const nm=label(l.name,'title');nm.position.set(-w/2-0.6,0.15,0);nm.element.style.transform='translate(-100%,-50%)';slab.add(nm);
     const sp=label(`${l.bw} · ${l.lat}`,'faint');sp.position.set(w/2+0.6,0,0);sp.element.style.transform='translate(0,-50%)';slab.add(sp);
     if(l.sev>=4){const b=label(`◆ chokepoint`,'heat');b.position.set(w/2+0.6,-0.55,0);b.element.style.transform='translate(0,-50%)';slab.add(b);}
@@ -1407,19 +1572,18 @@ function buildCXL(){
   const g=new THREE.Group();groups.cxl=g;g.userData.links=[];g.userData.pulses=[];g.userData.hosts=[];g.userData.mods=[];
   // headline — frames the whole region in one plain sentence
   const head=label('CXL: many servers borrow from <b style="color:#9a8cff">ONE</b> shared pool of memory','title');head.position.set(0,8.4,0);head.element.style.transform='translate(-50%,-50%)';head.element.style.fontSize='18px';g.add(head);
-  // ---- the switch (the hub everything plugs into) ----
-  const sw=new THREE.Mesh(new THREE.IcosahedronGeometry(1.6,0),solidMat('#9a8cff',0.4));sw.userData.flat=true;
-  g.add(sw);g.userData.sw=sw;
-  pick(sw,'cxl_switch',()=>openNode('cxl_switch'));
+  // ---- the switch (the hub everything plugs into) — real CXL switch silicon ----
+  const sw=switchChipModel(1.5,0x9a8cff);sw.rotation.x=0.34;
+  g.add(sw);g.userData.sw=sw;g.userData.swGlow=sw.userData.glowMat;
+  pick(hitProxy(sw,4.2,1.6,4.2,0.1),'cxl_switch',()=>openNode('cxl_switch'));
   const swl=label('CXL SWITCH','title');swl.position.set(0,2.25,0);swl.element.style.transform='translate(-50%,-50%)';g.add(swl);
   const sl=label('the shared-memory hub · routes any server to any module','faint');sl.position.set(0,-2.15,0);sl.element.style.transform='translate(-50%,-50%)';g.add(sl);
   // ---- compute hosts on top (the machines that need memory) ----
   const hosts=[['GPU server','#7ee787'],['CPU server','#5aa9ff'],['GPU server','#7ee787'],['CPU server','#5aa9ff']];
   const htitle=label('SERVERS — each runs short of its own memory','faint');htitle.position.set(0,6.7,0);htitle.element.style.transform='translate(-50%,-50%)';htitle.element.style.letterSpacing='1.5px';g.add(htitle);
   hosts.forEach((h,i)=>{const ang=Math.PI*(0.18+0.64*(i/(hosts.length-1)));const R=8.6;const x=Math.cos(ang)*R,z=-Math.sin(ang)*R*0.55,y=5.0;
-    const node=new THREE.Mesh(new RoundedBoxGeometry(2.2,1.4,2.2,4,0.2),solidMat(h[1],0.08));node.position.set(x,y,z);g.add(node);
-    node.add(new THREE.LineSegments(new THREE.EdgesGeometry(node.geometry,32),new THREE.LineBasicMaterial({color:new THREE.Color(h[1]),transparent:true,opacity:0.45})));
-    pick(node,'host',()=>openNode('cxl_host'));
+    const node=serverModel(1,new THREE.Color(h[1]).getHex());node.position.set(x,y,z);node.rotation.y=Math.atan2(-x,-(z))*0.25;g.add(node);
+    pick(hitProxy(node,2.9,1.5,2.6),'host',()=>openNode('cxl_host'));
     const nl=label(h[0],'faint');nl.position.set(0,1.35,0);nl.element.style.transform='translate(-50%,-50%)';node.add(nl);
     g.userData.hosts.push(node);addCXLLink(g,sw.position,node.position,h[1]);}); // memory flows switch → host (arriving)
   // ---- shared memory pool on the bottom (real RAM sticks) ----
@@ -1441,7 +1605,7 @@ function setCXL(v){cxlState=v;const g=groups.cxl;if(!g)return;
   g.userData.links.forEach(l=>l.material.opacity=v==='expansion'?0.12:v==='pooling'?0.42:0.6);
   g.userData.pulses.forEach((p,i)=>p.active=(v==='expansion')?(i===0||i===g.userData.hosts.length):true);
   g.userData.mods.forEach((m,i)=>{if(m.userData.lit)m.userData.lit.material.emissiveIntensity=v==='expansion'?(i===0?0.6:0.08):v==='sharing'?(i===2?0.7:0.16):0.26;});
-  g.userData.hosts.forEach((h,i)=>h.material.emissiveIntensity=v==='expansion'?(i===0?0.5:0.06):0.18);
+  g.userData.hosts.forEach((h,i)=>{if(h.userData.lit)h.userData.lit.material.emissiveIntensity=v==='expansion'?(i===0?1.6:0.2):1.0;});
 }
 
 /* ---------- PHOTONICS ---------- */
@@ -1461,10 +1625,19 @@ function addBackdrop(group,url,w,h,pos,opacity,scrimOp=0.34){
 function buildPhotonics(){
   const g=new THREE.Group();groups.phot=g;g.userData.flows=[];
   addBackdrop(g,'assets/concept_photonics.png',54,30.4,[0,0.5,-18],0.5);
-  // two chips that need to talk
-  function chip(x,lab,id){const c=new THREE.Mesh(new RoundedBoxGeometry(2.8,2.4,2.8,5,0.24),solidMat('#16294a',0.1));c.position.set(x,0,0);g.add(c);
-    c.add(new THREE.LineSegments(new THREE.EdgesGeometry(c.geometry,32),new THREE.LineBasicMaterial({color:0x46c8e0,transparent:true,opacity:0.5})));
-    pick(c,id,()=>openNode(id==='cL'?'phot_cpo':'phot_transceiver'));
+  // two chips that need to talk — a real GPU package (compute die + HBM stacks
+  // on an interposer) and the network switch ASIC, tilted like product shots
+  function chip(x,lab,id){
+    const c=new THREE.Group();c.position.set(x,0,0);c.rotation.x=0.52;g.add(c);
+    if(id==='cL'){ // GPU: substrate + compute die + 6 HBM stacks around it
+      const sub=new THREE.Mesh(new RoundedBoxGeometry(3.4,0.26,3.1,2,0.07),M.pcbGreen(0x10301f));c.add(sub);
+      const die=new THREE.Mesh(new THREE.BoxGeometry(1.35,0.18,1.7),M.die(0x46c8e0,0.45));die.position.y=0.2;c.add(die);
+      [-1.15,1.15].forEach(hx=>{for(let i=0;i<3;i++){const st=hbmStackModel(0.55,0x5eead4);st.position.set(hx,0.13,-0.95+i*0.95);c.add(st);}});
+      const seam=new THREE.Mesh(new THREE.BoxGeometry(3.0,0.05,2.75),M.glow(0x46c8e0,0.5));seam.position.y=0.12;c.add(seam);
+    }else{ // switch ASIC package
+      const pkg=switchChipModel(1.3,0x46c8e0);c.add(pkg);
+    }
+    pick(hitProxy(c,3.6,1.6,3.3,0.2),id,()=>openNode(id==='cL'?'phot_cpo':'phot_transceiver'));
     const l=label(lab,'title');l.position.set(0,1.9,0);l.element.style.transform='translate(-50%,-50%)';c.add(l);return c;}
   chip(-9.5,'GPU','cL');chip(9.5,'Switch','cR');
   const head=label('Two ways for AI chips to talk to each other:','title');head.position.set(0,5.9,0);head.element.style.transform='translate(-50%,-50%)';head.element.style.fontSize='17px';g.add(head);
@@ -1473,17 +1646,23 @@ function buildPhotonics(){
   const cY=3.1;
   const cu=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.16,9,12),new THREE.MeshStandardMaterial({color:0xc8803a,metalness:0.85,roughness:0.4,emissive:0xf6a345,emissiveIntensity:0.12}));
   cu.rotation.z=Math.PI/2;cu.position.set(-4.5,cY,0);g.add(cu);pick(cu,'cu',()=>openNode('phot_cpo'));
+  // DAC-style connector shells on the copper run
+  [-8.9,-0.1].forEach(cx=>{const shell=new THREE.Mesh(new RoundedBoxGeometry(0.7,0.42,0.42,2,0.08),M.silver());shell.position.set(cx,cY,0);g.add(shell);});
   const cuLab=label('① COPPER WIRE — cheap, but the signal dies after ~1 metre and runs hot','faint');cuLab.position.set(-3.5,cY+1.0,0);cuLab.element.style.transform='translate(-50%,-50%)';cuLab.element.style.color='#f6a345';g.add(cuLab);
   const die=label('✕ signal dies here','heat');die.position.set(0.6,cY,0);die.element.style.transform='translate(0,-50%)';g.add(die);
 
   // === LIGHT (bottom) — a laser turns data into light that travels far ===
   const oY=-2.9;
   const laser=new THREE.Group();laser.position.set(-9,oY,0);g.add(laser);
-  const ldBody=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.55,1.2,18),new THREE.MeshStandardMaterial({color:0x2a1016,metalness:0.6,roughness:0.3,emissive:0xff4d6d,emissiveIntensity:0.55}));ldBody.rotation.z=-Math.PI/2;laser.add(ldBody);
+  const can=laserCanModel(1.15);laser.add(can); // proper TO-can: gold header, pins, can, window ring
   const ldTip=new THREE.Mesh(new THREE.SphereGeometry(0.26,18,18),new THREE.MeshBasicMaterial({color:0xff9aab}));ldTip.position.set(0.62,0,0);laser.add(ldTip);
-  pick(ldBody,'laser',()=>openNode('phot_laser'));pick(ldTip,'laser',()=>openNode('phot_laser'));g.userData.laser=ldTip;
+  pick(hitProxy(laser,2.2,1.3,1.3),'laser',()=>openNode('phot_laser'));pick(ldTip,'laser',()=>openNode('phot_laser'));g.userData.laser=ldTip;
   const lLab=label('◆ THE LASER — turns data into light, and it\'s the bottleneck (click)','node',()=>openNode('phot_laser'));lLab.position.set(-5.5,oY-1.7,0);lLab.element.style.borderColor='rgba(255,107,94,.55)';lLab.element.style.color='#ff9aab';g.add(lLab);
   const fib=new THREE.Mesh(new THREE.CylinderGeometry(0.1,0.1,18.5,12),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:true,opacity:0.45,blending:THREE.AdditiveBlending,depthWrite:false}));fib.rotation.z=Math.PI/2;fib.position.set(0,oY,0);g.add(fib);pick(fib,'fib',()=>openNode('phot_transceiver'));
+  // fibre realism: glass cladding around the lit core + metal ferrules at the connectors
+  const clad=glassify(new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.2,17.6,12),new THREE.MeshPhysicalMaterial({color:0x9ffbe9,metalness:0,roughness:0.12,transparent:true,opacity:0.13,clearcoat:1})));
+  clad.rotation.z=Math.PI/2;clad.position.set(0,oY,0);g.add(clad);
+  [-8.95,8.95].forEach(fx=>{const fer=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.22,0.65,12),M.silver());fer.rotation.z=Math.PI/2;fer.position.set(fx,oY,0);g.add(fer);});
   const oLab=label('② LIGHT (PHOTONICS) — travels far, carries ~10× the data, almost no heat. This is replacing copper.','faint');oLab.position.set(2,oY+1.0,0);oLab.element.style.transform='translate(-50%,-50%)';oLab.element.style.color='#5eead4';g.add(oLab);
   WDM.forEach((c,wi)=>{const count=22;const pg=new THREE.BufferGeometry();const pp=new Float32Array(count*3);const zoff=(wi-WDM.length/2)*0.06;
     for(let k=0;k<count;k++){pp[k*3]=-9;pp[k*3+1]=oY;pp[k*3+2]=zoff;}pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
@@ -1534,7 +1713,16 @@ function buildAI(){
     shell.position.set(0,baseY+TANKH/2,0);t.add(shell);
     shell.add(new THREE.LineSegments(new THREE.EdgesGeometry(shellGeo,30),new THREE.LineBasicMaterial({color:0x9ffbe9,transparent:true,opacity:ghost?0.4:1})));
     const rim=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.08,4.3),new THREE.MeshBasicMaterial({color:0x5eead4,transparent:ghost,opacity:ghost?0.4:1}));rim.position.set(0,ceilY,0);t.add(rim);
-    const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);t.add(base);
+    if(ghost){const base=new THREE.Mesh(new THREE.BoxGeometry(4.3,0.18,4.3),solidMat('#16243c',0.05));base.position.set(0,baseY-0.1,0);t.add(base);}
+    else{ // the hero tank stands on an actual SXM-style GPU module board
+      const board=new THREE.Mesh(new RoundedBoxGeometry(4.7,0.2,4.7,2,0.06),M.pcbDark());board.position.set(0,baseY-0.12,0);t.add(board);
+      const conns=[];[-1.15,1.15].forEach(cx=>conns.push({w:1.9,h:0.1,d:0.5,x:cx,y:-0.14,z:1.95}));
+      [-1.15,1.15].forEach(cx=>conns.push({w:1.9,h:0.1,d:0.5,x:cx,y:-0.14,z:-1.95}));
+      const cm=mergedBoxes(conns,M.gold());cm.position.y=baseY;t.add(cm);
+      const fins=[];for(let i=0;i<12;i++)fins.push({w:0.06,h:0.24,d:4.3,x:-1.98+i*0.36});
+      const fm=mergedBoxes(fins,M.silver());fm.position.set(0,baseY-0.36,0);t.add(fm);
+      const dot=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.04,0.5),M.glow(0x5eead4,0.8));dot.position.set(1.6,baseY+0.02,1.6);t.add(dot);
+    }
     t.userData.shell=shell;t.userData.rim=rim;
     return t;
   }
@@ -1919,7 +2107,7 @@ function animate(){
     groups.hier.children.forEach(c=>{if(c.userData.idx!==undefined){const tgt=c.userData.baseEmi;c.material.emissiveIntensity+=(tgt-c.material.emissiveIntensity)*0.08;c.position.y+=Math.sin(tt*0.5+c.userData.idx)*0.0006;}});
   }
   else if(region==='cxl'&&groups.cxl){
-    const sw=groups.cxl.userData.sw;if(sw){sw.rotation.y+=dt*0.3;sw.rotation.x+=dt*0.12;sw.material.emissiveIntensity=0.4+Math.sin(tt*2)*0.12;}
+    const sw=groups.cxl.userData.sw;if(sw){sw.rotation.y+=dt*0.3;const gm=groups.cxl.userData.swGlow;if(gm)gm.emissiveIntensity=0.85+Math.sin(tt*2)*0.3;}
     (groups.cxl.userData.pulses||[]).forEach(p=>{p.mesh.visible=!!p.active;if(!p.active)return;p.t+=dt*p.sp;if(p.t>1)p.t-=1;p.mesh.position.lerpVectors(p.a,p.b,p.t);p.mesh.rotation.y+=dt*1.6;const s=0.85+Math.sin(p.t*Math.PI)*0.3;p.mesh.scale.setScalar(s);});
     groups.cxl.rotation.y=Math.sin(tt*0.08)*0.04;
   }

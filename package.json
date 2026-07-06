@@ -1,7 +1,7 @@
 {
   "name": "memory-atlas",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.7.0",
   "description": "Dev tooling for The Memory Atlas (the site itself is the dependency-free index.html)",
   "scripts": {
     "verify": "node tools/verify.mjs",

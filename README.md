@@ -18,10 +18,10 @@ Six interlinked **regions** in one continuous 3D world — drag to orbit, click 
 
 | Region | What it shows |
 |---|---|
-| **Map** | A knowledge graph of the four themes as glowing nodes joined by labelled relationship edges ("HBM holds the KV cache", "optical CXL"…). Click a node to fly in. |
-| **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged. |
-| **CXL** | A shared-memory fabric: four servers, a CXL switch, and a pool of memory modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
-| **Photonics** | Copper vs light: a copper wire whose signal dies mid-way vs a clickable laser firing wavelength-multiplexed light across the fibre. The laser is the bottleneck — click it. |
+| **Map** | A knowledge graph of the four themes as miniature hardware models — a memory-stack totem, CXL switch silicon, a GPU card, a laser firing light — joined by labelled relationship edges ("HBM holds the KV cache", "optical CXL"…). Click a node to fly in. |
+| **Stack** | The 8-layer memory hierarchy (Registers → L1/L2 → HBM → DDR5 → CXL → NVMe → Network) as glass slabs — width ∝ capacity, particle speed ∝ bandwidth, chokepoints flagged — each carrying a recognizable mini of its real hardware (HBM die stack, DIMM, M.2 stick…). |
+| **CXL** | A shared-memory fabric: four 2U rack servers, real CXL switch silicon on its substrate, and a pool of RAM modules any server can borrow from. Toggle Expansion / Pooling / Sharing. |
+| **Photonics** | Copper vs light: a DAC copper run whose signal dies mid-way vs a laser TO-can firing wavelength-multiplexed light down a clad fibre into a real GPU package (compute die + HBM stacks). The laser is the bottleneck — click it. |
 | **KV Cache** | How the cache actually works, word by word: the newest word is the *query*, every earlier word holds a stored *key/value* pair (attention beams look back), and each step appends exactly one new pair. Toggle the cache off and watch every step recompute everything — the waste the cache prevents, with live computation counters. |
 | **The Wall** | A live KV-cache calculator rendered as GPU "memory tanks": one tank = one GPU's 192 GB. The blue block is the model (fixed); every chat adds one green slab that grows with conversation length. When the tank fills, the excess pours into more GPUs on the right — with GPUs-needed, $ cost and ms/token computed live. |
 
