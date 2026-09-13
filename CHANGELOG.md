@@ -2,6 +2,27 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [2.0.2] — 2026-09-13
+
+Review round 2 (adversarial, gpt-5.6): Investor tab switches are history
+entries; a company-card hand-off to a file is one Back away from Intel;
+an Intel URL restores as the modal over the bare region. Dialog semantics
+and focus management for the reading panel and Intel modal (role=dialog,
+focus in / Tab trapped / focus returned, tablist with arrow keys, table
+caption + scopes); Wall sliders labelled, model buttons `aria-pressed`,
+results announced. Deploys are now atomic releases behind a switched
+`htdocs` symlink (`tools/deploy.sh`), with rollback. One `fmtCost()`.
+
+## [2.0.1] — 2026-09-13
+
+Review round 1 (adversarial, gpt-5.6): discrete navigations push history
+so Back/Forward walk the atlas; the journey's pending file-open is
+cancelled by any navigation; Wall controls write the URL; the text Wall
+shares the `#wall/m/ctx/chats` route with validation and draws its spill;
+JSON in `<script>` escaped; `<noscript>` generated from the data; build
+check covers `sitemap.xml` and obsolete pages; harness gains Back/Forward,
+slider→URL, invalid-route, journey-race and `read-wall` gates.
+
 ## [2.0.0] — 2026-09-13
 
 The audit release. Nine improvements from a fresh look at the shipped atlas,
