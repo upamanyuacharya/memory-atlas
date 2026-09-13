@@ -2,6 +2,78 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [2.0.0] — 2026-09-13
+
+The audit release. Nine improvements from a fresh look at the shipped atlas,
+each done end to end: every state has a URL, the content has a date, the
+engine and the content are separate files, the whole atlas exists as text,
+phones get a real product, analytics tell you where readers quit, the thesis
+is refreshed to September 2026 and grades its own forecasts, the investor
+layer has numbers, and the Wall calculator stands alone.
+
+### Added — deep links + sharing
+- **Every state has a URL.** `#map` `#stack` `#cxl` `#photonics` `#kvcache`
+  `#wall[/model/ctx/chats]` · `#node/<id>` · `#stop/<n>` · `#intel/<tab>`.
+  State writes the hash (replaceState, no history spam); pasted links,
+  Back/Forward and hand-edits drive state. Cold loads land exactly where the
+  URL says (the boot hash is captured before the first region build).
+- **Copy link** buttons in the reading panel, on journey captions and in the
+  Intel modal, with a toast.
+
+### Added — the text edition (`/read/`)
+- `tools/read.mjs` prerenders every node file, the companies index, the
+  investor views and the journey as an ordered reading list into plain,
+  fast, phone-first pages with canonical/OG/JSON-LD and a generated
+  sitemap. Crawlers finally see the content; phones get a real product; a
+  WebGL failure shows a door instead of a black screen.
+- The phone sheet now leads with **Read the text edition**; `<noscript>`
+  indexes every page.
+
+### Added — the Wall calculator as a page (`/read/wall.html`)
+- Same SERVING/MODELS contract as the 3D Wall (imported, so it cannot
+  drift), same `#model/ctx/chats` route, a copy-result share button.
+
+### Added — analytics events
+- `region_enter`, `node_open`, `intel_open`, `journey_stop`, `share_copy`,
+  `kvcache_toggle`, `wall_change`, `welcome_open`, `mobile_note`, `nogl`.
+  GA4 was loaded before; it fired nothing.
+
+### Changed — content model split out
+- All content constants now live in **`data/atlas-data.js`** (plain ES
+  module). `npm run build` inlines it between `@@DATA` markers in
+  `index.html` (single-file delivery stays intact) and regenerates `/read/`.
+  `npm run verify` fails if `index.html` is stale. A content refresh is a
+  data-only commit from here on.
+- **`DATA_ASOF`** surfaces as a "Data as of" chip (bottom-left), in every
+  Intel subtitle and on every text page.
+
+### Changed — September 2026 content refresh (sources in `docs/research/`)
+- Three new nodes: **The DRAM Cycle**, **The HBM4 Base Die**, **China's
+  Stack** — the three stories that actually move the tickers and were
+  missing. Journey grows to 30 stops.
+- The roadmap **grades its own forecasts**: every entry whose date has passed
+  carries a verdict and a "what actually happened" line; a 2026-H2 entry
+  with two dated policy shocks; 2027 rewritten.
+- A fifth Intel tab, **The numbers**: a static valuation snapshot (market
+  cap, price, 12-month return only where two sources agreed, forward P/E).
+- Company files refreshed (HBM4 qualification, sold-out-through-2027, CoWoS
+  outsourcing to OSATs, NVIDIA's $2B-each optics stakes, Astera Q2, Intel's
+  Diamond Rapids slip, Ajinomoto pricing). InnoLight's ticker corrected to
+  **300308.SZ**; Eoptolink, CXMT, SMIC and Huawei added.
+- The Wall now reasons about a **B300 (288 GB)**; the default scene is
+  re-tuned so the first tank is near-full (70B · 16K · 27 chats). Model
+  classes updated to Kimi K3 / DeepSeek V4 / GLM-5.3 / Qwen3.8-Max.
+
+### Fixed
+- three.js `compileAsync` threw on materials disposed mid-warm-up (a region
+  switch during shader compile); replaced with a generation-guarded
+  `warmShaders()`.
+- Two dangling `related` links (`photonics` → `region_photonics`).
+
+### Harness
+- New `router` gate; wall gates moved to B300 expectations; the journey gate
+  finds the first investor stop dynamically; 18 satellites / 5 gold nodes.
+
 ## [1.9.0] — 2026-07-07
 
 Hands on the map. Second round of reader feedback, same day.
