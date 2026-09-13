@@ -30,6 +30,7 @@ const REGION_NAME = { map: 'The Map', hierarchy: 'The Memory Stack', cxl: 'The C
 const nodeRegion = id => { const s = JOURNEY.find(x => x.n === id); if (s) return s.r; if (HIER.some(h => h.id === id)) return 'hierarchy'; if (id.startsWith('cxl')) return 'cxl'; if (id.startsWith('phot')) return 'photonics'; if (id.startsWith('kv')) return 'kvcache'; return 'map'; };
 const strip = s => String(s || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const clip = (s, n) => { s = strip(s); if (s.length <= n) return s; const cut = s.slice(0, n - 1); return cut.slice(0, Math.max(cut.lastIndexOf(' '), n - 40)).replace(/[,;:—-]$/, '') + '…'; };
 const asofLabel = () => new Date(DATA_ASOF + 'T00:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 const priv = co => co.tk === 'PRIVATE' || co.tk.startsWith('→');
 const journeyIndex = id => JOURNEY.findIndex(s => s.n === id);
@@ -100,13 +101,13 @@ function page({ file, title, desc, body, crumbs, jsonld, ogTitle }) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${esc(strip(title))} — The Memory Atlas</title>
-<meta name="description" content="${esc(strip(desc)).slice(0, 300)}">
+<meta name="description" content="${esc(clip(desc, 160))}">
 <link rel="canonical" href="${url}">
 <meta name="theme-color" content="#060709">
 <meta property="og:type" content="article"><meta property="og:site_name" content="The Memory Atlas"><meta property="og:url" content="${url}">
-<meta property="og:title" content="${esc(strip(ogTitle || title))}"><meta property="og:description" content="${esc(strip(desc)).slice(0, 200)}">
+<meta property="og:title" content="${esc(strip(ogTitle || title))}"><meta property="og:description" content="${esc(clip(desc, 200))}">
 <meta property="og:image" content="${SITE}/assets/og.jpg"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(strip(ogTitle || title))}"><meta name="twitter:description" content="${esc(strip(desc)).slice(0, 200)}"><meta name="twitter:image" content="${SITE}/assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(strip(ogTitle || title))}"><meta name="twitter:description" content="${esc(clip(desc, 200))}"><meta name="twitter:image" content="${SITE}/assets/og.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -155,9 +156,11 @@ function nodePage(node) {
   const k = nodeStops.findIndex(x => x.s.n === id);
   if (k >= 0) {
     const prev = nodeStops[k - 1], next = nodeStops[k + 1];
-    b += `<nav class="pn">${prev ? `<a href="${prev.s.n}.html"><small>← Previous · stop ${prev.i + 1}</small>${esc(prev.s.t)}</a>` : `<a href="./"><small>← Index</small>All files</a>`}${next ? `<a class="next" href="${next.s.n}.html"><small>Next · stop ${next.i + 1} →</small>${esc(next.s.t)}</a>` : `<a class="next" href="investor.html"><small>Next →</small>Investor Intelligence</a>`}</nav>`;
+    const after = JOURNEY.slice(nodeStops[k].i + 1).find(s => s.intel); // the intel stop that follows this node in the journey
+    const afterI = after ? JOURNEY.indexOf(after) : -1;
+    b += `<nav class="pn">${prev ? `<a href="${prev.s.n}.html"><small>← Previous · stop ${prev.i + 1}</small>${esc(prev.s.t)}</a>` : `<a href="./"><small>← Index</small>All files</a>`}${next && (afterI < 0 || next.i < afterI) ? `<a class="next" href="${next.s.n}.html"><small>Next · stop ${next.i + 1} →</small>${esc(next.s.t)}</a>` : after ? `<a class="next" href="investor.html#${after.intel}"><small>Next · stop ${afterI + 1} →</small>${esc(after.t)}</a>` : `<a class="next" href="investor.html"><small>Next →</small>Investor Intelligence</a>`}</nav>`;
   }
-  return page({ file: `${id}.html`, title: node.name, ogTitle: `${node.name} — ${strip(node.kind)}`, desc: ELI[id] || node.blurb, body: b, crumbs: [['Text edition', './'], [REGION_NAME[r], `./#${R2SLUG[r]}`], [node.name]],
+  return page({ file: `${id}.html`, title: node.name, ogTitle: `${node.name} — ${strip(node.kind)}`, desc: ELI[id] || node.blurb, body: b, crumbs: [['Text edition', './'], [REGION_NAME[r], r === 'map' ? '../#map' : `./#${R2SLUG[r]}`], [node.name]],
     jsonld: { about: strip(node.kind), keywords: [node.name, ...(node.cos || []).map(c => CO[c] && CO[c].n).filter(Boolean)].join(', ') } });
 }
 
@@ -189,18 +192,23 @@ function investorPage() {
   for (const g of WATCH_GROUPS) b += `<h3>${esc(g.t)}</h3><div class="pills">${g.ids.map(chip).join('')}</div>`;
   b += `<h2 id="geo">Where the single points of failure live</h2><p>Where each critical step physically happens, ordered by single-point-of-failure risk.</p>`;
   for (const g of GEO) b += `<div class="blk"><div class="kmini" style="color:var(--accent)">${esc(g.cc)} · ${esc(g.country)}${g.sev >= 5 ? ' · <span style="color:#ff5d6c">single point of failure</span>' : ''}</div><div class="sev"><div class="bars">${[1, 2, 3, 4, 5].map(i => `<i style="background:${i <= g.sev ? sevColor(g.sev) : 'rgba(255,255,255,.08)'}"></i>`).join('')}</div><span class="lbl" style="color:${sevColor(g.sev)}">${sevWord(g.sev)}</span></div><p>${g.role}</p><div class="pills">${g.cos.map(chip).join('')}</div></div>`;
-  b += `<h2 id="road">The roadmap — and the scorecard</h2><p>What happens when, and who benefits. Entries whose date has passed carry a verdict: the atlas grades its own forecasts.</p><div class="tl">`;
+  const roadHtml = (() => { let r = ''; r += `<h2 id="road">The roadmap — and the scorecard</h2><p>What happens when, and who benefits. Entries whose date has passed carry a verdict: the atlas grades its own forecasts.</p><div class="tl">`;
   for (const m of ROADMAP) {
     const v = m.v ? `<span class="verdict ${m.v.k}">${esc(m.v.t)}</span>` : '';
-    b += `<div class="it" style="--dotc:${m.c}"><div class="d">${esc(m.y)}<span>${esc(m.k)}</span></div><div class="t">${m.t}${v}</div><p>${m.d}</p>${m.v && m.v.d ? `<p style="color:var(--ink);font-size:16px"><b style="color:${m.v.k === 'hit' ? '#7ee787' : m.v.k === 'miss' ? '#ff5d6c' : '#f5d76e'}">What actually happened —</b> ${m.v.d}</p>` : ''}<div class="pills">${m.cos.map(chip).join('')}</div></div>`;
+    r += `<div class="it" style="--dotc:${m.c}"><div class="d">${esc(m.y)}<span>${esc(m.k)}</span></div><div class="t">${m.t}${v}</div><p>${m.d}</p>${m.v && m.v.d ? `<p style="color:var(--ink);font-size:16px"><b style="color:${m.v.k === 'hit' ? '#7ee787' : m.v.k === 'miss' ? '#ff5d6c' : '#f5d76e'}">What actually happened —</b> ${m.v.d}</p>` : ''}<div class="pills">${m.cos.map(chip).join('')}</div></div>`;
   }
-  b += `</div>`;
+  r += `</div>`; return r; })();
   if (D.VALUATION && D.VALUATION.rows && D.VALUATION.rows.length) {
     const V = D.VALUATION;
     b += `<h2 id="numbers">The numbers — what the market already prices in</h2><p>${V.note}</p><div class="tbl"><table><thead><tr><th>Company</th><th>Ticker</th><th style="text-align:right">Price</th><th style="text-align:right">Mkt cap</th><th style="text-align:right">12-mo</th><th style="text-align:right">Fwd P/E</th></tr></thead><tbody>`;
     for (const r of V.rows) { const co = CO[r.id]; b += `<tr><td><a href="companies.html#${r.id}">${esc(co ? co.n : r.id)}</a></td><td style="font-family:var(--mono);font-size:13px;color:var(--faint)">${esc(r.ticker)}</td><td class="num">${esc(r.price || 'n/a')}</td><td class="num">${r.mcapB == null ? 'n/a' : '$' + (r.mcapB >= 1000 ? (r.mcapB / 1000).toFixed(2) + 'T' : Math.round(r.mcapB) + 'B')}</td><td class="num" style="color:${r.ret12m == null ? 'var(--faint)' : r.ret12m >= 0 ? '#7ee787' : '#ff5d6c'}">${r.ret12m == null ? 'n/a' : (r.ret12m >= 0 ? '+' : '') + Math.round(r.ret12m) + '%'}</td><td class="num">${r.fwdPE == null ? 'n/a' : r.fwdPE.toFixed(1) + '×'}</td></tr>`; }
     b += `</tbody></table></div><p style="font-family:var(--mono);font-size:12px;color:var(--faint)">Snapshot ${esc(V.asof)} · ${esc(V.source)} · FX ${esc(V.fx)}. n/a = could not be verified from two sources, so it is left blank rather than guessed.</p>`;
   }
+  b += roadHtml; // journey order: shortlist → by layer → by country → the numbers → the roadmap
+  // prev / next along the journey: the node stop before the first intel stop, and whatever follows the last one
+  const firstIntel = JOURNEY.findIndex(s => s.intel), lastIntel = JOURNEY.map(s => !!s.intel).lastIndexOf(true);
+  const before = JOURNEY.slice(0, firstIntel).reverse().find(s => s.n), afterS = JOURNEY[lastIntel + 1];
+  b += `<nav class="pn">${before ? `<a href="${before.n}.html"><small>← Previous · stop ${JOURNEY.indexOf(before) + 1}</small>${esc(before.t)}</a>` : `<a href="./"><small>← Index</small>All files</a>`}${afterS ? `<a class="next" href="${stopLink(afterS)}"><small>Next · stop ${lastIntel + 2} →</small>${esc(afterS.t)}</a>` : ''}</nav>`;
   return page({ file: 'investor.html', title: 'Investor Intelligence', desc: 'The shortlist, every ticker by layer, country risk and the 2025→2030 roadmap for the AI memory and interconnect supply chain — with the atlas grading its own past forecasts.', body: b, crumbs: [['Text edition', './'], ['Investor Intelligence']] });
 }
 

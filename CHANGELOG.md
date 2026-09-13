@@ -2,6 +2,20 @@
 
 All notable changes to The Memory Atlas. Versioning: semantic, via git tags.
 
+## [2.0.3] — 2026-09-13
+
+Review round 3 (content, gpt-5.6): Korea's HBM share stated consistently
+with the chart (~80%, Micron the rest); "sells out a year ahead" → "sold
+out through 2027" everywhere; the FCC transceiver proposal marked
+unverified and not a catalyst; the NVIDIA ban scoped to the China-specific
+parts; Montage/JCET claims tightened; China's module share stated as 7 of
+the top 10 and ~60% of NVIDIA's 800G; base-die 3nm stated as evaluated;
+beginner copy shortened (DRAM cycle, base die, interconnect war, Huawei);
+product names normalised (NVLink Fusion, Tomahawk 6). Text edition: meta
+descriptions never cut mid-word, Investor sections in journey order with
+prev/next, map-region breadcrumbs point at the 3D map. Social preview is
+a 225 KB JPEG instead of a 1.5 MB PNG.
+
 ## [2.0.2] — 2026-09-13
 
 Review round 2 (adversarial, gpt-5.6): Investor tab switches are history
