@@ -1,13 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  <url>
-    <loc>https://memory.upamanyuacharya.com/</loc>
-    <lastmod>2026-07-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://memory.upamanyuacharya.com/assets/og.png</image:loc>
-      <image:title>The Memory Atlas — an interactive 3D map of the AI memory supply chain</image:title>
-    </image:image>
-  </url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://memory.upamanyuacharya.com/</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/reg.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/sram.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/hbm.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/ddr.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/cxl.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/ssd.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/net.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/cxl_switch.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/cxl_module.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/cxl_host.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/phot_laser.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/phot_cpo.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/phot_transceiver.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/kv_how.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/kv_econ.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/companies.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/investor.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/read/wall.html</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/#stack</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/#cxl</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/#photonics</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/#kvcache</loc><lastmod>2026-09-13</lastmod></url>
+  <url><loc>https://memory.upamanyuacharya.com/#wall</loc><lastmod>2026-09-13</lastmod></url>
 </urlset>

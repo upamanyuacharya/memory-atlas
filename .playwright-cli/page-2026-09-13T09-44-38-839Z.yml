@@ -1,0 +1,123 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic:
+      - generic: blame the cache
+      - generic: the cache lives in HBM
+      - generic: overflow spills to CXL
+      - generic: optical CXL
+      - generic: buys GPUs for their HBM
+      - generic: memory disaggregation
+      - generic [ref=e4] [cursor=pointer]: The Memory Wall
+      - generic: the problem — start here
+      - generic [ref=e5] [cursor=pointer]: The KV Cache
+      - generic: the memory hog, word by word
+      - generic [ref=e6] [cursor=pointer]: The Memory Stack
+      - generic: 7 layers · registers → network
+      - generic [ref=e7] [cursor=pointer]: CXL Fabric
+      - generic: pool & share memory
+      - generic [ref=e8] [cursor=pointer]: Photonics
+      - generic: light replaces copper
+      - generic [ref=e9] [cursor=pointer]: KV Economics
+      - generic [ref=e10] [cursor=pointer]: How the cache works
+      - generic [ref=e11] [cursor=pointer]: The Interconnect War
+      - generic [ref=e12] [cursor=pointer]: CXL Module
+      - generic [ref=e13] [cursor=pointer]: A Compute Host
+      - generic [ref=e14] [cursor=pointer]: The Laser Bottleneck
+      - generic [ref=e15] [cursor=pointer]: Co-Packaged Optics
+      - generic [ref=e16] [cursor=pointer]: Transceivers
+      - generic [ref=e17] [cursor=pointer]: Registers
+      - generic [ref=e18] [cursor=pointer]: L1 / L2 SRAM
+      - generic [ref=e19] [cursor=pointer]: HBM3E / HBM4
+      - generic [ref=e20] [cursor=pointer]: Host DDR5
+      - generic [ref=e21] [cursor=pointer]: CXL Memory
+      - generic [ref=e22] [cursor=pointer]: NVMe SSD
+      - generic [ref=e23] [cursor=pointer]: Network / Fabric
+      - generic [ref=e24] [cursor=pointer]: The Shortlist
+      - generic [ref=e25] [cursor=pointer]: Tickers by Layer
+      - generic [ref=e26] [cursor=pointer]: Country Risk
+      - generic [ref=e27] [cursor=pointer]: Roadmap 2025→30
+      - generic: ◎ INVESTOR INTELLIGENCE — follow the money
+      - generic [ref=e29] [cursor=pointer]: ▾ START HERE
+  - generic [ref=e30]:
+    - generic [ref=e31]: The Memory Atlas
+    - generic [ref=e34]: Mapping the supply chain…
+  - generic:
+    - generic:
+      - generic:
+        - generic: The Memory Atlas
+        - heading "The chips behind AI, made simple." [level=1]
+        - paragraph: "Every AI you use — ChatGPT, Gemini, Grok — runs on a stack of hardware controlled by a handful of companies. This is a living 3D map of that stack: who makes what, where the bottlenecks are, and which companies actually matter."
+        - paragraph: It looks complicated. It isn't. Give it three minutes.
+        - generic:
+          - button "▶ Walk the journey recommended — Next takes you stop by stop, zero → expert":
+            - text: ▶ Walk the journey
+            - generic: recommended — Next takes you stop by stop, zero → expert
+          - button "I'll explore on my own →"
+        - generic:
+          - text: No sign-up. Next ▶ (or N) walks you through every stop · WASD / arrows glide around · click any glowing node to dig in.
+          - text: Educational structural analysis, not investment advice. Built by
+          - link "Upamanyu Acharya":
+            - /url: https://upamanyuacharya.com
+          - text: ·
+          - link "open source on GitHub":
+            - /url: https://github.com/upamanyuacharya/memory-atlas
+          - text: .
+  - generic:
+    - generic [ref=e35]:
+      - generic [ref=e36]: Interactive Atlas · AI Hardware Supply Chain
+      - heading "The Memory Atlas" [level=1] [ref=e38]
+    - generic [ref=e39]:
+      - button "Map" [ref=e40] [cursor=pointer]: Map
+      - button "Stack" [ref=e42] [cursor=pointer]: Stack
+      - button "CXL" [ref=e44] [cursor=pointer]: CXL
+      - button "Photonics" [ref=e46] [cursor=pointer]: Photonics
+      - button "KV Cache" [ref=e48] [cursor=pointer]: KV Cache
+      - button "The Wall" [ref=e50] [cursor=pointer]: The Wall
+  - generic [ref=e54]:
+    - generic [ref=e55]: The Atlas
+    - heading "One connected world" [level=2] [ref=e57]
+    - paragraph [ref=e58]:
+      - text: Every topic in the atlas is a node on this graph — big hubs, their satellite topics, and the gold row where the money lives. Glide around with WASD / arrow keys, click anything to read it, and let Next ▶ below (or N) walk you stop by stop.
+      - button "▾ START HERE" [ref=e59] [cursor=pointer]
+    - generic [ref=e61]:
+      - generic [ref=e62]: Your progress
+      - generic [ref=e63]: 0 / 7 layers
+    - generic [ref=e65]:
+      - button "The Memory Stack 8 layers" [ref=e66] [cursor=pointer]:
+        - generic [ref=e68]: The Memory Stack
+        - generic [ref=e69]: 8 layers
+      - button "CXL Fabric pool & share" [ref=e70] [cursor=pointer]:
+        - generic [ref=e72]: CXL Fabric
+        - generic [ref=e73]: pool & share
+      - button "Photonics light > copper" [ref=e74] [cursor=pointer]:
+        - generic [ref=e76]: Photonics
+        - generic [ref=e77]: light > copper
+      - button "The KV Cache how it works" [ref=e78] [cursor=pointer]:
+        - generic [ref=e80]: The KV Cache
+        - generic [ref=e81]: how it works
+      - button "The Memory Wall why it all exists" [ref=e82] [cursor=pointer]:
+        - generic [ref=e84]: The Memory Wall
+        - generic [ref=e85]: why it all exists
+  - generic: WASD / arrows glide · N = next stop · click any node to read it
+  - generic [ref=e88]:
+    - button "⌂ Map" [ref=e89] [cursor=pointer]
+    - button "◀" [disabled] [ref=e90]
+    - generic [ref=e92]: 1/26 · The map — the whole story on one graph
+    - button "Next ▶" [ref=e94] [cursor=pointer]
+    - button "◎ Investor" [ref=e95] [cursor=pointer]
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - heading "Investor Intelligence" [level=2]
+          - button "✕"
+        - generic:
+          - button "The shortlist"
+          - button "By layer"
+          - button "By country"
+          - button "Roadmap"
+  - generic [ref=e96]:
+    - button "? What is this" [ref=e97] [cursor=pointer]
+    - link "GitHub" [ref=e98] [cursor=pointer]:
+      - /url: https://github.com/upamanyuacharya/memory-atlas

@@ -326,7 +326,7 @@
   #mobileNote .mn-grip{width:44px;height:4px;border-radius:2px;background:rgba(255,255,255,.28);margin:0 auto 10px}
   #mobileNote .mn-t{font-family:var(--display);font-size:17px;font-weight:600;margin-bottom:5px}
   #mobileNote .mn-d{font-size:13.5px;color:var(--ink-dim);line-height:1.55;margin-bottom:12px}
-  #mobileNote #mnGo{width:100%;font-family:var(--mono);font-size:13px;font-weight:700;color:#04110e;background:var(--accent);border:0;border-radius:999px;padding:12px;cursor:pointer}
+  #mobileNote #mnGo{width:100%;font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.05);border:1px solid var(--hair-bright);border-radius:999px;padding:12px;cursor:pointer}
 
   /* ---------------- WELCOME / ONBOARDING ---------------- */
   #welcome{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:24px;
@@ -358,6 +358,10 @@
   #introBtn{position:absolute;top:0;right:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
   @media (max-width:560px){.wtitle{font-size:30px}#welcome .core{padding:26px 24px}}
   #footlinks{position:fixed;left:24px;bottom:24px;z-index:30;display:flex;gap:8px;align-items:center}
+  #nogl{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:#060709;padding:24px}
+  #nogl .core{max-width:520px;text-align:center}#nogl h2{font-family:var(--display);font-size:30px;margin:12px 0;letter-spacing:-.02em}#nogl p{color:var(--ink-dim);font-size:17px;line-height:1.6}
+  #nogl a{display:inline-block;margin-top:10px;background:var(--accent);color:#06110f;font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;padding:12px 18px;border-radius:999px;text-decoration:none}
+  #mnRead{display:block;text-align:center;background:var(--accent);color:#06110f;font-family:var(--mono);font-weight:600;font-size:13px;letter-spacing:.06em;padding:13px 18px;border-radius:999px;text-decoration:none;margin-bottom:10px}
   #asof{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint);display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px dashed var(--hair);border-radius:999px;cursor:help}
   #asof i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.8}
   #toast{position:fixed;left:50%;bottom:118px;transform:translate(-50%,12px);z-index:120;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink);background:rgba(10,14,20,.92);border:1px solid var(--hair-bright);border-radius:999px;padding:10px 16px;opacity:0;pointer-events:none;transition:all .35s var(--ease);max-width:min(92vw,720px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -532,7 +536,20 @@
   <main style="max-width:680px;margin:60px auto;padding:0 24px;font-family:system-ui,sans-serif;color:#eef2f8;line-height:1.6">
     <h1>The Memory Atlas</h1>
     <p>An interactive 3D map of the AI memory and interconnect supply chain — the memory hierarchy (registers to network), HBM, CXL memory pooling, silicon photonics and the memory wall — through a business lens: who makes what, where the bottlenecks are (TSMC CoWoS, ASML EUV, EML lasers, Ajinomoto ABF), which countries control each step, and the metrics investors watch.</p>
-    <p>This explorer needs JavaScript and WebGL to run. Please enable JavaScript, or read the project overview on <a href="https://github.com/upamanyuacharya/memory-atlas" style="color:#5eead4">GitHub</a>.</p>
+    <p>The 3D explorer needs JavaScript and WebGL. <b>Every file in it is also available as plain pages:</b> <a href="read/" style="color:#5eead4">the text edition</a> — the 26-stop journey, every layer of the memory stack, HBM, CXL, photonics, the KV cache, the memory wall, all 35 companies and the investor views.</p>
+    <ul style="columns:2;gap:24px;padding-left:18px">
+      <li><a href="read/kv_econ.html" style="color:#5eead4">KV-cache economics — why memory is the wall</a></li>
+      <li><a href="read/kv_how.html" style="color:#5eead4">How the KV cache works</a></li>
+      <li><a href="read/reg.html" style="color:#5eead4">Registers</a></li><li><a href="read/sram.html" style="color:#5eead4">L1 / L2 SRAM</a></li>
+      <li><a href="read/hbm.html" style="color:#5eead4">HBM3E / HBM4</a></li><li><a href="read/ddr.html" style="color:#5eead4">Host DDR5</a></li>
+      <li><a href="read/cxl.html" style="color:#5eead4">CXL memory</a></li><li><a href="read/ssd.html" style="color:#5eead4">NVMe SSD</a></li>
+      <li><a href="read/net.html" style="color:#5eead4">Network / fabric</a></li><li><a href="read/cxl_switch.html" style="color:#5eead4">The interconnect war</a></li>
+      <li><a href="read/cxl_module.html" style="color:#5eead4">CXL memory module</a></li><li><a href="read/cxl_host.html" style="color:#5eead4">A compute host</a></li>
+      <li><a href="read/phot_laser.html" style="color:#5eead4">The laser bottleneck</a></li><li><a href="read/phot_cpo.html" style="color:#5eead4">Co-packaged optics</a></li>
+      <li><a href="read/phot_transceiver.html" style="color:#5eead4">Optical transceivers</a></li><li><a href="read/investor.html" style="color:#5eead4">Investor Intelligence</a></li>
+      <li><a href="read/companies.html" style="color:#5eead4">All companies</a></li><li><a href="read/wall.html" style="color:#5eead4">The Wall calculator</a></li>
+    </ul>
+    <p>Source on <a href="https://github.com/upamanyuacharya/memory-atlas" style="color:#5eead4">GitHub</a>.</p>
     <p>Built by <a href="https://upamanyuacharya.com" style="color:#5eead4">Upamanyu Acharya</a>. Educational structural analysis, not investment advice.</p>
   </main>
 </noscript>
@@ -1020,7 +1037,13 @@ camera.position.set(17,11,26);
 // 'low-power' specifically to keep the discrete GPU asleep on dual-GPU laptops.
 // This is an ambient explainer, not a million-splat scene; asking for the dGPU
 // spins the fan (and costs a ~1s GPU-switch hitch at launch) for no visual gain.
-const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}
+catch(e){ // no WebGL (old GPU, remote desktop, hardened browser) — send the reader to the text edition
+  const l=document.getElementById('loader');if(l)l.remove();
+  const f=document.createElement('div');f.id='nogl';f.innerHTML=`<div class="core"><div class="kmini" style="font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)">The Memory Atlas</div><h2>Your browser can't run the 3D map here.</h2><p>No WebGL — usually a remote desktop, an old GPU or a hardened browser. Everything in the atlas is also available as plain pages.</p><a href="read/">Read the text edition →</a></div>`;document.body.appendChild(f);
+  track('nogl');throw e;
+}
 renderer.setSize(W(),H());
 // resolution-aware pixel budget: cap total canvas pixels at ~3.2M so 1440p/4K
 // screens don't quadruple the raster cost (floor 0.6 keeps 4K acceptably sharp)
@@ -2543,12 +2566,14 @@ setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.
   if(!(small&&coarse)||seen)return;
   const n=document.createElement('div');n.id='mobileNote';
   n.innerHTML=`<div class="mn-grip"></div>
-    <div class="mn-t">Heads up — built for desktop</div>
-    <div class="mn-d">This is a 3D atlas with a lot of reading. It works on a phone, but it's at its best on a big screen with a mouse. Swipe this away to continue.</div>
-    <button id="mnGo">Proceed anyway →</button>`;
+    <div class="mn-t">On a phone? Read the text edition</div>
+    <div class="mn-d">Everything in this 3D atlas — every file, the 26-stop journey, the companies and the investor views — is also plain, fast pages built for a phone. The 3D map works here too, but it's at its best on a big screen with a mouse.</div>
+    <a id="mnRead" href="read/">Read the text edition →</a>
+    <button id="mnGo">Continue in 3D anyway</button>`;
   document.body.appendChild(n);
   const dismiss=()=>{n.classList.add('gone');try{sessionStorage.setItem('atlas_mobile_ok','1');}catch(e){}setTimeout(()=>n.remove(),420);};
   n.querySelector('#mnGo').addEventListener('click',()=>{track('mobile_note',{action:'proceed'});dismiss();});
+  n.querySelector('#mnRead').addEventListener('click',()=>{track('mobile_note',{action:'read'});});
   track('mobile_note',{action:'shown'});
   let y0=null;
   n.addEventListener('touchstart',e=>{y0=e.touches[0].clientY;n.style.transition='none';},{passive:true});

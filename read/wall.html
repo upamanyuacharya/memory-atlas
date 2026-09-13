@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Wall calculator — The Memory Atlas</title>
+<meta name="description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.">
+<link rel="canonical" href="https://memory.upamanyuacharya.com/read/wall.html">
+<meta name="theme-color" content="#060709">
+<meta property="og:type" content="article"><meta property="og:site_name" content="The Memory Atlas"><meta property="og:url" content="https://memory.upamanyuacharya.com/read/wall.html">
+<meta property="og:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta property="og:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.">
+<meta property="og:image" content="https://memory.upamanyuacharya.com/assets/og.png"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta name="twitter:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost."><meta name="twitter:image" content="https://memory.upamanyuacharya.com/assets/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","headline":"The Wall calculator","description":"Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.","url":"https://memory.upamanyuacharya.com/read/wall.html","dateModified":"2026-09-13","inLanguage":"en","author":{"@type":"Person","name":"Upamanyu Acharya","url":"https://upamanyuacharya.com"},"isPartOf":{"@type":"WebSite","name":"The Memory Atlas","url":"https://memory.upamanyuacharya.com/"},"image":"https://memory.upamanyuacharya.com/assets/og.png","applicationCategory":"EducationalApplication"}</script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BQ35RMCCW9"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BQ35RMCCW9",{page_title:document.title});</script>
+<style>
+:root{--bg:#060709;--ink:#eef2f8;--dim:#a7b3c6;--faint:#6f7c93;--hair:rgba(255,255,255,.09);--hair2:rgba(255,255,255,.18);--accent:#5eead4;--violet:#9a8cff;--gold:#f5d76e;--glass:rgba(255,255,255,.035);--display:'Space Grotesk',system-ui,sans-serif;--body:'Geist',system-ui,sans-serif;--mono:'Geist Mono',ui-monospace,monospace}
+*{box-sizing:border-box}html{color-scheme:dark}body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:760px;margin:0 auto;padding:28px 22px 96px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:34px}
+.brand{font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-.01em;color:var(--ink)}.brand i{font-style:italic;font-weight:500;color:var(--accent)}
+.brand small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--faint);margin-top:3px}
+.cta{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:#06110f;background:var(--accent);border-radius:999px;padding:10px 16px;font-weight:600}.cta:hover{text-decoration:none;filter:brightness(1.08)}
+.cta.ghost{background:var(--glass);color:var(--ink);border:1px solid var(--hair2)}
+.crumbs{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--faint);margin-bottom:18px}.crumbs a{color:var(--dim)}
+.kmini{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin:34px 0 10px}
+h1{font-family:var(--display);font-size:clamp(34px,6vw,50px);font-weight:600;letter-spacing:-.025em;line-height:1.04;margin:6px 0 10px}
+h2{font-family:var(--display);font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.15;margin:44px 0 12px}
+h3{font-family:var(--display);font-size:20px;font-weight:600;margin:22px 0 6px}
+p{margin:0 0 16px}b{color:var(--ink)}em{color:var(--ink);font-style:italic}.hl2{color:var(--gold)}
+.tier{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;display:inline-flex;align-items:center;gap:8px}.tier .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 12px currentColor;background:currentColor}
+.tag{font-family:var(--mono);font-size:14px;color:var(--dim);margin-bottom:22px}
+.lede{font-size:21px;line-height:1.55;color:#d7dfeb}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0 6px}
+.stat{background:var(--glass);border:1px solid var(--hair);border-radius:12px;padding:12px 14px}.stat .l{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}.stat .v{font-family:var(--display);font-size:17px;font-weight:600;margin-top:4px;color:var(--ink)}
+.blk{background:var(--glass);border:1px solid var(--hair);border-radius:14px;padding:18px 20px;margin:14px 0}.blk .kmini{margin:0 0 8px}.blk p:last-child{margin-bottom:0}
+.blk.eli{border-color:rgba(94,234,212,.28)}.blk.jour{border-color:rgba(154,140,255,.35)}
+.sev{display:flex;align-items:center;gap:10px;margin:6px 0 10px}.sev .bars{display:flex;gap:4px}.sev .bars i{width:22px;height:8px;border-radius:3px;display:block}.sev .lbl{font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.share{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:10px 0 8px}.share i{display:block;height:100%}.leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-family:var(--mono);font-size:12px;color:var(--dim)}.leg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:middle}
+ul.plain{list-style:none;padding:0;margin:0}ul.plain li{padding:10px 0;border-top:1px solid var(--hair)}ul.plain li:first-child{border-top:0}
+.mk{font-family:var(--display);font-weight:600;color:var(--ink)}.mv{color:var(--dim);font-size:16.5px}
+.geo{display:flex;gap:14px;padding:9px 0;border-top:1px solid var(--hair)}.geo:first-child{border-top:0}.geo .cc{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--accent);min-width:64px;padding-top:4px}
+.co{display:grid;grid-template-columns:52px 1fr;gap:14px;padding:16px 0;border-top:1px solid var(--hair)}.co:first-child{border-top:0}
+.logo{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.02em;overflow:hidden;background:#1a2233;color:#bcd6ff}.logo img{width:100%;height:100%;object-fit:cover}
+.co h3{margin:0 0 2px}.co .tk{font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:6px}.co .tk.priv{color:var(--violet)}.co .makes{font-family:var(--mono);font-size:13px;color:var(--dim);margin-bottom:6px}.co p{font-size:16.5px;margin-bottom:8px}
+.pills{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.pill{font-family:var(--mono);font-size:12px;color:var(--dim);border:1px solid var(--hair2);border-radius:999px;padding:4px 10px;background:var(--glass)}.pill.link:hover{border-color:var(--accent);text-decoration:none;color:var(--ink)}
+.rel{display:flex;flex-wrap:wrap;gap:8px}.rel a{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:13px;color:var(--ink);border:1px solid var(--hair2);border-radius:999px;padding:7px 13px;background:var(--glass)}.rel a:hover{text-decoration:none;border-color:var(--accent)}.rel .d{width:8px;height:8px;border-radius:50%}
+.src a{display:block;padding:9px 0;border-top:1px solid var(--hair);font-size:16px}.src a:first-child{border-top:0}
+nav.pn{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:48px 0 0}nav.pn a{display:block;background:var(--glass);border:1px solid var(--hair);border-radius:14px;padding:14px 16px;color:var(--ink)}nav.pn a:hover{border-color:var(--accent);text-decoration:none}nav.pn small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-bottom:5px}nav.pn .next{text-align:right}
+ol.journey{list-style:none;padding:0;margin:0;counter-reset:s}ol.journey li{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:16px 0;border-top:1px solid var(--hair)}ol.journey li:first-child{border-top:0}
+ol.journey .n{font-family:var(--mono);font-size:13px;color:var(--faint);padding-top:5px}ol.journey .t{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.25}ol.journey .r{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:2px 0 6px}ol.journey p{font-size:16.5px;color:var(--dim);margin:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}.grid a{display:block;background:var(--glass);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;color:var(--ink);font-family:var(--display);font-weight:600;font-size:16px;line-height:1.3}.grid a small{display:block;font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-top:4px}.grid a:hover{border-color:var(--accent);text-decoration:none}
+.tl{border-left:2px solid var(--hair2);padding-left:22px;margin:8px 0 0}.tl .it{position:relative;padding:4px 0 26px}.tl .it:before{content:'';position:absolute;left:-29px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--dotc);box-shadow:0 0 14px var(--dotc)}.tl .d{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}.tl .d span{margin-left:10px;color:var(--faint)}.tl .t{font-family:var(--display);font-size:21px;font-weight:600;margin:4px 0 6px}.tl p{font-size:16.5px;color:var(--dim)}
+.verdict{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;border-radius:999px;padding:3px 10px;margin-left:8px;border:1px solid}.verdict.hit{color:#7ee787;border-color:#7ee787}.verdict.partial{color:#f5d76e;border-color:#f5d76e}.verdict.miss{color:#ff5d6c;border-color:#ff5d6c}.verdict.open{color:var(--faint);border-color:var(--hair2)}
+.asof{font-family:var(--mono);font-size:12px;color:var(--faint);border:1px dashed var(--hair2);border-radius:999px;padding:6px 12px;display:inline-block}
+footer{margin-top:64px;padding-top:22px;border-top:1px solid var(--hair);font-family:var(--mono);font-size:12px;color:var(--faint);line-height:1.8}footer a{color:var(--dim)}
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:9px 8px;border-top:1px solid var(--hair);vertical-align:top}th{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);border-top:0}td.num{font-family:var(--mono);text-align:right;white-space:nowrap}.tbl{overflow-x:auto;margin:10px 0}
+@media (max-width:600px){body{font-size:17px}.wrap{padding:20px 16px 80px}nav.pn{grid-template-columns:1fr}nav.pn .next{text-align:left}.co{grid-template-columns:44px 1fr}.logo{width:44px;height:44px}}
+</style>
+</head>
+<body><div class="wrap">
+<header class="top"><a class="brand" href="./">The Memory <i>Atlas</i><small>Text edition</small></a><a class="cta" href="../">▶&nbsp; Open the 3D atlas</a></header>
+<div class="crumbs"><a href="./">Text edition</a> <span style="opacity:.5">/</span> The Wall calculator</div>
+
+<div class="tier" style="color:#f6a345"><span class="dot"></span>The Memory Wall · live calculator</div>
+<h1>What does one chat cost in GPUs?</h1>
+<p class="lede">Pick a model class, a conversation length and how many people are chatting at once. The calculator fills one <b>B200</b> (192 GB) with the model's weights, then adds each chat's KV cache — and tells you when you're buying whole extra GPUs.</p>
+<p><a class="cta" href="../#wall">▶&nbsp; See the tanks fill in 3D</a> &nbsp; <a class="cta ghost" href="kv_econ.html">Why memory is the wall</a></p>
+
+<div class="blk" id="calc">
+  <div class="kmini">Model class</div>
+  <div class="pills" id="mdl"></div>
+  <p id="mtip" style="font-size:15.5px;color:var(--dim);margin:8px 0 18px"></p>
+  <div class="kmini">Context per chat <span id="ctxV" style="color:var(--ink);margin-left:8px"></span></div>
+  <input type="range" id="ctx" min="1" max="256" value="16" style="width:100%;accent-color:#5eead4">
+  <div class="kmini" style="margin-top:18px">Simultaneous chats <span id="batV" style="color:var(--ink);margin-left:8px"></span></div>
+  <input type="range" id="bat" min="1" max="128" value="8" style="width:100%;accent-color:#5eead4">
+</div>
+
+<div class="stats" id="out">
+  <div class="stat"><div class="l">Weights</div><div class="v" id="oW">—</div></div>
+  <div class="stat"><div class="l">KV cache · total</div><div class="v" id="oKV" style="color:#7ee787">—</div></div>
+  <div class="stat"><div class="l">GPUs needed</div><div class="v" id="oG" style="font-size:26px">—</div></div>
+  <div class="stat"><div class="l">ms / token</div><div class="v" id="oT">—</div></div>
+  <div class="stat"><div class="l">Hardware</div><div class="v" id="oC">—</div></div>
+</div>
+<div class="tankwrap"><div class="tank" id="tank"></div><div id="tankL" class="kmini" style="margin:8px 0 0"></div></div>
+<p id="headline" class="lede" style="margin-top:18px"></p>
+<p><button class="cta" id="share" style="border:0;cursor:pointer">⧉&nbsp; Copy this result</button> <span id="toast" style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px"></span></p>
+
+<h2>How it's calculated</h2>
+<p>Weights are fixed per model class (fp16, fp8 for the 1T MoE class). The KV cache is <b>bytes per token × context × chats</b> — and bytes per token is the number that architecture decides: a GQA model like the 405B class stores ~504 KB per token, while an MLA model like the 1T MoE class compresses that to ~69 KB. A GPU is "full" at 192 GB; anything over spills into another GPU at roughly $35k each. Speed is memory-bound: a decode step must re-read weights plus the whole cache, so ms/token scales with what's resident.</p>
+<p>The same numbers drive the 3D Wall — <a href="../#wall">watch the tanks overflow</a>, or read <a href="kv_how.html">how the KV cache works</a> word by word.</p>
+<style>
+.tankwrap{margin:16px 0 0}.tank{height:26px;border-radius:8px;border:1px solid var(--hair2);background:var(--glass);display:flex;overflow:hidden}.tank i{display:block;height:100%}.tank .w{background:#5aa9ff}.tank .k{background:#7ee787}.tank .s{background:#f6a345}
+#mdl .pill{cursor:pointer}#mdl .pill.on{color:#06110f;background:var(--accent);border-color:var(--accent);font-weight:600}
+</style>
+<script>
+(function(){
+const MODELS=[{"n":"8B","W":16,"kvTok":131072,"tip":"Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The \"runs on one GPU (even a gaming card)\" class."},{"n":"70B","W":140,"kvTok":327680,"tip":"Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B200, or 2× H100."},{"n":"405B","W":810,"kvTok":516096,"tip":"Today: Llama-3.1-405B (dense), Qwen3.5-397B (MoE). The classic heavyweight — an 8-GPU node, and the heaviest KV per chat here."},{"n":"1T MoE","W":1000,"kvTok":70272,"tip":"Today: Kimi K2.6 (1T, 32B active), DeepSeek V4 (1.6T), Ling 2.5. MLA compresses KV ~7× below the 405B — a giant model with tiny per-chat memory. Cluster territory."}],S={"GPU":"B200","CAP_GB":192,"COST_K":35,"BW_FACTOR":8};
+const $=id=>document.getElementById(id);
+let m=1,ctx=16,bat=8;
+const h=location.hash.replace(/^#\/?/,'').split('/').map(Number);
+if(h.length===3&&MODELS[h[0]]&&h[1]>=1&&h[1]<=256&&h[2]>=1&&h[2]<=128){m=h[0];ctx=h[1];bat=h[2];}
+$('ctx').value=ctx;$('bat').value=bat;
+$('mdl').innerHTML=MODELS.map((x,i)=>'<button class="pill" data-i="'+i+'">'+x.n+'</button>').join('');
+function kvGB(x,c,b){return (x.kvTok*c*1024*b)/1e9;}
+function fmt$(k){return k<1000?'$'+Math.round(k)+'k':'$'+(k/1000).toFixed(2)+'M';} // identical to the 3D Wall's format
+function render(){
+  const x=MODELS[m];const kv=kvGB(x,ctx,bat);const total=x.W+kv;const g=Math.max(1,Math.ceil(total/S.CAP_GB));
+  const perChat=kvGB(x,ctx,1);const fits=Math.max(0,Math.floor((S.CAP_GB-x.W)/Math.max(perChat,1e-9)));
+  document.querySelectorAll('#mdl .pill').forEach(b=>b.classList.toggle('on',+b.dataset.i===m));
+  $('mtip').textContent=x.tip;$('ctxV').textContent=ctx+'K tokens';$('batV').textContent=bat+' chats';
+  $('oW').textContent=x.W+' GB';$('oKV').textContent=(kv<10?kv.toFixed(1):Math.round(kv))+' GB';$('oG').textContent=g+' × '+S.GPU;$('oC').textContent=fmt$(g*S.COST_K);
+  const wp=Math.min(100,x.W/S.CAP_GB*100),kp=Math.min(100-wp,kv/S.CAP_GB*100),sp=Math.max(0,(total-S.CAP_GB)/S.CAP_GB*100);
+  $('tank').innerHTML='<i class="w" style="width:'+wp+'%"></i><i class="k" style="width:'+kp+'%"></i>'+(sp>0?'<i class="s" style="width:'+Math.min(100-wp-kp,sp)+'%"></i>':'');
+  $('tankL').innerHTML='<span style="color:#5aa9ff">■ weights</span> &nbsp; <span style="color:#7ee787">■ KV cache</span>'+(sp>0?' &nbsp; <span style="color:#f6a345">■ spills into GPU #'+(g)+'</span>':'')+' &nbsp; · one tank = one '+S.GPU+' ('+S.CAP_GB+' GB)';
+  const msTok=total/(g*S.BW_FACTOR); // same SERVING contract as the 3D Wall (index.html updateKV)
+  $('oT').textContent=msTok<10?msTok.toFixed(1):Math.round(msTok);
+  $('headline').innerHTML=g===1?('A <b>'+x.n+'</b> model serving <b>'+bat+'</b> chats at <b>'+ctx+'K</b> tokens fits in one '+S.GPU+' — '+Math.round(total)+' of '+S.CAP_GB+' GB used, room for about '+fits+' chats this size.'):
+    ('A <b>'+x.n+'</b> model serving <b>'+bat+'</b> chats at <b>'+ctx+'K</b> tokens needs <b>'+g+' × '+S.GPU+'</b> (~'+fmt$(g*S.COST_K)+' of hardware) — the cache alone is '+Math.round(kv)+' GB, '+(kv>x.W?'bigger than the model itself.':'on top of '+x.W+' GB of weights.'));
+  try{history.replaceState(null,'','#'+m+'/'+ctx+'/'+bat);}catch(e){}
+  if(window.gtag)try{gtag('event','wall_change',{model:x.n,ctx:ctx,chats:bat,gpus:g,page:'read'});}catch(e){}
+}
+$('mdl').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b)return;m=+b.dataset.i;render();});
+$('ctx').addEventListener('input',()=>{ctx=+$('ctx').value;render();});
+$('bat').addEventListener('input',()=>{bat=+$('bat').value;render();});
+$('share').addEventListener('click',()=>{const txt=document.getElementById('headline').textContent+' — '+location.href;const done=()=>{$('toast').textContent='copied';setTimeout(()=>$('toast').textContent='',1800);if(window.gtag)try{gtag('event','share_copy',{route:'read/wall'});}catch(e){}};
+  if(navigator.clipboard)navigator.clipboard.writeText(txt).then(done,()=>prompt('Copy',txt));else prompt('Copy',txt);});
+window.addEventListener('hashchange',()=>{const h=location.hash.replace(/^#\/?/,'').split('/').map(Number);if(h.length===3&&MODELS[h[0]]){m=h[0];ctx=h[1];bat=h[2];$('ctx').value=ctx;$('bat').value=bat;render();}});
+render();
+})();
+</script>
+<footer>Every fact here was re-verified against primary sources on <b>13 September 2026</b>. Educational structural analysis, not investment advice.<br>
+Built by <a href="https://upamanyuacharya.com">Upamanyu Acharya</a> · <a href="https://github.com/upamanyuacharya/memory-atlas">open source on GitHub</a> · <a href="./">text edition index</a> · <a href="../">3D atlas</a></footer>
+</div></body></html>
