@@ -8,7 +8,8 @@
  * a phone, prefills from the URL (#m/ctx/chats — the same route the 3D Wall uses),
  * and copies a one-line result for sharing.
  */
-export function wallPage({ page, esc, asofLabel, MODELS, SERVING, SITE }) {
+export function wallPage({ page, esc, asofLabel, MODELS, SERVING, KV_DEFAULT, SITE }) {
+  const dflt = KV_DEFAULT || { model: 1, ctx: 16, batch: 8 };
   const models = JSON.stringify(MODELS.map(m => ({ n: m.n, W: m.W, kvTok: m.kvTok, tip: m.tip })));
   const serving = JSON.stringify(SERVING);
   const body = `
@@ -22,9 +23,9 @@ export function wallPage({ page, esc, asofLabel, MODELS, SERVING, SITE }) {
   <div class="pills" id="mdl"></div>
   <p id="mtip" style="font-size:15.5px;color:var(--dim);margin:8px 0 18px"></p>
   <div class="kmini">Context per chat <span id="ctxV" style="color:var(--ink);margin-left:8px"></span></div>
-  <input type="range" id="ctx" min="1" max="256" value="16" style="width:100%;accent-color:#5eead4">
+  <input type="range" id="ctx" min="1" max="256" value="${dflt.ctx}" style="width:100%;accent-color:#5eead4">
   <div class="kmini" style="margin-top:18px">Simultaneous chats <span id="batV" style="color:var(--ink);margin-left:8px"></span></div>
-  <input type="range" id="bat" min="1" max="128" value="8" style="width:100%;accent-color:#5eead4">
+  <input type="range" id="bat" min="1" max="128" value="${dflt.batch}" style="width:100%;accent-color:#5eead4">
 </div>
 
 <div class="stats" id="out">
@@ -49,7 +50,7 @@ export function wallPage({ page, esc, asofLabel, MODELS, SERVING, SITE }) {
 (function(){
 const MODELS=${models},S=${serving};
 const $=id=>document.getElementById(id);
-let m=1,ctx=16,bat=8;
+let m=${dflt.model},ctx=${dflt.ctx},bat=${dflt.batch};
 const h=location.hash.replace(/^#\\/?/,'').split('/').map(Number);
 if(h.length===3&&MODELS[h[0]]&&h[1]>=1&&h[1]<=256&&h[2]>=1&&h[2]<=128){m=h[0];ctx=h[1];bat=h[2];}
 $('ctx').value=ctx;$('bat').value=bat;

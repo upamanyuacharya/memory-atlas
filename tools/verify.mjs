@@ -90,8 +90,8 @@ const STATES = [
       }));
       if (s.region !== 'map') throw `region=${s.region}`;
       if (s.css2d < 10) throw `only ${s.css2d} labels`;
-      if (s.sats < 15) throw `only ${s.sats} satellite topics on the map (expected 15)`;
-      if (s.gold !== 4) throw `${s.gold} gold investor nodes (expected 4)`;
+      if (s.sats < 18) throw `only ${s.sats} satellite topics on the map (expected 18)`;
+      if (s.gold !== 5) throw `${s.gold} gold investor nodes (expected 5)`;
       if (!s.start) throw 'START HERE pointer missing';
     },
     px: png => { if (lumaStddev(png, [0.35, 0.2, 0.75, 0.8]) < 8) throw 'centre crop looks blank'; },
@@ -165,12 +165,12 @@ const STATES = [
   {
     name: 'wall-fit',
     setup: async p => {
-      await p.evaluate(() => { window.__atlas.go('ai'); window.__atlas.setKV(1, 16, 8); });
+      await p.evaluate(() => { window.__atlas.go('ai'); window.__atlas.setKV(1, 16, 8); });   // 70B · 16K · 8 = 183 GB → fits one 288 GB B300
       await p.waitForTimeout(1800);
     },
     dom: async p => {
       const s = await p.evaluate(() => ({ head: document.getElementById('whT').textContent, gpus: document.getElementById('kvGpus').textContent }));
-      if (!/ONE B200/.test(s.head)) throw `headline=${s.head}`;
+      if (!/ONE B300/.test(s.head)) throw `headline=${s.head}`;
       if (s.gpus !== '1') throw `gpus=${s.gpus}`;
     },
     px: png => {
@@ -180,10 +180,10 @@ const STATES = [
   },
   {
     name: 'wall-spill',
-    setup: async p => { await p.evaluate(() => window.__atlas.setKV(1, 16, 24)); await p.waitForTimeout(1500); },
+    setup: async p => { await p.evaluate(() => window.__atlas.setKV(1, 16, 40)); await p.waitForTimeout(1500); },   // 140 + 215 GB → spills into a 2nd B300
     dom: async p => {
       const s = await p.evaluate(() => ({ head: document.getElementById('whT').textContent, gpus: document.getElementById('kvGpus').textContent }));
-      if (!/2 × B200 GPUs/.test(s.head)) throw `headline=${s.head}`;
+      if (!/2 × B300 GPUs/.test(s.head)) throw `headline=${s.head}`;
       if (s.gpus !== '2') throw `gpus=${s.gpus}`;
     },
     px: png => {
@@ -196,8 +196,8 @@ const STATES = [
     setup: async p => { await p.evaluate(() => window.__atlas.setKV(3, 16, 24)); await p.waitForTimeout(1500); },
     dom: async p => {
       const s = await p.evaluate(() => ({ head: document.getElementById('whT').textContent, gpus: document.getElementById('kvGpus').textContent }));
-      if (!/6 × B200 GPUs/.test(s.head)) throw `headline=${s.head}`;
-      if (s.gpus !== '6') throw `gpus=${s.gpus}`;
+      if (!/4 × B300 GPUs/.test(s.head)) throw `headline=${s.head}`;   // 1000 + 28 GB / 288 → 4
+      if (s.gpus !== '4') throw `gpus=${s.gpus}`;
     },
     px: png => {
       const a = countClass(png, [0.45, 0.15, 0.98, 0.85], isAmber);
@@ -220,7 +220,8 @@ const STATES = [
       if (s.region !== 'ai') throw `step 1 region=${s.region}`;
       if (!s.open || !/KV-Cache Economics/.test(s.h2)) throw `step 1 panel: open=${s.open} h2=${s.h2}`;
       // an investor step opens the Intel modal on the right tab
-      const gold = await p.evaluate(() => { window.__atlas.jGo(21); return null; });
+      // the first investor stop, wherever it sits (the journey grows with the atlas)
+      const gold = await p.evaluate(() => { window.__atlas.jGo(window.__atlas.jFirstIntel); return null; });
       await p.waitForTimeout(700);
       s = await p.evaluate(() => ({ on: document.getElementById('watchModal').classList.contains('on'), txt: document.getElementById('wmBody').textContent.slice(0, 400) }));
       if (!s.on) throw 'investor step did not open the Intel modal';

@@ -16,7 +16,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'read');
 const SITE = 'https://memory.upamanyuacharya.com';
 const D = await import(pathToFileURL(path.join(ROOT, 'data', 'atlas-data.js')).href);
-const { CO, COURL, HIER, EXTRA, ELI, SRC, WATCH_GROUPS, ROADMAP, GEO, SHORTLIST, JOURNEY, REGIONS, DATA_ASOF, MODELS, SERVING } = D;
+const { CO, COURL, HIER, EXTRA, ELI, SRC, WATCH_GROUPS, ROADMAP, GEO, SHORTLIST, JOURNEY, REGIONS, DATA_ASOF, MODELS, SERVING, KV_DEFAULT } = D;
 
 /* ---------- helpers ---------- */
 const nodes = HIER.concat(Object.values(EXTRA));
@@ -197,8 +197,8 @@ function investorPage() {
   b += `</div>`;
   if (D.VALUATION && D.VALUATION.rows && D.VALUATION.rows.length) {
     const V = D.VALUATION;
-    b += `<h2 id="numbers">The numbers</h2><p>${V.note}</p><div class="tbl"><table><thead><tr><th>Company</th><th>Ticker</th><th style="text-align:right">Mkt cap</th><th style="text-align:right">12-mo</th><th style="text-align:right">Fwd P/E</th><th style="text-align:right">Rev growth</th></tr></thead><tbody>`;
-    for (const r of V.rows) { const co = CO[r.id]; b += `<tr><td><a href="companies.html#${r.id}">${esc(co ? co.n : r.name)}</a></td><td style="font-family:var(--mono);font-size:13px;color:var(--faint)">${esc(r.ticker)}</td><td class="num">${r.mcapB == null ? 'n/a' : '$' + (r.mcapB >= 1000 ? (r.mcapB / 1000).toFixed(2) + 'T' : Math.round(r.mcapB) + 'B')}</td><td class="num" style="color:${r.ret12m == null ? 'var(--faint)' : r.ret12m >= 0 ? '#7ee787' : '#ff5d6c'}">${r.ret12m == null ? 'n/a' : (r.ret12m >= 0 ? '+' : '') + Math.round(r.ret12m) + '%'}</td><td class="num">${r.fwdPE == null ? 'n/a' : r.fwdPE.toFixed(1) + '×'}</td><td class="num">${r.revGrowth == null ? 'n/a' : (r.revGrowth >= 0 ? '+' : '') + Math.round(r.revGrowth) + '%'}</td></tr>`; }
+    b += `<h2 id="numbers">The numbers — what the market already prices in</h2><p>${V.note}</p><div class="tbl"><table><thead><tr><th>Company</th><th>Ticker</th><th style="text-align:right">Price</th><th style="text-align:right">Mkt cap</th><th style="text-align:right">12-mo</th><th style="text-align:right">Fwd P/E</th></tr></thead><tbody>`;
+    for (const r of V.rows) { const co = CO[r.id]; b += `<tr><td><a href="companies.html#${r.id}">${esc(co ? co.n : r.id)}</a></td><td style="font-family:var(--mono);font-size:13px;color:var(--faint)">${esc(r.ticker)}</td><td class="num">${esc(r.price || 'n/a')}</td><td class="num">${r.mcapB == null ? 'n/a' : '$' + (r.mcapB >= 1000 ? (r.mcapB / 1000).toFixed(2) + 'T' : Math.round(r.mcapB) + 'B')}</td><td class="num" style="color:${r.ret12m == null ? 'var(--faint)' : r.ret12m >= 0 ? '#7ee787' : '#ff5d6c'}">${r.ret12m == null ? 'n/a' : (r.ret12m >= 0 ? '+' : '') + Math.round(r.ret12m) + '%'}</td><td class="num">${r.fwdPE == null ? 'n/a' : r.fwdPE.toFixed(1) + '×'}</td></tr>`; }
     b += `</tbody></table></div><p style="font-family:var(--mono);font-size:12px;color:var(--faint)">Snapshot ${esc(V.asof)} · ${esc(V.source)} · FX ${esc(V.fx)}. n/a = could not be verified from two sources, so it is left blank rather than guessed.</p>`;
   }
   return page({ file: 'investor.html', title: 'Investor Intelligence', desc: 'The shortlist, every ticker by layer, country risk and the 2025→2030 roadmap for the AI memory and interconnect supply chain — with the atlas grading its own past forecasts.', body: b, crumbs: [['Text edition', './'], ['Investor Intelligence']] });
@@ -223,7 +223,7 @@ function indexPage() {
     if (!byRegion[r]) continue;
     b += `<h2 id="${R2SLUG[r]}">${REGION_NAME[r]} <a class="pill link" style="vertical-align:middle;margin-left:8px" href="../#${R2SLUG[r]}">open in 3D ↗</a></h2><div class="grid">${byRegion[r].map(n => `<a href="${n.id}.html">${esc(n.name)}<small>${esc(strip(n.kind))}</small></a>`).join('')}</div>`;
   }
-  b += `<h2>The money</h2><div class="grid"><a href="investor.html#short">The shortlist<small>who structurally matters</small></a><a href="investor.html#watch">Every ticker, by layer<small>${Object.values(CO).filter(c => !priv(c)).length} public names</small></a><a href="investor.html#geo">Country risk<small>${GEO.length} countries, ranked</small></a><a href="investor.html#road">Roadmap &amp; scorecard<small>2025 → 2030, graded</small></a><a href="companies.html">All companies<small>${Object.keys(CO).length} files with backlinks</small></a><a href="wall.html">The Wall calculator<small>what a chat costs in GPUs</small></a></div>`;
+  b += `<h2>The money</h2><div class="grid"><a href="investor.html#short">The shortlist<small>who structurally matters</small></a><a href="investor.html#watch">Every ticker, by layer<small>${Object.values(CO).filter(c => !priv(c)).length} public names</small></a><a href="investor.html#geo">Country risk<small>${GEO.length} countries, ranked</small></a><a href="investor.html#numbers">The numbers<small>market cap, 12-mo, fwd P/E</small></a><a href="investor.html#road">Roadmap &amp; scorecard<small>2025 → 2030, graded</small></a><a href="companies.html">All companies<small>${Object.keys(CO).length} files with backlinks</small></a><a href="wall.html">The Wall calculator<small>what a chat costs in GPUs</small></a></div>`;
   return page({ file: 'index.html', title: 'Text edition', ogTitle: 'The Memory Atlas — text edition', desc: 'Every file in The Memory Atlas as plain, fast pages: the memory hierarchy, HBM, CXL, photonics, the KV cache and the memory wall — who makes what, the chokepoints, and who to watch.', body: b,
     jsonld: { '@type': 'CollectionPage' } });
 }
@@ -236,7 +236,7 @@ export async function buildRead({ check = false } = {}) {
   pages.push(['investor.html', investorPage()]);
   pages.push(['index.html', indexPage()]);
   // optional extra pages registered by other generators (the Wall calculator)
-  try { const { wallPage } = await import(pathToFileURL(path.join(ROOT, 'tools', 'wall.mjs')).href); pages.push(['wall.html', wallPage({ page, CSS, esc, strip, asofLabel, MODELS, SERVING, SITE })]); } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
+  try { const { wallPage } = await import(pathToFileURL(path.join(ROOT, 'tools', 'wall.mjs')).href); pages.push(['wall.html', wallPage({ page, CSS, esc, strip, asofLabel, MODELS, SERVING, KV_DEFAULT, SITE })]); } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
   if (check) {
     for (const [f, html] of pages) { const p = path.join(OUT, f); if (!fs.existsSync(p) || fs.readFileSync(p, 'utf8') !== html) { console.error(`read/${f} is stale — run \`npm run build\``); process.exit(1); } }
     return pages.length;

@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Wall calculator — The Memory Atlas</title>
-<meta name="description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.">
+<meta name="description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B300, and what the extra GPUs cost.">
 <link rel="canonical" href="https://memory.upamanyuacharya.com/read/wall.html">
 <meta name="theme-color" content="#060709">
 <meta property="og:type" content="article"><meta property="og:site_name" content="The Memory Atlas"><meta property="og:url" content="https://memory.upamanyuacharya.com/read/wall.html">
-<meta property="og:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta property="og:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.">
+<meta property="og:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta property="og:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B300, and what the extra GPUs cost.">
 <meta property="og:image" content="https://memory.upamanyuacharya.com/assets/og.png"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta name="twitter:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost."><meta name="twitter:image" content="https://memory.upamanyuacharya.com/assets/og.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="What does one AI chat cost in GPUs? — The Wall calculator"><meta name="twitter:description" content="Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B300, and what the extra GPUs cost."><meta name="twitter:image" content="https://memory.upamanyuacharya.com/assets/og.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","headline":"The Wall calculator","description":"Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B200, and what the extra GPUs cost.","url":"https://memory.upamanyuacharya.com/read/wall.html","dateModified":"2026-09-13","inLanguage":"en","author":{"@type":"Person","name":"Upamanyu Acharya","url":"https://upamanyuacharya.com"},"isPartOf":{"@type":"WebSite","name":"The Memory Atlas","url":"https://memory.upamanyuacharya.com/"},"image":"https://memory.upamanyuacharya.com/assets/og.png","applicationCategory":"EducationalApplication"}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","headline":"The Wall calculator","description":"Pick a model class, a context length and a number of simultaneous chats; see how much KV cache they need, when they overflow a B300, and what the extra GPUs cost.","url":"https://memory.upamanyuacharya.com/read/wall.html","dateModified":"2026-09-13","inLanguage":"en","author":{"@type":"Person","name":"Upamanyu Acharya","url":"https://upamanyuacharya.com"},"isPartOf":{"@type":"WebSite","name":"The Memory Atlas","url":"https://memory.upamanyuacharya.com/"},"image":"https://memory.upamanyuacharya.com/assets/og.png","applicationCategory":"EducationalApplication"}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQ35RMCCW9"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BQ35RMCCW9",{page_title:document.title});</script>
 <style>
@@ -69,7 +69,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
 
 <div class="tier" style="color:#f6a345"><span class="dot"></span>The Memory Wall · live calculator</div>
 <h1>What does one chat cost in GPUs?</h1>
-<p class="lede">Pick a model class, a conversation length and how many people are chatting at once. The calculator fills one <b>B200</b> (192 GB) with the model's weights, then adds each chat's KV cache — and tells you when you're buying whole extra GPUs.</p>
+<p class="lede">Pick a model class, a conversation length and how many people are chatting at once. The calculator fills one <b>B300</b> (288 GB) with the model's weights, then adds each chat's KV cache — and tells you when you're buying whole extra GPUs.</p>
 <p><a class="cta" href="../#wall">▶&nbsp; See the tanks fill in 3D</a> &nbsp; <a class="cta ghost" href="kv_econ.html">Why memory is the wall</a></p>
 
 <div class="blk" id="calc">
@@ -79,7 +79,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
   <div class="kmini">Context per chat <span id="ctxV" style="color:var(--ink);margin-left:8px"></span></div>
   <input type="range" id="ctx" min="1" max="256" value="16" style="width:100%;accent-color:#5eead4">
   <div class="kmini" style="margin-top:18px">Simultaneous chats <span id="batV" style="color:var(--ink);margin-left:8px"></span></div>
-  <input type="range" id="bat" min="1" max="128" value="8" style="width:100%;accent-color:#5eead4">
+  <input type="range" id="bat" min="1" max="128" value="27" style="width:100%;accent-color:#5eead4">
 </div>
 
 <div class="stats" id="out">
@@ -94,7 +94,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
 <p><button class="cta" id="share" style="border:0;cursor:pointer">⧉&nbsp; Copy this result</button> <span id="toast" style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px"></span></p>
 
 <h2>How it's calculated</h2>
-<p>Weights are fixed per model class (fp16, fp8 for the 1T MoE class). The KV cache is <b>bytes per token × context × chats</b> — and bytes per token is the number that architecture decides: a GQA model like the 405B class stores ~504 KB per token, while an MLA model like the 1T MoE class compresses that to ~69 KB. A GPU is "full" at 192 GB; anything over spills into another GPU at roughly $35k each. Speed is memory-bound: a decode step must re-read weights plus the whole cache, so ms/token scales with what's resident.</p>
+<p>Weights are fixed per model class (fp16, fp8 for the 1T MoE class). The KV cache is <b>bytes per token × context × chats</b> — and bytes per token is the number that architecture decides: a GQA model like the 405B class stores ~504 KB per token, while an MLA model like the 1T MoE class compresses that to ~69 KB. A GPU is "full" at 288 GB; anything over spills into another GPU at roughly $45k each. Speed is memory-bound: a decode step must re-read weights plus the whole cache, so ms/token scales with what's resident.</p>
 <p>The same numbers drive the 3D Wall — <a href="../#wall">watch the tanks overflow</a>, or read <a href="kv_how.html">how the KV cache works</a> word by word.</p>
 <style>
 .tankwrap{margin:16px 0 0}.tank{height:26px;border-radius:8px;border:1px solid var(--hair2);background:var(--glass);display:flex;overflow:hidden}.tank i{display:block;height:100%}.tank .w{background:#5aa9ff}.tank .k{background:#7ee787}.tank .s{background:#f6a345}
@@ -102,9 +102,9 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
 </style>
 <script>
 (function(){
-const MODELS=[{"n":"8B","W":16,"kvTok":131072,"tip":"Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The \"runs on one GPU (even a gaming card)\" class."},{"n":"70B","W":140,"kvTok":327680,"tip":"Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B200, or 2× H100."},{"n":"405B","W":810,"kvTok":516096,"tip":"Today: Llama-3.1-405B (dense), Qwen3.5-397B (MoE). The classic heavyweight — an 8-GPU node, and the heaviest KV per chat here."},{"n":"1T MoE","W":1000,"kvTok":70272,"tip":"Today: Kimi K2.6 (1T, 32B active), DeepSeek V4 (1.6T), Ling 2.5. MLA compresses KV ~7× below the 405B — a giant model with tiny per-chat memory. Cluster territory."}],S={"GPU":"B200","CAP_GB":192,"COST_K":35,"BW_FACTOR":8};
+const MODELS=[{"n":"8B","W":16,"kvTok":131072,"tip":"Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The \"runs on one GPU (even a gaming card)\" class."},{"n":"70B","W":140,"kvTok":327680,"tip":"Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B300 with room for ~27 chats at 16K, or 2× H100."},{"n":"405B","W":810,"kvTok":516096,"tip":"Today: Llama-3.1-405B (dense), Qwen3.5-397B (MoE). The classic dense heavyweight — a fading class as the frontier goes MoE, but still the heaviest KV per chat here."},{"n":"1T MoE","W":1000,"kvTok":70272,"tip":"Today: Kimi K3 (1T), DeepSeek V4 / V4 Pro (1.6T), GLM-5.3, Qwen3.8-Max. MLA compresses KV ~7× below the 405B — a giant model with tiny per-chat memory. Cluster territory."}],S={"GPU":"B300","CAP_GB":288,"COST_K":45,"BW_FACTOR":8};
 const $=id=>document.getElementById(id);
-let m=1,ctx=16,bat=8;
+let m=1,ctx=16,bat=27;
 const h=location.hash.replace(/^#\/?/,'').split('/').map(Number);
 if(h.length===3&&MODELS[h[0]]&&h[1]>=1&&h[1]<=256&&h[2]>=1&&h[2]<=128){m=h[0];ctx=h[1];bat=h[2];}
 $('ctx').value=ctx;$('bat').value=bat;
