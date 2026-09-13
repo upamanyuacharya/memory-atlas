@@ -19,7 +19,7 @@ TAG=$(git describe --tags --always)-$(date -u +%Y%m%d%H%M%S)
 npm run build:check >/dev/null || { echo "index.html is stale vs data/atlas-data.js — run npm run build"; exit 1; }
 
 echo "→ uploading release $TAG + switching (one ssh session)"
-tar czf - index.html sitemap.xml robots.txt read assets/*.png | ssh -o ConnectTimeout=25 "$HOST" "
+tar czf - index.html sitemap.xml robots.txt read assets/*.png assets/og.jpg | ssh -o ConnectTimeout=25 "$HOST" "
   set -e
   cd $SITE
   R=releases/$TAG; mkdir -p \$R; tar xzf - -C \$R

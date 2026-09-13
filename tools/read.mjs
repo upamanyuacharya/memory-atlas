@@ -93,7 +93,7 @@ function page({ file, title, desc, body, crumbs, jsonld, ogTitle }) {
   const url = `${SITE}/read/${file === 'index.html' ? '' : file}`;
   const crumbHtml = crumbs ? `<div class="crumbs">${crumbs.map(([t, h]) => h ? `<a href="${h}">${t}</a>` : t).join(' <span style="opacity:.5">/</span> ')}</div>` : '';
   const ld = { '@context': 'https://schema.org', '@type': 'Article', headline: strip(title), description: strip(desc), url, dateModified: DATA_ASOF, inLanguage: 'en',
-    author: { '@type': 'Person', name: 'Upamanyu Acharya', url: 'https://upamanyuacharya.com' }, isPartOf: { '@type': 'WebSite', name: 'The Memory Atlas', url: SITE + '/' }, image: `${SITE}/assets/og.png`, ...(jsonld || {}) };
+    author: { '@type': 'Person', name: 'Upamanyu Acharya', url: 'https://upamanyuacharya.com' }, isPartOf: { '@type': 'WebSite', name: 'The Memory Atlas', url: SITE + '/' }, image: `${SITE}/assets/og.jpg`, ...(jsonld || {}) };
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -105,8 +105,8 @@ function page({ file, title, desc, body, crumbs, jsonld, ogTitle }) {
 <meta name="theme-color" content="#060709">
 <meta property="og:type" content="article"><meta property="og:site_name" content="The Memory Atlas"><meta property="og:url" content="${url}">
 <meta property="og:title" content="${esc(strip(ogTitle || title))}"><meta property="og:description" content="${esc(strip(desc)).slice(0, 200)}">
-<meta property="og:image" content="${SITE}/assets/og.png"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(strip(ogTitle || title))}"><meta name="twitter:description" content="${esc(strip(desc)).slice(0, 200)}"><meta name="twitter:image" content="${SITE}/assets/og.png">
+<meta property="og:image" content="${SITE}/assets/og.jpg"><meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(strip(ogTitle || title))}"><meta name="twitter:description" content="${esc(strip(desc)).slice(0, 200)}"><meta name="twitter:image" content="${SITE}/assets/og.jpg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
