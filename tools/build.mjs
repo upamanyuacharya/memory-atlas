@@ -26,7 +26,26 @@ let data = fs.readFileSync(DATA, 'utf8');
 // strip the file header comment (engine already documents the model) and `export `
 data = data.replace(/^\/\*[\s\S]*?\*\/\s*/, '').replace(/^export const /gm, 'const ');
 const inlined = `${BEGIN}\n// ---- generated from data/atlas-data.js by tools/build.mjs — edit THAT file, not this block ----\n${data.trim()}\n${END}`;
-const out = html.slice(0, a) + inlined + html.slice(b + END.length);
+let out = html.slice(0, a) + inlined + html.slice(b + END.length);
+
+// <noscript> index — generated from the data so its counts and links can never go stale
+const D = await import(pathToFileURL(DATA).href + `?t=${Date.now()}`);
+const NB = '<!--@@NOSCRIPT:BEGIN@@-->', NE = '<!--@@NOSCRIPT:END@@-->';
+const na = out.indexOf(NB), nb = out.indexOf(NE);
+if (na < 0 || nb < 0) throw new Error('index.html is missing the @@NOSCRIPT markers');
+const nodes = D.HIER.concat(Object.values(D.EXTRA));
+const escT = s => String(s).replace(/<[^>]+>/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const li = (href, t) => `      <li><a href="${href}" style="color:#5eead4">${escT(t)}</a></li>`;
+const noscript = `${NB}
+    <p>The 3D explorer needs JavaScript and WebGL. <b>Every file in it is also available as plain pages:</b> <a href="read/" style="color:#5eead4">the text edition</a> — the ${D.JOURNEY.length}-stop journey, ${nodes.length} files, all ${Object.keys(D.CO).length} companies and the investor views. Data as of ${D.DATA_ASOF}.</p>
+    <ul style="columns:2;gap:24px;padding-left:18px">
+${nodes.map(n => li(`read/${n.id}.html`, n.name)).join('\n')}
+${li('read/investor.html', 'Investor Intelligence')}
+${li('read/companies.html', 'All companies')}
+${li('read/wall.html', 'The Wall calculator')}
+    </ul>
+    ${NE}`;
+out = out.slice(0, na) + noscript + out.slice(nb + NE.length);
 
 if (CHECK) {
   if (out !== html) { console.error('index.html is stale — run `npm run build`'); process.exit(1); }

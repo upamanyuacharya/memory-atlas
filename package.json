@@ -7,7 +7,7 @@
     "build": "node tools/build.mjs",
     "build:check": "node tools/build.mjs --check",
     "verify": "node tools/build.mjs --check && node tools/verify.mjs",
-    "verify:update": "node tools/verify.mjs --update",
+    "verify:update": "node tools/build.mjs --check && node tools/verify.mjs --update",
     "dev": "python -m http.server 4323"
   },
   "devDependencies": {

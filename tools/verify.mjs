@@ -289,6 +289,34 @@ const STATES = [
       if (await h() !== '#stop/9') throw `journey hash = ${await h()}`;
       await p.evaluate(() => { location.hash = '#nonsense/xyz'; }); await p.waitForTimeout(300);
       if (await h() === '#nonsense/xyz') throw 'unknown route was not corrected';
+      // invalid numeric wall route → canonicalised, never applied
+      await p.evaluate(() => { location.hash = '#wall/9/999/0'; }); await p.waitForTimeout(600);
+      s = await p.evaluate(() => ({ hash: location.hash, region: window.__atlas.region }));
+      if (s.hash === '#wall/9/999/0' || s.region !== 'ai') throw `invalid wall route: ${JSON.stringify(s)}`;
+      // sliders write the URL (replaceState)
+      await p.evaluate(() => { const el = document.getElementById('ctxSl'); el.value = 64; el.dispatchEvent(new Event('input', { bubbles: true })); }); await p.waitForTimeout(200);
+      if (!/^#wall\/\d+\/64\/\d+$/.test(await h())) throw `slider did not write the URL: ${await h()}`;
+      // Back / Forward walk the atlas (discrete navigations push history)
+      await p.evaluate(() => window.__atlas.go('cxl')); await p.waitForTimeout(900);
+      await p.evaluate(() => window.__atlas.go('photonics')); await p.waitForTimeout(900);
+      await p.goBack(); await p.waitForTimeout(900);
+      s = await p.evaluate(() => ({ hash: location.hash, region: window.__atlas.region }));
+      if (s.hash !== '#cxl' || s.region !== 'cxl') throw `Back: ${JSON.stringify(s)}`;
+      await p.goForward(); await p.waitForTimeout(900);
+      s = await p.evaluate(() => ({ hash: location.hash, region: window.__atlas.region }));
+      if (s.hash !== '#photonics' || s.region !== 'photonics') throw `Forward: ${JSON.stringify(s)}`;
+      // Back from a file to its region closes the file without rebuilding
+      await p.evaluate(() => window.__atlas.route('#stack')); await p.waitForTimeout(900);
+      await p.evaluate(() => document.querySelector('#nav .navbtn[data-region="hierarchy"]').click()); await p.waitForTimeout(600);
+      await p.evaluate(() => window.__atlas.jGo(8)); await p.waitForTimeout(1400); // HBM stop (same region → no fly-in)
+      await p.goBack(); await p.waitForTimeout(700);
+      s = await p.evaluate(() => ({ hash: location.hash, open: document.getElementById('panel').classList.contains('open') }));
+      if (s.open) throw `Back did not close the file: ${JSON.stringify(s)}`;
+      // journey race: navigating away during the 700 ms fly-in must cancel the pending file open
+      await p.evaluate(() => { window.__atlas.go('map'); }); await p.waitForTimeout(600);
+      await p.evaluate(() => { window.__atlas.jGo(1); window.__atlas.go('map'); }); await p.waitForTimeout(1400);
+      s = await p.evaluate(() => ({ hash: location.hash, region: window.__atlas.region, open: document.getElementById('panel').classList.contains('open') }));
+      if (s.open || s.region !== 'map' || s.hash !== '#map') throw `journey race: ${JSON.stringify(s)}`;
       await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1200);
       const err = await p.evaluate(() => window.__atlas.lastErr());
       if (err) throw `lastErr: ${err}`;
@@ -317,6 +345,27 @@ const STATES = [
       await p.waitForTimeout(600);
       const f2 = await p.evaluate(() => window.__atlas.frames());
       if (f2 - f1 < 3) throw `scene did not wake on region change (${f2 - f1} frames)`;
+    },
+  },
+  {
+    // Behavioral: the standalone Wall page shares the 3D Wall's contract — same route,
+    // same math — and survives an invalid route. Runs last; restores the app afterwards.
+    name: 'read-wall',
+    behavioral: true,
+    setup: async () => {}, // the loop reads __atlas.lastErr() after setup — so leave the app until dom() runs
+    dom: async p => {
+      await p.goto(`http://127.0.0.1:${PORT}/read/wall.html#wall/3/64/32`, { waitUntil: 'load' }); await p.waitForTimeout(400);
+      let s = await p.evaluate(() => ({ g: document.getElementById('oG').textContent, hash: location.hash, spill: !document.getElementById('tank2').hidden }));
+      if (!/^4 × B300/.test(s.g) || s.hash !== '#wall/3/64/32' || !s.spill) throw `read wall: ${JSON.stringify(s)}`;
+      await p.click('#mdl .pill[data-i="1"]'); await p.waitForTimeout(200);
+      s = await p.evaluate(() => ({ g: document.getElementById('oG').textContent, hash: location.hash }));
+      if (s.hash !== '#wall/1/64/32') throw `read wall route after click: ${JSON.stringify(s)}`;
+      await p.evaluate(() => { location.hash = '#wall/9/-1/NaN'; }); await p.waitForTimeout(300);
+      s = await p.evaluate(() => ({ g: document.getElementById('oG').textContent }));
+      if (!/B300/.test(s.g)) throw `read wall invalid route: ${JSON.stringify(s)}`;
+      const nan = await p.evaluate(() => /NaN/.test(document.getElementById('out').textContent + document.getElementById('headline').textContent));
+      if (nan) throw 'read wall rendered NaN on an invalid route';
+      await p.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'load' }); await p.waitForTimeout(2000);
     },
   },
 ];

@@ -89,7 +89,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
   <div class="stat"><div class="l">ms / token</div><div class="v" id="oT">—</div></div>
   <div class="stat"><div class="l">Hardware</div><div class="v" id="oC">—</div></div>
 </div>
-<div class="tankwrap"><div class="tank" id="tank"></div><div id="tankL" class="kmini" style="margin:8px 0 0"></div></div>
+<div class="tankwrap"><div class="tank" id="tank"></div><div class="tank spill" id="tank2" hidden></div><div id="tankL" class="kmini" style="margin:8px 0 0"></div></div>
 <p id="headline" class="lede" style="margin-top:18px"></p>
 <p><button class="cta" id="share" style="border:0;cursor:pointer">⧉&nbsp; Copy this result</button> <span id="toast" style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px"></span></p>
 
@@ -97,7 +97,7 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
 <p>Weights are fixed per model class (fp16, fp8 for the 1T MoE class). The KV cache is <b>bytes per token × context × chats</b> — and bytes per token is the number that architecture decides: a GQA model like the 405B class stores ~504 KB per token, while an MLA model like the 1T MoE class compresses that to ~69 KB. A GPU is "full" at 288 GB; anything over spills into another GPU at roughly $45k each. Speed is memory-bound: a decode step must re-read weights plus the whole cache, so ms/token scales with what's resident.</p>
 <p>The same numbers drive the 3D Wall — <a href="../#wall">watch the tanks overflow</a>, or read <a href="kv_how.html">how the KV cache works</a> word by word.</p>
 <style>
-.tankwrap{margin:16px 0 0}.tank{height:26px;border-radius:8px;border:1px solid var(--hair2);background:var(--glass);display:flex;overflow:hidden}.tank i{display:block;height:100%}.tank .w{background:#5aa9ff}.tank .k{background:#7ee787}.tank .s{background:#f6a345}
+.tankwrap{margin:16px 0 0}.tank{height:26px;border-radius:8px;border:1px solid var(--hair2);background:var(--glass);display:flex;overflow:hidden}.tank i{display:block;height:100%}.tank .w{background:#5aa9ff}.tank .k{background:#7ee787}.tank .s{background:#f6a345}.tank.spill{margin-top:6px;border-style:dashed;border-color:#f6a345}
 #mdl .pill{cursor:pointer}#mdl .pill.on{color:#06110f;background:var(--accent);border-color:var(--accent);font-weight:600}
 </style>
 <script>
@@ -105,26 +105,30 @@ table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;p
 const MODELS=[{"n":"8B","W":16,"kvTok":131072,"tip":"Today: Qwen3-8B, Llama-3.1-8B, Ministral 8B. GQA attention. The \"runs on one GPU (even a gaming card)\" class."},{"n":"70B","W":140,"kvTok":327680,"tip":"Today: Llama-3.3-70B, Qwen2.5-72B, R1-Distill-70B. GQA (~8× KV compression). 140 GB of weights — one B300 with room for ~27 chats at 16K, or 2× H100."},{"n":"405B","W":810,"kvTok":516096,"tip":"Today: Llama-3.1-405B (dense), Qwen3.5-397B (MoE). The classic dense heavyweight — a fading class as the frontier goes MoE, but still the heaviest KV per chat here."},{"n":"1T MoE","W":1000,"kvTok":70272,"tip":"Today: Kimi K3 (1T), DeepSeek V4 / V4 Pro (1.6T), GLM-5.3, Qwen3.8-Max. MLA compresses KV ~7× below the 405B — a giant model with tiny per-chat memory. Cluster territory."}],S={"GPU":"B300","CAP_GB":288,"COST_K":45,"BW_FACTOR":8};
 const $=id=>document.getElementById(id);
 let m=1,ctx=16,bat=27;
-const h=location.hash.replace(/^#\/?/,'').split('/').map(Number);
-if(h.length===3&&MODELS[h[0]]&&h[1]>=1&&h[1]<=256&&h[2]>=1&&h[2]<=128){m=h[0];ctx=h[1];bat=h[2];}
+// ONE route contract with the 3D atlas: #wall/<model>/<ctxK>/<chats> (a bare #m/c/b is accepted for old links)
+function parseRoute(){const p=location.hash.replace(/^#\/?/,'').split('/');if(p[0]==='wall')p.shift();if(p.length!==3)return null;
+  const [a,b,c]=p.map(x=>/^\d+$/.test(x)?parseInt(x,10):NaN);if(!MODELS[a]||!(b>=1&&b<=256)||!(c>=1&&c<=128))return null;return [a,b,c];}
+const r0=parseRoute();if(r0){[m,ctx,bat]=r0;}
 $('ctx').value=ctx;$('bat').value=bat;
 $('mdl').innerHTML=MODELS.map((x,i)=>'<button class="pill" data-i="'+i+'">'+x.n+'</button>').join('');
 function kvGB(x,c,b){return (x.kvTok*c*1024*b)/1e9;}
 function fmt$(k){return k<1000?'$'+Math.round(k)+'k':'$'+(k/1000).toFixed(2)+'M';} // identical to the 3D Wall's format
 function render(){
   const x=MODELS[m];const kv=kvGB(x,ctx,bat);const total=x.W+kv;const g=Math.max(1,Math.ceil(total/S.CAP_GB));
-  const perChat=kvGB(x,ctx,1);const fits=Math.max(0,Math.floor((S.CAP_GB-x.W)/Math.max(perChat,1e-9)));
+  const perChat=kvGB(x,ctx,1);const fits=Math.max(0,Math.floor((S.CAP_GB-total)/Math.max(perChat,1e-9))); // chats of THIS size still fitting in the first GPU
   document.querySelectorAll('#mdl .pill').forEach(b=>b.classList.toggle('on',+b.dataset.i===m));
   $('mtip').textContent=x.tip;$('ctxV').textContent=ctx+'K tokens';$('batV').textContent=bat+' chats';
   $('oW').textContent=x.W+' GB';$('oKV').textContent=(kv<10?kv.toFixed(1):Math.round(kv))+' GB';$('oG').textContent=g+' × '+S.GPU;$('oC').textContent=fmt$(g*S.COST_K);
-  const wp=Math.min(100,x.W/S.CAP_GB*100),kp=Math.min(100-wp,kv/S.CAP_GB*100),sp=Math.max(0,(total-S.CAP_GB)/S.CAP_GB*100);
-  $('tank').innerHTML='<i class="w" style="width:'+wp+'%"></i><i class="k" style="width:'+kp+'%"></i>'+(sp>0?'<i class="s" style="width:'+Math.min(100-wp-kp,sp)+'%"></i>':'');
-  $('tankL').innerHTML='<span style="color:#5aa9ff">■ weights</span> &nbsp; <span style="color:#7ee787">■ KV cache</span>'+(sp>0?' &nbsp; <span style="color:#f6a345">■ spills into GPU #'+(g)+'</span>':'')+' &nbsp; · one tank = one '+S.GPU+' ('+S.CAP_GB+' GB)';
+  // first tank: weights + as much cache as fits; a second, dashed tank shows what spilled (as a share of one GPU)
+  const wp=Math.min(100,x.W/S.CAP_GB*100),kp=Math.min(100-wp,kv/S.CAP_GB*100),spillGB=Math.max(0,total-S.CAP_GB);
+  $('tank').innerHTML='<i class="w" style="width:'+wp+'%"></i><i class="k" style="width:'+kp+'%"></i>';
+  const t2=$('tank2');if(spillGB>0){t2.hidden=false;t2.innerHTML='<i class="s" style="width:'+Math.min(100,spillGB/S.CAP_GB*100)+'%"></i>';}else{t2.hidden=true;t2.innerHTML='';}
+  $('tankL').innerHTML='<span style="color:#5aa9ff">■ weights</span> &nbsp; <span style="color:#7ee787">■ KV cache</span>'+(spillGB>0?' &nbsp; <span style="color:#f6a345">■ '+Math.round(spillGB)+' GB spills into '+(g-1)+' more GPU'+(g>2?'s':'')+'</span>':'')+' &nbsp; · one tank = one '+S.GPU+' ('+S.CAP_GB+' GB)';
   const msTok=total/(g*S.BW_FACTOR); // same SERVING contract as the 3D Wall (index.html updateKV)
   $('oT').textContent=msTok<10?msTok.toFixed(1):Math.round(msTok);
   $('headline').innerHTML=g===1?('A <b>'+x.n+'</b> model serving <b>'+bat+'</b> chats at <b>'+ctx+'K</b> tokens fits in one '+S.GPU+' — '+Math.round(total)+' of '+S.CAP_GB+' GB used, room for about '+fits+' chats this size.'):
     ('A <b>'+x.n+'</b> model serving <b>'+bat+'</b> chats at <b>'+ctx+'K</b> tokens needs <b>'+g+' × '+S.GPU+'</b> (~'+fmt$(g*S.COST_K)+' of hardware) — the cache alone is '+Math.round(kv)+' GB, '+(kv>x.W?'bigger than the model itself.':'on top of '+x.W+' GB of weights.'));
-  try{history.replaceState(null,'','#'+m+'/'+ctx+'/'+bat);}catch(e){}
+  try{history.replaceState(null,'','#wall/'+m+'/'+ctx+'/'+bat);}catch(e){}
   if(window.gtag)try{gtag('event','wall_change',{model:x.n,ctx:ctx,chats:bat,gpus:g,page:'read'});}catch(e){}
 }
 $('mdl').addEventListener('click',e=>{const b=e.target.closest('.pill');if(!b)return;m=+b.dataset.i;render();});
@@ -132,7 +136,7 @@ $('ctx').addEventListener('input',()=>{ctx=+$('ctx').value;render();});
 $('bat').addEventListener('input',()=>{bat=+$('bat').value;render();});
 $('share').addEventListener('click',()=>{const txt=document.getElementById('headline').textContent+' — '+location.href;const done=()=>{$('toast').textContent='copied';setTimeout(()=>$('toast').textContent='',1800);if(window.gtag)try{gtag('event','share_copy',{route:'read/wall'});}catch(e){}};
   if(navigator.clipboard)navigator.clipboard.writeText(txt).then(done,()=>prompt('Copy',txt));else prompt('Copy',txt);});
-window.addEventListener('hashchange',()=>{const h=location.hash.replace(/^#\/?/,'').split('/').map(Number);if(h.length===3&&MODELS[h[0]]){m=h[0];ctx=h[1];bat=h[2];$('ctx').value=ctx;$('bat').value=bat;render();}});
+window.addEventListener('hashchange',()=>{const r=parseRoute();if(!r)return;[m,ctx,bat]=r;$('ctx').value=ctx;$('bat').value=bat;render();});
 render();
 })();
 </script>

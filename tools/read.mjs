@@ -110,7 +110,7 @@ function page({ file, title, desc, body, crumbs, jsonld, ogTitle }) {
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23060709'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%235eead4' stroke-width='2.4'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%235eead4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script type="application/ld+json">${JSON.stringify(ld)}</script>
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-BQ35RMCCW9"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-BQ35RMCCW9",{page_title:document.title});</script>
 <style>${CSS}</style>
@@ -237,14 +237,21 @@ export async function buildRead({ check = false } = {}) {
   pages.push(['index.html', indexPage()]);
   // optional extra pages registered by other generators (the Wall calculator)
   try { const { wallPage } = await import(pathToFileURL(path.join(ROOT, 'tools', 'wall.mjs')).href); pages.push(['wall.html', wallPage({ page, CSS, esc, strip, asofLabel, MODELS, SERVING, KV_DEFAULT, SITE })]); } catch (e) { if (e.code !== 'ERR_MODULE_NOT_FOUND') throw e; }
+  // sitemap: every read page (no fragment URLs — crawlers drop them; the 3D routes have no crawlable body)
+  const urls = [`${SITE}/`, `${SITE}/read/`, ...pages.filter(([f]) => f !== 'index.html').map(([f]) => `${SITE}/read/${f}`)];
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${u}</loc><lastmod>${DATA_ASOF}</lastmod></url>`).join('\n')}\n</urlset>\n`;
+  const managed = new Set(pages.map(([f]) => f));
+  const stray = fs.existsSync(OUT) ? fs.readdirSync(OUT).filter(f => f.endsWith('.html') && !managed.has(f)) : [];
   if (check) {
     for (const [f, html] of pages) { const p = path.join(OUT, f); if (!fs.existsSync(p) || fs.readFileSync(p, 'utf8') !== html) { console.error(`read/${f} is stale — run \`npm run build\``); process.exit(1); } }
+    const sm = path.join(ROOT, 'sitemap.xml');
+    if (!fs.existsSync(sm) || fs.readFileSync(sm, 'utf8') !== sitemap) { console.error('sitemap.xml is stale — run `npm run build`'); process.exit(1); }
+    if (stray.length) { console.error(`obsolete generated pages in read/: ${stray.join(', ')} — run \`npm run build\``); process.exit(1); }
     return pages.length;
   }
   fs.mkdirSync(OUT, { recursive: true });
   for (const [f, html] of pages) fs.writeFileSync(path.join(OUT, f), html);
-  // sitemap: the 3D routes + every read page
-  const urls = [`${SITE}/`, `${SITE}/read/`, ...pages.filter(([f]) => f !== 'index.html').map(([f]) => `${SITE}/read/${f}`), ...['stack', 'cxl', 'photonics', 'kvcache', 'wall'].map(s => `${SITE}/#${s}`)];
-  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${u}</loc><lastmod>${DATA_ASOF}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+  for (const f of stray) { fs.unlinkSync(path.join(OUT, f)); console.log(`read/${f}: removed (no longer in the data)`); }
+  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), sitemap);
   return pages.length;
 }

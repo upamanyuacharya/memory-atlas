@@ -542,19 +542,32 @@
   <main style="max-width:680px;margin:60px auto;padding:0 24px;font-family:system-ui,sans-serif;color:#eef2f8;line-height:1.6">
     <h1>The Memory Atlas</h1>
     <p>An interactive 3D map of the AI memory and interconnect supply chain — the memory hierarchy (registers to network), HBM, CXL memory pooling, silicon photonics and the memory wall — through a business lens: who makes what, where the bottlenecks are (TSMC CoWoS, ASML EUV, EML lasers, Ajinomoto ABF), which countries control each step, and the metrics investors watch.</p>
-    <p>The 3D explorer needs JavaScript and WebGL. <b>Every file in it is also available as plain pages:</b> <a href="read/" style="color:#5eead4">the text edition</a> — the 26-stop journey, every layer of the memory stack, HBM, CXL, photonics, the KV cache, the memory wall, all 35 companies and the investor views.</p>
+    <!--@@NOSCRIPT:BEGIN@@-->
+    <p>The 3D explorer needs JavaScript and WebGL. <b>Every file in it is also available as plain pages:</b> <a href="read/" style="color:#5eead4">the text edition</a> — the 30-stop journey, 18 files, all 38 companies and the investor views. Data as of 2026-09-13.</p>
     <ul style="columns:2;gap:24px;padding-left:18px">
-      <li><a href="read/kv_econ.html" style="color:#5eead4">KV-cache economics — why memory is the wall</a></li>
-      <li><a href="read/kv_how.html" style="color:#5eead4">How the KV cache works</a></li>
-      <li><a href="read/reg.html" style="color:#5eead4">Registers</a></li><li><a href="read/sram.html" style="color:#5eead4">L1 / L2 SRAM</a></li>
-      <li><a href="read/hbm.html" style="color:#5eead4">HBM3E / HBM4</a></li><li><a href="read/ddr.html" style="color:#5eead4">Host DDR5</a></li>
-      <li><a href="read/cxl.html" style="color:#5eead4">CXL memory</a></li><li><a href="read/ssd.html" style="color:#5eead4">NVMe SSD</a></li>
-      <li><a href="read/net.html" style="color:#5eead4">Network / fabric</a></li><li><a href="read/cxl_switch.html" style="color:#5eead4">The interconnect war</a></li>
-      <li><a href="read/cxl_module.html" style="color:#5eead4">CXL memory module</a></li><li><a href="read/cxl_host.html" style="color:#5eead4">A compute host</a></li>
-      <li><a href="read/phot_laser.html" style="color:#5eead4">The laser bottleneck</a></li><li><a href="read/phot_cpo.html" style="color:#5eead4">Co-packaged optics</a></li>
-      <li><a href="read/phot_transceiver.html" style="color:#5eead4">Optical transceivers</a></li><li><a href="read/investor.html" style="color:#5eead4">Investor Intelligence</a></li>
-      <li><a href="read/companies.html" style="color:#5eead4">All companies</a></li><li><a href="read/wall.html" style="color:#5eead4">The Wall calculator</a></li>
+      <li><a href="read/reg.html" style="color:#5eead4">Registers</a></li>
+      <li><a href="read/sram.html" style="color:#5eead4">L1 / L2 SRAM</a></li>
+      <li><a href="read/hbm.html" style="color:#5eead4">HBM3E / HBM4</a></li>
+      <li><a href="read/ddr.html" style="color:#5eead4">Host DDR5</a></li>
+      <li><a href="read/cxl.html" style="color:#5eead4">CXL Memory</a></li>
+      <li><a href="read/ssd.html" style="color:#5eead4">NVMe SSD</a></li>
+      <li><a href="read/net.html" style="color:#5eead4">Network / Fabric</a></li>
+      <li><a href="read/cxl_switch.html" style="color:#5eead4">The Interconnect War</a></li>
+      <li><a href="read/cxl_module.html" style="color:#5eead4">CXL Memory Module</a></li>
+      <li><a href="read/cxl_host.html" style="color:#5eead4">A Compute Host</a></li>
+      <li><a href="read/phot_laser.html" style="color:#5eead4">The Laser Bottleneck</a></li>
+      <li><a href="read/phot_cpo.html" style="color:#5eead4">Co-Packaged Optics</a></li>
+      <li><a href="read/phot_transceiver.html" style="color:#5eead4">Optical Transceivers</a></li>
+      <li><a href="read/kv_how.html" style="color:#5eead4">How the KV Cache Works</a></li>
+      <li><a href="read/kv_econ.html" style="color:#5eead4">KV-Cache Economics</a></li>
+      <li><a href="read/dram_cycle.html" style="color:#5eead4">The DRAM Cycle</a></li>
+      <li><a href="read/hbm_basedie.html" style="color:#5eead4">The HBM4 Base Die</a></li>
+      <li><a href="read/china.html" style="color:#5eead4">China's Stack</a></li>
+      <li><a href="read/investor.html" style="color:#5eead4">Investor Intelligence</a></li>
+      <li><a href="read/companies.html" style="color:#5eead4">All companies</a></li>
+      <li><a href="read/wall.html" style="color:#5eead4">The Wall calculator</a></li>
     </ul>
+    <!--@@NOSCRIPT:END@@-->
     <p>Source on <a href="https://github.com/upamanyuacharya/memory-atlas" style="color:#5eead4">GitHub</a>.</p>
     <p>Built by <a href="https://upamanyuacharya.com" style="color:#5eead4">Upamanyu Acharya</a>. Educational structural analysis, not investment advice.</p>
   </main>
@@ -762,7 +775,7 @@ const HIER=[
    biz:'<span class="hl">The center of gravity.</span> A 3-way oligopoly (<b>SK Hynix</b>, <b>Samsung</b>, <b>Micron</b>) makes the stacks — all three are now qualified on NVIDIA\'s Rubin HBM4, with SK Hynix holding ~60–70% of that allocation. <b>TSMC</b> CoWoS packaging is the real ceiling on supply (and now makes SK Hynix\'s base die too); <b>Besi</b>/<b>ASML</b>/Japan materials gate it from below. HBM is ~5–10× the cost/GB of DDR, sells out a year ahead, and is eating the DRAM wafers commodity memory used to get — <span class="hl2">see The DRAM Cycle</span>.',
    cos:['skhynix','samsung','micron','tsmc','besi','asml','lam','disco','ase','ajinomoto','ibiden','shinetsu'],
    geo:[['KOR','HBM stacks — SK Hynix, Samsung (95%+ in 2 cities)'],['TWN','CoWoS packaging — TSMC (sold out to 2027)'],['NLD','EUV litho — ASML (100% monopoly); bonding — Besi'],['JPN','wafers/resist/ABF — Shin-Etsu, Ajinomoto, Ibiden'],['USA','Micron HBM, Lam tools, GPU design']],
-   share:{title:'HBM market share (2025) — Rubin HBM4 allocation runs ~SK Hynix 65 · Samsung 27 · Micron 8',seg:[['SK Hynix',62,'#5eead4'],['Micron',21,'#46c8e0'],['Samsung',17,'#5aa9ff']]},
+   share:{title:'HBM market share, 2025 (revenue)',seg:[['SK Hynix',62,'#5eead4'],['Micron',21,'#46c8e0'],['Samsung',17,'#5aa9ff']]},
    mx:[['HBM bit-growth','industry HBM bit supply YoY — the core volume signal'],['HBM share of DRAM wafers','~18% end-2025 → ~22% end-2026 → ~30% end-2027: the crowd-out tape'],['CoWoS capacity','~130k wafers/month by end-2026; still sold out'],['HBM ASP / margin','memory-maker gross margin = cycle health'],['Rubin HBM4 allocation','who gets qualified at NVIDIA = who wins; 16-Hi samples due Q4 2026']],
    related:['sram','ddr','cxl','wall','region_photonics','hbm_basedie','dram_cycle']},
   {id:'ddr',name:'Host DDR5',kind:'CPU-attached DRAM',col:'#5aa9ff',cap:'0.5–8 TB',bw:'50–410 GB/s',lat:'80–100 ns',en:'~15 pJ/b',sev:3,
@@ -888,12 +901,12 @@ const EXTRA={
     related:['hbm','ddr','china','wall']},
   hbm_basedie:{id:'hbm_basedie',name:'The HBM4 Base Die',kind:'where memory becomes logic',col:'#9a8cff',sev:4,
     why:'HBM4 doubles the bus to 2,048 bits and puts real logic in the bottom die of the stack — and a memory fab cannot print leading-edge logic. So the base die is now made on a foundry node: SK Hynix on TSMC 12nm (evaluating 3nm for HBM4E), Samsung on its own 4nm. That drags the world\'s scarcest packaging line into the world\'s scarcest memory part — and hands TSMC a slice of HBM economics it never had.',
-    stats:[['HBM4 bus','2,048-bit'],['SK Hynix base die','TSMC 12nm → 3nm'],['Samsung base die','in-house 4nm'],['16-Hi samples','Q4 2026']],
+    stats:[['HBM4 bus','2,048-bit'],['SK Hynix base die','TSMC 12nm → 3nm'],['Samsung base die','in-house 4nm'],['Rubin allocation','~65 / 27 / rest']],
     blurb:'An HBM stack is 8–16 DRAM dies sitting on a <b>base die</b> that talks to the GPU. Through HBM3E that base die was made in the memory fab. HBM4 moves it to a logic process — a foundry-made die with buffers, test logic and soon compute — because the interface got too fast and too wide for DRAM-process transistors. From here, an HBM stack is part memory, part chip.',
     biz:'Two camps, one winner-takes-more. <b>SK Hynix + TSMC</b> ("One-Team"): the best logic die on earth under the best HBM on earth — the combination NVIDIA qualified first and gave ~60–70% of Rubin HBM4 to. <b>Samsung</b> goes it alone with an in-house 4nm base die and the only turnkey memory-plus-logic-plus-packaging offer — a real differentiator for custom HBM. <b>Micron</b> lands in between. Structurally, TSMC gains a toll on every SK Hynix stack, and the base die becomes the place hyperscalers will customise their memory.',
     cos:['skhynix','tsmc','samsung','micron','besi','nvidia'],
     geo:[['TWN','SK Hynix base dies — TSMC'],['KOR','stacks — SK Hynix, Samsung; Samsung base die — Samsung Foundry 4nm'],['NLD','hybrid bonding for 16-Hi and beyond — Besi']],
-    mx:[['Rubin HBM4 allocation','~65 / 27 / 8 — the scoreboard of the two approaches'],['HBM4E base-die node','TSMC 3nm confirmation = the moat deepens'],['Custom HBM wins','hyperscaler-specific base dies = the next design-win war'],['16-Hi qualification','Q4 2026 samples to NVIDIA']],
+    mx:[['Rubin HBM4 allocation','SK Hynix ~60–70% · Samsung ~25–30% · Micron the rest — the scoreboard of the two approaches'],['HBM4E base-die node','TSMC 3nm confirmation = the moat deepens'],['Custom HBM wins','hyperscaler-specific base dies = the next design-win war'],['16-Hi qualification','Q4 2026 samples to NVIDIA']],
     related:['hbm','dram_cycle','cxl_host','phot_cpo']},
   china:{id:'china',name:'China\'s Stack',kind:'what it can and cannot make',col:'#ff5d6c',sev:4,
     why:'The chokepoint runs both ways. China dominates transceiver assembly (7 of the top 10 makers) and is closing on commodity DRAM scale — but cannot buy an EUV machine, cannot yet make HBM3E, cannot make a high-speed DSP, and localises under 15% of its 25G+ lasers. Meanwhile it holds the gallium/germanium/rare-earth inputs that the West\'s lasers and magnets need. Every export-control move now has a counter-move, and both sides\' supply chains are hostage to it.',
@@ -1443,7 +1456,7 @@ const panelScrim=document.createElement('div');panelScrim.id='panelScrim';docume
 panelScrim.addEventListener('click',()=>closePanel());
 let panelTab='overview',panelNode=null;
 document.addEventListener('click',e=>{if(e.target.closest('.pclose')||e.target.closest('.pback'))closePanel();});
-function closePanel(){const was=!!panelNode;panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);if(was)syncHash();}
+function closePanel(){const was=!!panelNode;panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);if(was)syncHash(null,true);}
 
 function hueFromName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return h;}
 function monoStyle(n){const h=hueFromName(n);return `background:linear-gradient(140deg,hsl(${h},44%,24%),hsl(${(h+24)%360},40%,17%));color:hsl(${h},78%,80%)`;}
@@ -1464,6 +1477,7 @@ function updateExplored(){
   document.querySelectorAll('#railcore [data-layer]').forEach(b=>b.classList.toggle('seen',visited.has(b.dataset.layer)));
 }
 function openNode(id){
+  jGen++; // a user opening a file cancels any pending journey timeout
   const node=findNode(id);
   if(!node){ // region / wall node
     if(REGIONS[id]){enterRegion(REGIONS[id].into);return;}
@@ -1489,7 +1503,7 @@ function openNode(id){
   document.body.classList.add('reading'); // text is the focus; the 3D recedes
   phead.querySelector('.pshare').addEventListener('click',copyLink);
   track('node_open',{node:id,name:node.name,region});
-  syncHash();
+  syncHash(null,true);
 }
 function renderPanelBody(){
   const node=panelNode;if(!node)return;
@@ -1630,8 +1644,8 @@ function renderNumbers(){
 }
 let intelTab='short';
 function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():intelTab==='numbers'?renderNumbers():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;if(watchModal.classList.contains('on'))syncHash();}
-function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);track('intel_open',{tab:intelTab});syncHash();}
-function closeIntel(){const was=watchModal.classList.contains('on');watchModal.classList.remove('on');if(was)syncHash();}
+function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);track('intel_open',{tab:intelTab});jGen++;syncHash(null,true);}
+function closeIntel(){const was=watchModal.classList.contains('on');watchModal.classList.remove('on');if(was)syncHash(null,true);}
 function closeModals(){closeIntel();}
 document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
 watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
@@ -2371,10 +2385,10 @@ function setDock(region){
         <div class="kvo"><span class="kvo-v" id="kvSpeed">—</span><span class="kvo-l">ms / token</span></div>
         <div class="kvo"><span class="kvo-v" id="kvCost">—</span><span class="kvo-l">hardware</span></div>
       </div>`;
-    dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>x.classList.toggle('on',x===b));kv.model=+b.dataset.m;updateKV();});
+    dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>x.classList.toggle('on',x===b));kv.model=+b.dataset.m;updateKV();syncHash();});
     const cs=dockcore.querySelector('#ctxSl'),bs=dockcore.querySelector('#batSl');
-    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';updateKV();});
-    bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();});
+    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';updateKV();syncHash();});
+    bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();syncHash();});
     updateKV();
   }else if(region==='kvcache'){
     dock.style.display='';dock.classList.add('ai'); // reuse the big-dock sizing
@@ -2411,7 +2425,7 @@ function setDock(region){
 let __warmGen=0;
 function warmShaders(){
   const gen=++__warmGen;let mats;
-  try{mats=renderer.compile(scene,camera);}catch(e){return;}
+  try{mats=new Set(renderer.compile(scene,camera));}catch(e){return;} // Set in r161; wrap so an Array-returning three still works
   const tick=()=>{
     if(gen!==__warmGen)return;                      // a newer region superseded this warm-up
     mats.forEach(m=>{const p=renderer.properties.get(m).currentProgram;if(!p||p.isReady())mats.delete(m);});
@@ -2422,8 +2436,8 @@ function warmShaders(){
 }
 function enterRegion(r){
   if(r===region&&groups&&Object.keys(groups).length){/* allow re-entry refresh */}
-  region=r;
-  clearScene();closePanel();
+  region=r;jGen++;
+  __muteHash=true;clearScene();closePanel();__muteHash=false; // the implicit close is not a navigation
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.region===(r==='map'?'map':r)));
   if(r==='map'){buildMap();}
   else if(r==='hierarchy'){buildHierarchy();}
@@ -2448,7 +2462,7 @@ function enterRegion(r){
     kvcache:'<b>+1 word</b> to step · toggle the cache off · <b>click</b> anything to open its file'};
   document.getElementById('hint').innerHTML=hints[r]||'';
   track('region_enter',{region:r});
-  syncHash();
+  syncHash(null,true);
 }
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(!b)return;enterRegion(b.dataset.region);});
 
@@ -2469,13 +2483,14 @@ function jGo(i){
   else{
     const move=region!==s.r;
     if(move)enterRegion(s.r);
-    if(s.n)setTimeout(()=>{jNavigating=true;openNode(s.n);if(s.r==='hierarchy')focusLayer(s.n);jNavigating=false;},move?700:0);
+    const gen=++jGen; // anything that navigates before the fly-in lands invalidates this stop
+    if(s.n)setTimeout(()=>{if(gen!==jGen)return;jNavigating=true;openNode(s.n);if(s.r==='hierarchy')focusLayer(s.n);jNavigating=false;},move?700:0);
     else closePanel();
   }
   jNavigating=false;
   renderJourney(true);
   track('journey_stop',{stop:jI+1,title:s.t});
-  syncHash('stop/'+(jI+1));
+  syncHash('stop/'+(jI+1),true);
   wake();
 }
 function renderJourney(showCap){
@@ -2594,23 +2609,28 @@ const SLUG2R=Object.fromEntries(Object.entries(R2SLUG).map(([k,v])=>[v,k]));
 // which region a node lives in — the journey is the authority, prefixes the fallback
 function nodeRegion(id){const s=JOURNEY.find(x=>x.n===id);if(s)return s.r;if(HIER.some(h=>h.id===id))return 'hierarchy';if(id.startsWith('cxl'))return 'cxl';if(id.startsWith('phot'))return 'photonics';if(id.startsWith('kv'))return 'kvcache';return region;}
 let __routing=false; // true while applyRoute drives state, so syncHash doesn't fight it
+let __booted=false;  // before boot completes every write is replaceState (so Back leaves the site cleanly)
+let __muteHash=false;// enterRegion closes the panel as a side effect — that close must not write history
+let jGen=0;          // navigation generation: any navigation invalidates a pending journey timeout
 function currentRoute(){
   if(watchModal.classList.contains('on'))return 'intel/'+intelTab;
   if(panelNode)return 'node/'+panelNode.id;
   if(region==='ai'&&(kv.model!==KV_DEFAULT.model||kv.ctx!==KV_DEFAULT.ctx||kv.batch!==KV_DEFAULT.batch))return `wall/${kv.model}/${kv.ctx}/${kv.batch}`;
   return R2SLUG[region]||'map';
 }
-function syncHash(force){
-  if(__routing||jNavigating)return;
+// push = a discrete user navigation (region, file, tab, stop) → a history entry, so Back walks the atlas.
+// replace = canonicalisation or a high-frequency update (sliders) → no history spam.
+function syncHash(force,push){
+  if(__routing||jNavigating||__muteHash)return;
   const want='#'+(force||currentRoute());
   if(location.hash===want)return;
-  try{history.replaceState(null,'',want);}catch(e){location.hash=want;}
+  try{if(push&&__booted)history.pushState(null,'',want);else history.replaceState(null,'',want);}catch(e){location.hash=want;}
 }
 function applyRoute(hash){
   const h=(hash||'').replace(/^#\/?/,'').trim();
   if(!h)return false;
   const [head,...rest]=h.split('/');
-  __routing=true;
+  __routing=true;jGen++;
   try{
     closeIntel();
     if(head==='node'&&rest[0]&&findNode(rest[0])){
@@ -2624,11 +2644,13 @@ function applyRoute(hash){
       const tab=['short','watch','geo','numbers','road'].includes(rest[0])?rest[0]:'short';
       openIntel(tab);
     }else if(head==='wall'&&rest.length===3){
-      const m=+rest[0],c=+rest[1],b=+rest[2];
-      if(MODELS[m]&&c>=1&&c<=256&&b>=1&&b<=128){kv.model=m;kv.ctx=c;kv.batch=b;}
-      if(region!=='ai')enterRegion('ai');else{setDock('ai');updateKV();}
+      const m=parseInt(rest[0],10),c=parseInt(rest[1],10),b=parseInt(rest[2],10);
+      const ok=Number.isInteger(m)&&Number.isInteger(c)&&Number.isInteger(b)&&MODELS[m]&&c>=1&&c<=256&&b>=1&&b<=128;
+      if(ok){kv.model=m;kv.ctx=c;kv.batch=b;} // otherwise keep the current scene; the canonical hash is written below
+      if(region!=='ai')enterRegion('ai');else{closePanel();setDock('ai');updateKV();}
     }else if(SLUG2R[head]){
-      if(region!==SLUG2R[head]||panelNode)enterRegion(SLUG2R[head]);
+      const r=SLUG2R[head];
+      if(region!==r)enterRegion(r);else closePanel(); // Back from #node/x to #stack just closes the file — no rebuild
     }else{__routing=false;return false;}
   }finally{__routing=false;}
   syncHash(); // state was driven with syncHash muted — now write the canonical form of it
@@ -2636,6 +2658,7 @@ function applyRoute(hash){
   return true;
 }
 window.addEventListener('hashchange',()=>{if(!applyRoute(location.hash))syncHash();});
+window.addEventListener('popstate',()=>{/* hashchange fires for hash-only history moves; nothing extra needed */});
 // share: copy the canonical deep link for whatever is on screen
 const toast=document.createElement('div');toast.id='toast';document.body.appendChild(toast);
 let __toastT=0;
@@ -2657,13 +2680,14 @@ window.__atlas={scene,lr,camera,get region(){return region},get groups(){return 
   go(r){enterRegion(r);},route(h){return applyRoute(h);},get hash(){return location.hash;},get asof(){return DATA_ASOF;},
   jGo(i){jGo(i);},get jI(){return jI;},get jLen(){return JOURNEY.length;},get jFirstIntel(){return JOURNEY.findIndex(s=>s.intel);},   // journey harness hooks
   get camX(){return controls.target.x;},get camY(){return controls.target.y;}, // glide harness hooks
-  setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}wake();},
+  setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();syncHash();}wake();},
   kvStep(){stepKVR();wake();},kvCache(on){kvr.cache=on;updateKVR(false);wake();},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
 const BOOT_HASH=location.hash; // read BEFORE the first enterRegion, which would otherwise rewrite it to #map
 enterRegion('map');   // also fires compileAsync — the initial shader warm-up runs behind the loader
 animate();
 if(BOOT_HASH&&BOOT_HASH!=='#map'){if(!applyRoute(BOOT_HASH))syncHash();} // deep link: land exactly where the URL says
+__booted=true; // from here on, discrete navigations push history entries
 // (removed the 350ms hidden-tab heartbeat: it forced a full render every third of
 //  a second forever, even backgrounded — pure waste. rAF pausing when hidden is the
 //  correct behavior, and visibilitychange re-wakes us for a fresh frame on return.)
