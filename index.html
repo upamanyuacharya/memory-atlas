@@ -159,6 +159,7 @@
   #panel .pback{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--ink-dim);
     background:rgba(255,255,255,.05);border:1px solid var(--hair);border-radius:999px;padding:7px 14px;margin-bottom:13px;cursor:pointer;transition:all .3s var(--ease)}
   #panel .pback:hover{color:var(--ink);border-color:var(--hair-bright);background:rgba(255,255,255,.09);transform:translateX(-2px)}
+  #panel .pshare{margin-left:8px;margin-bottom:13px;vertical-align:top}
   #panel .pbody p{font-size:15px;line-height:1.7}
   #panel .phead .tier{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
   #panel .phead .tier .dot{width:8px;height:8px;border-radius:50%;box-shadow:0 0 12px currentColor}
@@ -357,9 +358,17 @@
   #introBtn{position:absolute;top:0;right:0;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--hair);color:var(--ink-dim);cursor:pointer;font-size:14px;display:none;align-items:center;justify-content:center}
   @media (max-width:560px){.wtitle{font-size:30px}#welcome .core{padding:26px 24px}}
   #footlinks{position:fixed;left:24px;bottom:24px;z-index:30;display:flex;gap:8px;align-items:center}
-  #introReopen,#ghLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;transition:all .3s var(--ease);text-decoration:none}
-  #introReopen:hover,#ghLink:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
-  @media (max-width:980px){#footlinks{left:16px;bottom:72px}#ghLink{display:none}} /* clears the full-width journey bar */
+  #asof{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint);display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px dashed var(--hair);border-radius:999px;cursor:help}
+  #asof i{width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.8}
+  #toast{position:fixed;left:50%;bottom:118px;transform:translate(-50%,12px);z-index:120;font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink);background:rgba(10,14,20,.92);border:1px solid var(--hair-bright);border-radius:999px;padding:10px 16px;opacity:0;pointer-events:none;transition:all .35s var(--ease);max-width:min(92vw,720px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #toast.on{opacity:1;transform:translate(-50%,0)}
+  .pshare,.wmshare,#jCapShare{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-dim);background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:999px;padding:7px 12px;cursor:pointer;transition:all .3s var(--ease)}
+  .pshare:hover,.wmshare:hover,#jCapShare:hover{color:var(--ink);border-color:var(--hair-bright)}
+  .wmshare{margin-left:auto;margin-right:10px;align-self:center}
+  #jCapShare{margin-top:10px}
+  #introReopen,#ghLink,#readLink{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--ink-dim);background:var(--glass);border:1px solid var(--hair);border-radius:999px;padding:8px 14px;cursor:pointer;transition:all .3s var(--ease);text-decoration:none}
+  #introReopen:hover,#ghLink:hover,#readLink:hover{color:var(--ink);border-color:var(--hair-bright);transform:translateY(-1px)}
+  @media (max-width:980px){#footlinks{left:16px;bottom:72px}#ghLink,#asof{display:none}} /* clears the full-width journey bar */
 
   /* ---------------- 3D LABELS ---------------- */
   /* NO backdrop-filter here: these labels move every rendered frame, and a moving
@@ -596,7 +605,7 @@
   <button id="jIntel" title="Investor Intelligence — the shortlist, by layer, by country, roadmap">◎&nbsp;Investor</button>
 </div></div></div>
 <!-- journey caption: the guided-tour teaching, shown in the flow, dismissable -->
-<div id="jCap" style="display:none"><button id="jCapX">✕</button><div id="jCapT"></div></div>
+<div id="jCap" style="display:none"><button id="jCapX">✕</button><div id="jCapT"></div><button id="jCapShare" title="Copy a link to this stop">⧉&nbsp; Copy link to this stop</button></div>
 
 <!-- The Wall's fixed headline (written by updateKV) -->
 <div id="wallHead" style="display:none">
@@ -610,6 +619,7 @@
   <div class="wm-card shell"><div class="core">
     <div class="wm-head">
       <div><h2>Investor Intelligence</h2><div class="wm-sub" id="wmSub"></div></div>
+      <button class="wmshare" title="Copy a link to this tab">⧉&nbsp; Copy link</button>
       <button class="wmclose">✕</button>
     </div>
     <div class="wm-tabs" id="wmTabs">
@@ -643,6 +653,16 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
    CONTENT MODEL  — the "second brain". Nodes + companies + relationships.
    Business lens: who makes what · bottleneck · geography · metrics.
    ========================================================================= */
+
+// ---- FRESHNESS ----
+// Every fact in this file was verified against primary sources on this date.
+// Surfaces as the "Data as of" chip (bottom-left), in the Intel modal and on /read/.
+const DATA_ASOF='2026-09-13';
+function asofLabel(){const d=new Date(DATA_ASOF+'T00:00:00Z');return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}
+
+// ---- ANALYTICS ----
+// One wrapper; GA4 custom events. No-op when gtag is blocked, never throws.
+function track(name,params){try{if(typeof window.gtag==='function')window.gtag('event',name,params||{});}catch(e){}}
 
 // ---- COMPANIES (keyed) ----
 const CO = {
@@ -1192,7 +1212,7 @@ const panelScrim=document.createElement('div');panelScrim.id='panelScrim';docume
 panelScrim.addEventListener('click',()=>closePanel());
 let panelTab='overview',panelNode=null;
 document.addEventListener('click',e=>{if(e.target.closest('.pclose')||e.target.closest('.pback'))closePanel();});
-function closePanel(){panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);}
+function closePanel(){const was=!!panelNode;panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);if(was)syncHash();}
 
 function hueFromName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return h;}
 function monoStyle(n){const h=hueFromName(n);return `background:linear-gradient(140deg,hsl(${h},44%,24%),hsl(${(h+24)%360},40%,17%));color:hsl(${h},78%,80%)`;}
@@ -1225,6 +1245,7 @@ function openNode(id){
   const tagLine=node.cap?`${node.cap} · ${node.bw} · ${node.lat}`:node.kind;
   phead.innerHTML=`
     <button class="pback">←&nbsp; Back to the 3D view</button>
+    <button class="pshare" title="Copy a link straight to this file">⧉&nbsp; Copy link</button>
     <button class="pclose">✕</button>
     <div class="tier" style="color:${c}"><span class="dot" style="background:${c}"></span>${node.kind}</div>
     <h2>${node.name}</h2>
@@ -1235,6 +1256,9 @@ function openNode(id){
   renderPanelBody();
   panel.classList.add('open');panelScrim.classList.add('on');
   document.body.classList.add('reading'); // text is the focus; the 3D recedes
+  phead.querySelector('.pshare').addEventListener('click',copyLink);
+  track('node_open',{node:id,name:node.name,region});
+  syncHash();
 }
 function renderPanelBody(){
   const node=panelNode;if(!node)return;
@@ -1363,7 +1387,7 @@ const SHORTLIST=[
   ]},
 ];
 function renderShort(){
-  wmSub.textContent='the names that structurally define this map — who matters most, and why · educational, not investment advice';
+  wmSub.textContent='the names that structurally define this map — who matters most, and why · educational, not investment advice · data as of '+asofLabel();
   wmBody.innerHTML=SHORTLIST.map(g=>`<div class="wm-group"><div class="wm-gt">${g.t}</div><div class="sl-d">${g.d}</div><div class="sl-list">`+
     g.items.map(([cid,why])=>{const co=CO[cid];if(!co)return'';const sv=companySev(cid);const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');
       return `<button class="sl-row" data-co="${cid}">${logoHTML(co)}<span class="sl-ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="sl-why">${why}</span></span><span class="sev" style="background:${sevColor(sv)}"></span></button>`;}).join('')+
@@ -1372,7 +1396,7 @@ function renderShort(){
 }
 function wireChips(){wmBody.querySelectorAll('[data-co]').forEach(b=>b.addEventListener('click',()=>toggleCard(b.dataset.co,b,wmBody)));}
 function renderWatch(){
-  wmSub.textContent='every public ticker in the AI-memory supply chain · grouped by layer · dot = chokepoint severity';
+  wmSub.textContent='every public ticker in the AI-memory supply chain · grouped by layer · dot = chokepoint severity · data as of '+asofLabel();
   wmBody.innerHTML=WATCH_GROUPS.map(g=>`<div class="wm-group"><div class="wm-gt">${g.t}</div><div class="chips">`+
     g.ids.map(cid=>{const co=CO[cid];if(!co)return'';const priv=co.tk==='PRIVATE'||co.tk.startsWith('→');const sv=companySev(cid);
       return `<button class="chip" data-co="${cid}">${logoHTML(co)}<span class="ct"><span class="cn">${co.n} <span class="tk ${priv?'priv':''}">${co.tk}</span></span><span class="cr">${co.makes} · ${co.ctry}</span></span><span class="sev" style="background:${sevColor(sv)}" title="chokepoint ${sevWord(sv)}"></span><span class="arr">→</span></button>`;}).join('')+
@@ -1380,7 +1404,7 @@ function renderWatch(){
   wireChips();
 }
 function renderGeo(){
-  wmSub.textContent='where each critical step physically happens · ordered by single-point-of-failure risk';
+  wmSub.textContent='where each critical step physically happens · ordered by single-point-of-failure risk · data as of '+asofLabel();
   wmBody.innerHTML=GEO.map(g=>`<div class="geo-card">
     <div class="gh"><span class="gcc">${g.cc}</span><span class="gn">${g.country}${g.sev>=5?'<span class="spof">single point of failure</span>':''}</span>
       <span class="gsev">${[1,2,3,4,5].map(i=>`<i style="background:${i<=g.sev?sevColor(g.sev):'rgba(255,255,255,.08)'}"></i>`).join('')}</span></div>
@@ -1391,7 +1415,7 @@ function renderGeo(){
   wireChips();
 }
 function renderRoad(){
-  wmSub.textContent='what happens when, and who benefits · 2025 → 2030 · tap a ticker to open its file';
+  wmSub.textContent='what happens when, and who benefits · 2025 → 2030 · tap a ticker to open its file · data as of '+asofLabel();
   wmBody.innerHTML=`<div class="tl">`+ROADMAP.map(m=>`
     <div class="tl-item" style="--dotc:${m.c}">
       <div class="tl-date">${m.y}<span class="tl-kind">${m.k}</span></div>
@@ -1402,13 +1426,14 @@ function renderRoad(){
   wireChips();
 }
 let intelTab='short';
-function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;}
-function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);}
-function closeIntel(){watchModal.classList.remove('on');}
+function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;if(watchModal.classList.contains('on'))syncHash();}
+function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);track('intel_open',{tab:intelTab});syncHash();}
+function closeIntel(){const was=watchModal.classList.contains('on');watchModal.classList.remove('on');if(was)syncHash();}
 function closeModals(){closeIntel();}
 document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
 watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
 watchModal.querySelector('.wmclose').addEventListener('click',closeIntel);
+watchModal.querySelector('.wmshare').addEventListener('click',copyLink);
 /* Keyboard (v1.9.0):
    - WASD + arrow keys GLIDE the camera around the current scene (held, smooth,
      handled in the animate loop via panKeys)
@@ -2169,7 +2194,7 @@ function setDock(region){
     document.getElementById('kvStep').addEventListener('click',stepKVR);
     document.getElementById('kvReset').addEventListener('click',()=>{kvr.n=KVR_PREFILL;kvr.auto=false;document.getElementById('kvAuto').classList.remove('on');updateKVR(false);});
     document.getElementById('kvAuto').addEventListener('click',e=>{kvr.auto=!kvr.auto;e.currentTarget.classList.toggle('on',kvr.auto);if(groups.kvr)groups.kvr.userData.nextAt=T.now+0.2;});
-    document.getElementById('kvCacheT').addEventListener('click',e=>{kvr.cache=!kvr.cache;e.currentTarget.classList.toggle('on',kvr.cache);updateKVR(false);});
+    document.getElementById('kvCacheT').addEventListener('click',e=>{kvr.cache=!kvr.cache;e.currentTarget.classList.toggle('on',kvr.cache);updateKVR(false);track('kvcache_toggle',{cache:kvr.cache});});
     updateKVR(false);
   }else if(region==='photonics'){
     dock.style.display='';
@@ -2183,6 +2208,21 @@ function setDock(region){
 /* =========================================================================
    REGION SWITCH
    ========================================================================= */
+// Disposal-safe shader warm-up. three's compileAsync polls `properties.get(material).currentProgram.isReady()`
+// and throws if a material was disposed mid-compile — which is exactly what a region switch during
+// warm-up does (v2.0.0 fix: deep links + fast journey clicks made it reproducible). Same behaviour, tolerant.
+let __warmGen=0;
+function warmShaders(){
+  const gen=++__warmGen;let mats;
+  try{mats=renderer.compile(scene,camera);}catch(e){return;}
+  const tick=()=>{
+    if(gen!==__warmGen)return;                      // a newer region superseded this warm-up
+    mats.forEach(m=>{const p=renderer.properties.get(m).currentProgram;if(!p||p.isReady())mats.delete(m);});
+    if(mats.size===0){wake(300);return;}
+    setTimeout(tick,10);
+  };
+  setTimeout(tick,0);
+}
 function enterRegion(r){
   if(r===region&&groups&&Object.keys(groups).length){/* allow re-entry refresh */}
   region=r;
@@ -2202,7 +2242,7 @@ function enterRegion(r){
   renderOnce();              // immediate first paint of the new region
   // Warm the new region's shaders off the main thread (KHR_parallel_shader_compile)
   // so the first real frame doesn't stutter. At launch this runs behind the loader.
-  if(renderer.compileAsync)renderer.compileAsync(scene,camera).then(()=>wake(300)).catch(()=>{});
+  warmShaders();
   const hints={map:'<b>WASD / arrows</b> glide · <b>N</b> = next stop · <b>click</b> any node to read it',
     hierarchy:'<b>click</b> any slab → who makes it · bottlenecks · metrics',
     cxl:'<b>click</b> the switch / hosts / modules · switch capability below',
@@ -2210,6 +2250,8 @@ function enterRegion(r){
     ai:'<b>drag</b> the sliders · watch the KV cache overflow the GPU',
     kvcache:'<b>+1 word</b> to step · toggle the cache off · <b>click</b> anything to open its file'};
   document.getElementById('hint').innerHTML=hints[r]||'';
+  track('region_enter',{region:r});
+  syncHash();
 }
 document.getElementById('nav').addEventListener('click',e=>{const b=e.target.closest('.navbtn');if(!b)return;enterRegion(b.dataset.region);});
 
@@ -2263,6 +2305,8 @@ function jGo(i){
   }
   jNavigating=false;
   renderJourney(true);
+  track('journey_stop',{stop:jI+1,title:s.t});
+  syncHash('stop/'+(jI+1));
   wake();
 }
 function renderJourney(showCap){
@@ -2291,6 +2335,7 @@ document.getElementById('jPrev').addEventListener('click',()=>jGo(jI-1));
 document.getElementById('jHome').addEventListener('click',()=>{closePanel();closeIntel();enterRegion('map');});
 document.getElementById('jIntel').addEventListener('click',()=>openIntel('short'));
 document.getElementById('jCapX').addEventListener('click',()=>{jCapEl.style.display='none';});
+document.getElementById('jCapShare').addEventListener('click',copyLink);
 renderJourney(false);
 
 /* =========================================================================
@@ -2368,27 +2413,95 @@ window.addEventListener('resize',()=>{camera.aspect=W()/H();camera.updateProject
 /* BOOT */
 const lmsg=['Mapping the supply chain…','Stacking HBM dies…','Lighting the waveguides…','Wiring the CXL fabric…','Tracing the bottlenecks…'];
 let li=0;const lint=setInterval(()=>{li=(li+1)%lmsg.length;const e=document.getElementById('lt');if(e)e.textContent=lmsg[li];},650);
+/* =========================================================================
+   ROUTER — every state has a URL (v2.0.0).
+   #map · #stack · #cxl · #photonics · #kvcache · #wall[/model/ctxK/chats]
+   #node/<id> · #stop/<n> · #intel/<short|watch|geo|road>
+   State → hash via syncHash() (replaceState, no history spam); hash → state via
+   applyRoute() on load and on hashchange (Back/Forward, pasted links, edits).
+   ========================================================================= */
+const R2SLUG={map:'map',hierarchy:'stack',cxl:'cxl',photonics:'photonics',kvcache:'kvcache',ai:'wall'};
+const SLUG2R=Object.fromEntries(Object.entries(R2SLUG).map(([k,v])=>[v,k]));
+// which region a node lives in — the journey is the authority, prefixes the fallback
+function nodeRegion(id){const s=JOURNEY.find(x=>x.n===id);if(s)return s.r;if(HIER.some(h=>h.id===id))return 'hierarchy';if(id.startsWith('cxl'))return 'cxl';if(id.startsWith('phot'))return 'photonics';if(id.startsWith('kv'))return 'kvcache';return region;}
+let __routing=false; // true while applyRoute drives state, so syncHash doesn't fight it
+function currentRoute(){
+  if(watchModal.classList.contains('on'))return 'intel/'+intelTab;
+  if(panelNode)return 'node/'+panelNode.id;
+  if(region==='ai'&&(kv.model!==1||kv.ctx!==16||kv.batch!==8))return `wall/${kv.model}/${kv.ctx}/${kv.batch}`;
+  return R2SLUG[region]||'map';
+}
+function syncHash(force){
+  if(__routing||jNavigating)return;
+  const want='#'+(force||currentRoute());
+  if(location.hash===want)return;
+  try{history.replaceState(null,'',want);}catch(e){location.hash=want;}
+}
+function applyRoute(hash){
+  const h=(hash||'').replace(/^#\/?/,'').trim();
+  if(!h)return false;
+  const [head,...rest]=h.split('/');
+  __routing=true;
+  try{
+    closeIntel();
+    if(head==='node'&&rest[0]&&findNode(rest[0])){
+      const id=rest[0],r=nodeRegion(id);
+      if(region!==r)enterRegion(r);
+      openNode(id);if(r==='hierarchy')focusLayer(id);
+    }else if(head==='stop'&&rest[0]){
+      const n=parseInt(rest[0],10);
+      if(n>=1&&n<=JOURNEY.length){__routing=false;jGo(n-1);return true;}
+    }else if(head==='intel'){
+      const tab=['short','watch','geo','road'].includes(rest[0])?rest[0]:'short';
+      openIntel(tab);
+    }else if(head==='wall'&&rest.length===3){
+      const m=+rest[0],c=+rest[1],b=+rest[2];
+      if(MODELS[m]&&c>=1&&c<=256&&b>=1&&b<=128){kv.model=m;kv.ctx=c;kv.batch=b;}
+      if(region!=='ai')enterRegion('ai');else{setDock('ai');updateKV();}
+    }else if(SLUG2R[head]){
+      if(region!==SLUG2R[head]||panelNode)enterRegion(SLUG2R[head]);
+    }else{__routing=false;return false;}
+  }finally{__routing=false;}
+  syncHash(); // state was driven with syncHash muted — now write the canonical form of it
+  wake();
+  return true;
+}
+window.addEventListener('hashchange',()=>{if(!applyRoute(location.hash))syncHash();});
+// share: copy the canonical deep link for whatever is on screen
+const toast=document.createElement('div');toast.id='toast';document.body.appendChild(toast);
+let __toastT=0;
+function showToast(msg){toast.textContent=msg;toast.classList.add('on');clearTimeout(__toastT);__toastT=setTimeout(()=>toast.classList.remove('on'),1900);}
+function copyLink(e){
+  if(e)e.stopPropagation();
+  const url=location.origin+location.pathname+'#'+currentRoute();
+  const done=()=>{showToast('Link copied — '+url.replace(/^https?:\/\//,''));track('share_copy',{route:currentRoute()});};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done,()=>{prompt('Copy this link',url);});
+  else prompt('Copy this link',url);
+}
+
 window.__atlas={scene,lr,camera,get region(){return region},get groups(){return groups},
   countCSS2D(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject)n++;});return n;},
   countVisible(){let n=0;scene.traverse(o=>{if(o.isCSS2DObject&&o.element&&o.element.parentNode)n++;});return n;},
   frames(){return __frames;},lastErr(){return __lastErr;},render(){renderOnce();},
   freeze(t){T.frozen=true;if(t!=null)T.now=t;renderOnce();},thaw(){T.frozen=false;},get frozen(){return T.frozen;},
   sleep(){awakeUntil=0;},get awake(){return isActive(performance.now());},   // for the idle-rest gate
-  go(r){enterRegion(r);},
+  go(r){enterRegion(r);},route(h){return applyRoute(h);},get hash(){return location.hash;},get asof(){return DATA_ASOF;},
   jGo(i){jGo(i);},get jI(){return jI;},get jLen(){return JOURNEY.length;},   // journey harness hooks
   get camX(){return controls.target.x;},get camY(){return controls.target.y;}, // glide harness hooks
   setKV(model,ctx,batch){kv.model=model;kv.ctx=ctx;kv.batch=batch;if(region==='ai'){setDock('ai');updateKV();}wake();},
   kvStep(){stepKVR();wake();},kvCache(on){kvr.cache=on;updateKVR(false);wake();},
   probe(){scene.updateMatrixWorld(true);const vp=new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);const out=[];scene.traverse(o=>{if(o.isCSS2DObject&&out.length<3){const v=new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).applyMatrix4(vp);out.push({txt:o.element.textContent.slice(0,12),x:+v.x.toFixed(2),y:+v.y.toFixed(2),z:+v.z.toFixed(3),vis:o.visible,disp:o.element.style.display,hasParent:!!o.element.parentNode});}});return out;}};
+const BOOT_HASH=location.hash; // read BEFORE the first enterRegion, which would otherwise rewrite it to #map
 enterRegion('map');   // also fires compileAsync — the initial shader warm-up runs behind the loader
 animate();
+if(BOOT_HASH&&BOOT_HASH!=='#map'){if(!applyRoute(BOOT_HASH))syncHash();} // deep link: land exactly where the URL says
 // (removed the 350ms hidden-tab heartbeat: it forced a full render every third of
 //  a second forever, even backgrounded — pure waste. rAF pausing when hidden is the
 //  correct behavior, and visibilitychange re-wakes us for a fresh frame on return.)
 
 /* ---------- WELCOME (kept behind "? What is this" only — nothing auto-opens) ---------- */
 const welcome=document.getElementById('welcome');
-function showWelcome(){welcome.classList.add('show');}
+function showWelcome(){welcome.classList.add('show');track('welcome_open');}
 function hideWelcome(){welcome.classList.remove('show');try{localStorage.setItem('atlas_seen','1');}catch(e){}}
 document.getElementById('wTour').addEventListener('click',()=>{hideWelcome();setTimeout(()=>jGo(1),260);});
 document.getElementById('wExplore').addEventListener('click',hideWelcome);
@@ -2396,6 +2509,8 @@ welcome.addEventListener('click',e=>{if(e.target===welcome)hideWelcome();});
 const footlinks=document.createElement('div');footlinks.id='footlinks';document.body.appendChild(footlinks);
 const introBtn=document.createElement('button');introBtn.id='introReopen';introBtn.innerHTML='?&nbsp; What is this';introBtn.addEventListener('click',showWelcome);footlinks.appendChild(introBtn);
 const ghLink=document.createElement('a');ghLink.id='ghLink';ghLink.href='https://github.com/upamanyuacharya/memory-atlas';ghLink.target='_blank';ghLink.rel='noopener';ghLink.textContent='GitHub';footlinks.appendChild(ghLink);
+const readLink=document.createElement('a');readLink.id='readLink';readLink.href='read/';readLink.textContent='Text edition';readLink.title='Every file in the atlas as plain, fast pages';footlinks.appendChild(readLink);
+const asof=document.createElement('span');asof.id='asof';asof.title='Every fact in the atlas was re-verified against primary sources on this date';asof.innerHTML='<i></i>Data as of '+asofLabel();footlinks.appendChild(asof);
 
 // v1.8.0: the landing IS the map — no takeover modal, no nudge. The ▾ START HERE
 // pointer and the journey bar are the onboarding.
@@ -2416,7 +2531,8 @@ setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.
     <button id="mnGo">Proceed anyway →</button>`;
   document.body.appendChild(n);
   const dismiss=()=>{n.classList.add('gone');try{sessionStorage.setItem('atlas_mobile_ok','1');}catch(e){}setTimeout(()=>n.remove(),420);};
-  n.querySelector('#mnGo').addEventListener('click',dismiss);
+  n.querySelector('#mnGo').addEventListener('click',()=>{track('mobile_note',{action:'proceed'});dismiss();});
+  track('mobile_note',{action:'shown'});
   let y0=null;
   n.addEventListener('touchstart',e=>{y0=e.touches[0].clientY;n.style.transition='none';},{passive:true});
   n.addEventListener('touchmove',e=>{if(y0==null)return;const dy=Math.max(0,e.touches[0].clientY-y0);n.style.transform=`translateY(${dy}px)`;},{passive:true});
