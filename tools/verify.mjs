@@ -312,6 +312,20 @@ const STATES = [
       await p.goBack(); await p.waitForTimeout(700);
       s = await p.evaluate(() => ({ hash: location.hash, open: document.getElementById('panel').classList.contains('open') }));
       if (s.open) throw `Back did not close the file: ${JSON.stringify(s)}`;
+      // Investor tab switches are history entries; a hand-off from a company card to a file is ONE entry
+      await p.evaluate(() => window.__atlas.route('#intel/short')); await p.waitForTimeout(400);
+      await p.click('#wmTabs button[data-it="geo"]'); await p.waitForTimeout(300);
+      await p.goBack(); await p.waitForTimeout(400);
+      s = await p.evaluate(() => ({ hash: location.hash, tab: document.querySelector('#wmTabs button.on').dataset.it, on: document.getElementById('watchModal').classList.contains('on') }));
+      if (s.hash !== '#intel/short' || s.tab !== 'short' || !s.on) throw `Back across intel tabs: ${JSON.stringify(s)}`;
+      await p.click('#wmBody [data-co="tsmc"]'); await p.waitForTimeout(300);            // expand the company card
+      await p.click('#wmBody [data-bk="hbm"]'); await p.waitForTimeout(1200);            // hand-off to the HBM file
+      s = await p.evaluate(() => ({ hash: location.hash, open: document.getElementById('panel').classList.contains('open') }));
+      if (s.hash !== '#node/hbm' || !s.open) throw `intel→node hand-off: ${JSON.stringify(s)}`;
+      await p.goBack(); await p.waitForTimeout(600);
+      s = await p.evaluate(() => ({ hash: location.hash, on: document.getElementById('watchModal').classList.contains('on'), open: document.getElementById('panel').classList.contains('open') }));
+      if (s.hash !== '#intel/short' || !s.on || s.open) throw `one Back should return to Intel: ${JSON.stringify(s)}`;
+      await p.evaluate(() => window.__atlas.route('#map')); await p.waitForTimeout(600);
       // journey race: navigating away during the 700 ms fly-in must cancel the pending file open
       await p.evaluate(() => { window.__atlas.go('map'); }); await p.waitForTimeout(600);
       await p.evaluate(() => { window.__atlas.jGo(1); window.__atlas.go('map'); }); await p.waitForTimeout(1400);

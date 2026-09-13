@@ -476,6 +476,7 @@
   .numwrap{overflow-x:auto;margin:14px 0 10px}.numtbl{width:100%;border-collapse:collapse;font-size:14px}.numtbl th{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint);text-align:left;padding:8px 8px;border-bottom:1px solid var(--hair)}
   .numtbl td{padding:8px 8px;border-bottom:1px solid var(--hair);vertical-align:middle;white-space:nowrap}.numtbl .n{text-align:right;font-family:var(--mono)}.numtbl .tk{font-family:var(--mono);font-size:12px;color:var(--ink-faint)}.numtbl .na{color:var(--ink-faint)}
   .numco{display:inline-flex;align-items:center;gap:9px;background:transparent;border:0;color:var(--ink);font:inherit;cursor:pointer;padding:0}.numco .logo{width:26px;height:26px;border-radius:7px;font-size:9px}.numco:hover span{color:var(--accent)}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
   .numfoot{font-family:var(--mono);font-size:11.5px;line-height:1.6;color:var(--ink-faint)}
   .tl-cos{display:flex;flex-wrap:wrap;gap:6px}
   .tl-co{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--hair);border-radius:999px;padding:4px 11px 4px 5px;cursor:pointer;transition:all .3s var(--ease);font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
@@ -618,7 +619,7 @@
 <div id="rail"><div class="shell"><div class="core" id="railcore"></div></div></div>
 
 <!-- RIGHT PANEL -->
-<div id="panel"><div class="shell"><div class="core">
+<div id="panel" role="dialog" aria-modal="true" aria-labelledby="ptitle"><div class="shell"><div class="core">
   <div class="phead" id="phead"></div>
   <div class="ptabs" id="ptabs"></div>
   <div class="pbody" id="pbody"></div>
@@ -652,18 +653,18 @@
 <!-- INVESTOR INTELLIGENCE MODAL (tabs: by layer · by country · roadmap) -->
 <div id="watchModal">
   <div class="wm-backdrop"></div>
-  <div class="wm-card shell"><div class="core">
+  <div class="wm-card shell" role="dialog" aria-modal="true" aria-labelledby="wmTitle"><div class="core">
     <div class="wm-head">
-      <div><h2>Investor Intelligence</h2><div class="wm-sub" id="wmSub"></div></div>
+      <div><h2 id="wmTitle">Investor Intelligence</h2><div class="wm-sub" id="wmSub"></div></div>
       <button class="wmshare" title="Copy a link to this tab">⧉&nbsp; Copy link</button>
       <button class="wmclose">✕</button>
     </div>
-    <div class="wm-tabs" id="wmTabs">
-      <button data-it="short" class="on">The shortlist</button>
-      <button data-it="watch">By layer</button>
-      <button data-it="geo">By country</button>
-      <button data-it="numbers">The numbers</button>
-      <button data-it="road">Roadmap</button>
+    <div class="wm-tabs" id="wmTabs" role="tablist" aria-label="Investor Intelligence views">
+      <button role="tab" data-it="short" class="on" aria-selected="true">The shortlist</button>
+      <button role="tab" data-it="watch" aria-selected="false" tabindex="-1">By layer</button>
+      <button role="tab" data-it="geo" aria-selected="false" tabindex="-1">By country</button>
+      <button role="tab" data-it="numbers" aria-selected="false" tabindex="-1">The numbers</button>
+      <button role="tab" data-it="road" aria-selected="false" tabindex="-1">Roadmap</button>
     </div>
     <div class="wm-body" id="wmBody"></div>
   </div></div>
@@ -1456,7 +1457,7 @@ const panelScrim=document.createElement('div');panelScrim.id='panelScrim';docume
 panelScrim.addEventListener('click',()=>closePanel());
 let panelTab='overview',panelNode=null;
 document.addEventListener('click',e=>{if(e.target.closest('.pclose')||e.target.closest('.pback'))closePanel();});
-function closePanel(){const was=!!panelNode;panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);if(was)syncHash(null,true);}
+function closePanel(){const was=!!panelNode;if(was)restoreFocus(panel);panel.classList.remove('open');panelScrim.classList.remove('on');document.body.classList.remove('reading');panelNode=null;if(region==='hierarchy')tweenObj(controls.target,{x:0},0.6);if(was)syncHash(null,true);}
 
 function hueFromName(n){let h=0;for(let i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))%360;return h;}
 function monoStyle(n){const h=hueFromName(n);return `background:linear-gradient(140deg,hsl(${h},44%,24%),hsl(${(h+24)%360},40%,17%));color:hsl(${h},78%,80%)`;}
@@ -1485,6 +1486,7 @@ function openNode(id){
   }
   if(HIER.some(h=>h.id===id)){visited.add(id);updateExplored();}
   jSync(s=>s.n===id); // free reading moves the journey pointer here too
+  const wasOpen=panel.classList.contains('open');
   panelNode=node;panelTab='overview';
   const c=node.col;
   const tagLine=node.cap?`${node.cap} · ${node.bw} · ${node.lat}`:node.kind;
@@ -1493,7 +1495,7 @@ function openNode(id){
     <button class="pshare" title="Copy a link straight to this file">⧉&nbsp; Copy link</button>
     <button class="pclose">✕</button>
     <div class="tier" style="color:${c}"><span class="dot" style="background:${c}"></span>${node.kind}</div>
-    <h2>${node.name}</h2>
+    <h2 id="ptitle">${node.name}</h2>
     <div class="tag">${tagLine}</div>`;
   ptabs.innerHTML=['overview','players','metrics','geography'].map(t=>
     `<button class="ptab ${t==='overview'?'on':''}" data-tab="${t}">${t==='players'?'Who makes it':t}</button>`).join('');
@@ -1502,6 +1504,8 @@ function openNode(id){
   panel.classList.add('open');panelScrim.classList.add('on');
   document.body.classList.add('reading'); // text is the focus; the 3D recedes
   phead.querySelector('.pshare').addEventListener('click',copyLink);
+  if(!wasOpen)rememberFocus(panel);
+  setTimeout(()=>{const b=phead.querySelector('.pback');if(b&&!panel.contains(document.activeElement))b.focus();},30);
   track('node_open',{node:id,name:node.name,region});
   syncHash(null,true);
 }
@@ -1636,17 +1640,17 @@ function renderNumbers(){
   const cap=b=>b==null?'n/a':b>=1000?'$'+(b/1000).toFixed(2)+'T':'$'+Math.round(b)+'B';
   const pct=r=>r==null?'<span class="na">n/a</span>':`<span style="color:${r>=0?'#7ee787':'#ff5d6c'}">${r>=0?'+':''}${Math.round(r)}%</span>`;
   wmBody.innerHTML=`<div class="wm-group"><div class="sl-d">${V.note}</div>
-    <div class="numwrap"><table class="numtbl"><thead><tr><th>Company</th><th>Ticker</th><th class="n">Price</th><th class="n">Mkt cap</th><th class="n">12-mo</th><th class="n">Fwd P/E</th></tr></thead><tbody>`+
+    <div class="numwrap"><table class="numtbl"><caption class="sr">Valuation snapshot, ${V.asof}: market cap, price, 12-month return and forward P/E for every public company in the atlas</caption><thead><tr><th scope="col">Company</th><th scope="col">Ticker</th><th scope="col" class="n">Price</th><th scope="col" class="n">Mkt cap</th><th scope="col" class="n">12-mo</th><th scope="col" class="n">Fwd P/E</th></tr></thead><tbody>`+
     V.rows.map(r=>{const co=CO[r.id];if(!co)return'';return `<tr><td><button class="numco" data-co="${r.id}">${logoHTML(co)}<span>${co.n}</span></button></td><td class="tk">${r.ticker}</td><td class="n">${r.price}</td><td class="n">${cap(r.mcapB)}</td><td class="n">${pct(r.ret12m)}</td><td class="n">${r.fwdPE==null?'<span class="na">n/a</span>':r.fwdPE.toFixed(1)+'×'}</td></tr>`;}).join('')+
     `</tbody></table></div>
     <div class="numfoot">Source: ${V.source} · FX ${V.fx} · n/a = could not be confirmed from two sources, so it is left blank rather than guessed. Tap a company to open its file.</div></div>`;
   wireChips();
 }
 let intelTab='short';
-function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():intelTab==='numbers'?renderNumbers():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>b.classList.toggle('on',b.dataset.it===intelTab));wmBody.scrollTop=0;if(watchModal.classList.contains('on'))syncHash();}
-function openIntel(tab){if(tab)intelTab=tab;renderIntel();watchModal.classList.add('on');jSync(s=>s.intel===intelTab);track('intel_open',{tab:intelTab});jGen++;syncHash(null,true);}
-function closeIntel(){const was=watchModal.classList.contains('on');watchModal.classList.remove('on');if(was)syncHash(null,true);}
-function closeModals(){closeIntel();}
+function renderIntel(){intelTab==='geo'?renderGeo():intelTab==='road'?renderRoad():intelTab==='watch'?renderWatch():intelTab==='numbers'?renderNumbers():renderShort();document.querySelectorAll('#wmTabs button').forEach(b=>{const on=b.dataset.it===intelTab;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');b.tabIndex=on?0:-1;});wmBody.scrollTop=0;}
+function openIntel(tab){if(tab)intelTab=tab;renderIntel();if(!watchModal.classList.contains('on'))rememberFocus(watchModal);watchModal.classList.add('on');setTimeout(()=>{const t=watchModal.querySelector('#wmTabs button.on');if(t&&!watchModal.contains(document.activeElement))t.focus();},30);jSync(s=>s.intel===intelTab);track('intel_open',{tab:intelTab});jGen++;syncHash(null,true);}
+function closeIntel(silent){const was=watchModal.classList.contains('on');watchModal.classList.remove('on');if(was){if(!silent)syncHash(null,true);restoreFocus(watchModal);}}
+function closeModals(){closeIntel(true);} // hand-off to a file: the file's own push is the history entry
 document.getElementById('wmTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)openIntel(b.dataset.it);});
 watchModal.querySelector('.wm-backdrop').addEventListener('click',closeIntel);
 watchModal.querySelector('.wmclose').addEventListener('click',closeIntel);
@@ -1659,7 +1663,27 @@ watchModal.querySelector('.wmshare').addEventListener('click',copyLink);
    Form controls are never hijacked. */
 const panKeys=new Set();
 const PAN_CODES=['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyW','KeyA','KeyS','KeyD'];
+/* ---- dialog focus management (review round 2): remember the opener, focus the dialog,
+   keep Tab inside it while it is open, and give focus back on close ---- */
+const __focusReturn=new WeakMap();
+function rememberFocus(dlg){const a=document.activeElement;if(a&&a!==document.body&&!dlg.contains(a))__focusReturn.set(dlg,a);}
+function restoreFocus(dlg){const a=__focusReturn.get(dlg);__focusReturn.delete(dlg);if(a&&a.isConnected&&typeof a.focus==='function')setTimeout(()=>{try{a.focus({preventScroll:true});}catch(e){}},0);}
+function trapTab(dlg,e){
+  const f=[...dlg.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')].filter(x=>!x.disabled&&x.offsetParent!==null);
+  if(!f.length)return;const first=f[0],last=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}
+  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}
+  else if(!dlg.contains(document.activeElement)){e.preventDefault();first.focus();}
+}
 window.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){
+    if(watchModal.classList.contains('on'))return trapTab(watchModal,e);
+    if(panel.classList.contains('open'))return trapTab(panel,e);
+  }
+  // arrow keys move between Investor tabs when one has focus (WAI-ARIA tabs pattern)
+  if((e.key==='ArrowLeft'||e.key==='ArrowRight')&&e.target&&e.target.closest&&e.target.closest('#wmTabs')){
+    const tabs=[...document.querySelectorAll('#wmTabs button')];const i=tabs.indexOf(e.target);if(i>=0){e.preventDefault();const n=tabs[(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length];openIntel(n.dataset.it);n.focus();return;}
+  }
   if(e.key==='Escape'){
     if(watchModal.classList.contains('on'))closeIntel();
     else if(panel.classList.contains('open'))closePanel();
@@ -2120,6 +2144,8 @@ function buildPhotonics(){
 /* ---------- AI / MEMORY WALL ---------- */
 let kv={...KV_DEFAULT}; // default scene lives in data (KV_DEFAULT): tuned so the first tank is near-full and ANY slider nudge visibly spills
 function kvGB(m,ctxK,b){return (m.kvTok*ctxK*1024*b)/1e9;}
+// ONE cost format everywhere (3D headline, dock, /read/wall.html mirrors it): $Nk under $1M, else $X.XXM
+function fmtCost(k){return k<1000?'$'+Math.round(k)+'k':'$'+(k/1000).toFixed(2)+'M';}
 function buildAI(){
   const g=new THREE.Group();groups.ai=g;
   addBackdrop(g,'assets/concept_wall.png',58,32.6,[0,1.5,-20],0.4,0.68);
@@ -2240,7 +2266,7 @@ function updateKV(){
   const costK0=gpusN*SERVING.COST_K;
   const whT=document.getElementById('whT');
   if(whT)whT.innerHTML=overflow
-    ?`Serving this needs <b style="color:#f6a345">${gpusN} × ${SERVING.GPU} GPUs</b> · ~${costK0<1000?'$'+costK0+'k':'$'+(costK0/1000).toFixed(1)+'M'} of hardware`
+    ?`Serving this needs <b style="color:#f6a345">${gpusN} × ${SERVING.GPU} GPUs</b> · ~${fmtCost(costK0)} of hardware`
     :`This serves on <b style="color:#7ee787">ONE ${SERVING.GPU} GPU</b> — ${Math.max(0,Math.round(capGB-totalGB))} GB to spare`;
   // dynamic legend: the per-chat number lives here now, not in a floating scene label
   const whS=document.getElementById('whS');
@@ -2252,7 +2278,7 @@ function updateKV(){
   const msTok=totalGB/(gpusN*SERVING.BW_FACTOR);const costK=gpusN*SERVING.COST_K;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   const out=document.getElementById('kvOut');if(out){out.textContent=f1(val);out.style.color=overflow?'#f6a345':'#7ee787';}
-  set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',costK<1000?('$'+costK+'k'):('$'+(costK/1000).toFixed(2)+'M'));
+  set('kvGpus',gpusN);set('kvSpeed',msTok<10?msTok.toFixed(1):Math.round(msTok));set('kvCost',fmtCost(costK));
   const note=document.getElementById('kvNote');
   if(note){note.classList.toggle('ok',!overflow);
     // the caption carries ONLY the arithmetic — GPU count and cost live in the headline
@@ -2376,19 +2402,19 @@ function setDock(region){
     dockcore.querySelector('#cxlSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#cxlSeg button').forEach(x=>x.classList.toggle('on',x===b));setCXL(b.dataset.v);const cap=document.getElementById('cxlCap');if(cap)cap.innerHTML=CXLCAP[b.dataset.v];});
   }else if(region==='ai'){
     dock.style.display='';
-    dockcore.innerHTML=`<span class="dlabel">Model</span><div class="seg" id="mSeg">${MODELS.map((m,i)=>`<button data-m="${i}"${i===kv.model?' class="on"':''} data-tip="${m.tip}">${m.n}</button>`).join('')}</div>
-      <div class="slider-wrap"><span class="dlabel">Context / chat</span><input type="range" id="ctxSl" min="1" max="256" value="${kv.ctx}"><span class="sv" id="ctxV">${kv.ctx}K tokens</span></div>
-      <div class="slider-wrap"><span class="dlabel">Users</span><input type="range" id="batSl" min="1" max="128" value="${kv.batch}"><span class="sv" id="batV">${kv.batch} chats</span></div>
-      <div class="kvo-cluster">
+    dockcore.innerHTML=`<span class="dlabel" id="mSegL">Model</span><div class="seg" id="mSeg" role="group" aria-labelledby="mSegL">${MODELS.map((m,i)=>`<button data-m="${i}"${i===kv.model?' class="on"':''} aria-pressed="${i===kv.model}" data-tip="${m.tip}">${m.n}</button>`).join('')}</div>
+      <div class="slider-wrap"><label class="dlabel" for="ctxSl">Context / chat</label><input type="range" id="ctxSl" min="1" max="256" value="${kv.ctx}" aria-describedby="ctxV" aria-valuetext="${kv.ctx}K tokens"><span class="sv" id="ctxV">${kv.ctx}K tokens</span></div>
+      <div class="slider-wrap"><label class="dlabel" for="batSl">Users</label><input type="range" id="batSl" min="1" max="128" value="${kv.batch}" aria-describedby="batV" aria-valuetext="${kv.batch} chats"><span class="sv" id="batV">${kv.batch} chats</span></div>
+      <div class="kvo-cluster" role="status" aria-live="polite" aria-atomic="true">
         <div class="kvo"><span class="kvo-v" id="kvOut" style="color:#7ee787">4</span><span class="kvo-l">KV cache · GB</span></div>
         <div class="kvo"><span class="kvo-v" id="kvGpus">1</span><span class="kvo-l">GPUs · ${SERVING.GPU}</span></div>
         <div class="kvo"><span class="kvo-v" id="kvSpeed">—</span><span class="kvo-l">ms / token</span></div>
         <div class="kvo"><span class="kvo-v" id="kvCost">—</span><span class="kvo-l">hardware</span></div>
       </div>`;
-    dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>x.classList.toggle('on',x===b));kv.model=+b.dataset.m;updateKV();syncHash();});
+    dockcore.querySelector('#mSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;dockcore.querySelectorAll('#mSeg button').forEach(x=>{const on=x===b;x.classList.toggle('on',on);x.setAttribute('aria-pressed',on);});kv.model=+b.dataset.m;updateKV();syncHash();});
     const cs=dockcore.querySelector('#ctxSl'),bs=dockcore.querySelector('#batSl');
-    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';updateKV();syncHash();});
-    bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';updateKV();syncHash();});
+    cs.addEventListener('input',()=>{kv.ctx=+cs.value;dockcore.querySelector('#ctxV').textContent=kv.ctx+'K tokens';cs.setAttribute('aria-valuetext',kv.ctx+'K tokens');updateKV();syncHash();});
+    bs.addEventListener('input',()=>{kv.batch=+bs.value;dockcore.querySelector('#batV').textContent=kv.batch+' chats';bs.setAttribute('aria-valuetext',kv.batch+' chats');updateKV();syncHash();});
     updateKV();
   }else if(region==='kvcache'){
     dock.style.display='';dock.classList.add('ai'); // reuse the big-dock sizing
@@ -2641,6 +2667,7 @@ function applyRoute(hash){
       const n=parseInt(rest[0],10);
       if(n>=1&&n<=JOURNEY.length){__routing=false;jGo(n-1);return true;}
     }else if(head==='intel'){
+      closePanel(); // a URL can only encode ONE layer: an Intel route is the modal over the bare region
       const tab=['short','watch','geo','numbers','road'].includes(rest[0])?rest[0]:'short';
       openIntel(tab);
     }else if(head==='wall'&&rest.length===3){
@@ -2660,7 +2687,7 @@ function applyRoute(hash){
 window.addEventListener('hashchange',()=>{if(!applyRoute(location.hash))syncHash();});
 window.addEventListener('popstate',()=>{/* hashchange fires for hash-only history moves; nothing extra needed */});
 // share: copy the canonical deep link for whatever is on screen
-const toast=document.createElement('div');toast.id='toast';document.body.appendChild(toast);
+const toast=document.createElement('div');toast.id='toast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');document.body.appendChild(toast);
 let __toastT=0;
 function showToast(msg){toast.textContent=msg;toast.classList.add('on');clearTimeout(__toastT);__toastT=setTimeout(()=>toast.classList.remove('on'),1900);}
 function copyLink(e){
@@ -2720,7 +2747,7 @@ setTimeout(()=>{clearInterval(lint);const l=document.getElementById('loader');l.
   const n=document.createElement('div');n.id='mobileNote';
   n.innerHTML=`<div class="mn-grip"></div>
     <div class="mn-t">On a phone? Read the text edition</div>
-    <div class="mn-d">Everything in this 3D atlas — every file, the 26-stop journey, the companies and the investor views — is also plain, fast pages built for a phone. The 3D map works here too, but it's at its best on a big screen with a mouse.</div>
+    <div class="mn-d">Everything in this 3D atlas — every file, the ${JOURNEY.length}-stop journey, the companies and the investor views — is also plain, fast pages built for a phone. The 3D map works here too, but it's at its best on a big screen with a mouse.</div>
     <a id="mnRead" href="read/">Read the text edition →</a>
     <button id="mnGo">Continue in 3D anyway</button>`;
   document.body.appendChild(n);

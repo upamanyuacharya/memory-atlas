@@ -20,16 +20,16 @@ export function wallPage({ page, esc, asofLabel, MODELS, SERVING, KV_DEFAULT, SI
 <p><a class="cta" href="../#wall">▶&nbsp; See the tanks fill in 3D</a> &nbsp; <a class="cta ghost" href="kv_econ.html">Why memory is the wall</a></p>
 
 <div class="blk" id="calc">
-  <div class="kmini">Model class</div>
-  <div class="pills" id="mdl"></div>
+  <div class="kmini" id="mdlL">Model class</div>
+  <div class="pills" id="mdl" role="group" aria-labelledby="mdlL"></div>
   <p id="mtip" style="font-size:15.5px;color:var(--dim);margin:8px 0 18px"></p>
-  <div class="kmini">Context per chat <span id="ctxV" style="color:var(--ink);margin-left:8px"></span></div>
+  <label class="kmini" for="ctx" style="display:block">Context per chat <span id="ctxV" style="color:var(--ink);margin-left:8px"></span></label>
   <input type="range" id="ctx" min="1" max="256" value="${dflt.ctx}" style="width:100%;accent-color:#5eead4">
-  <div class="kmini" style="margin-top:18px">Simultaneous chats <span id="batV" style="color:var(--ink);margin-left:8px"></span></div>
+  <label class="kmini" for="bat" style="display:block;margin-top:18px">Simultaneous chats <span id="batV" style="color:var(--ink);margin-left:8px"></span></label>
   <input type="range" id="bat" min="1" max="128" value="${dflt.batch}" style="width:100%;accent-color:#5eead4">
 </div>
 
-<div class="stats" id="out">
+<div class="stats" id="out" role="status" aria-live="polite" aria-atomic="true">
   <div class="stat"><div class="l">Weights</div><div class="v" id="oW">—</div></div>
   <div class="stat"><div class="l">KV cache · total</div><div class="v" id="oKV" style="color:#7ee787">—</div></div>
   <div class="stat"><div class="l">GPUs needed</div><div class="v" id="oG" style="font-size:26px">—</div></div>
@@ -38,7 +38,7 @@ export function wallPage({ page, esc, asofLabel, MODELS, SERVING, KV_DEFAULT, SI
 </div>
 <div class="tankwrap"><div class="tank" id="tank"></div><div class="tank spill" id="tank2" hidden></div><div id="tankL" class="kmini" style="margin:8px 0 0"></div></div>
 <p id="headline" class="lede" style="margin-top:18px"></p>
-<p><button class="cta" id="share" style="border:0;cursor:pointer">⧉&nbsp; Copy this result</button> <span id="toast" style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px"></span></p>
+<p><button class="cta" id="share" style="border:0;cursor:pointer">⧉&nbsp; Copy this result</button> <span id="toast" role="status" aria-live="polite" style="font-family:var(--mono);font-size:12px;color:var(--faint);margin-left:10px"></span></p>
 
 <h2>How it's calculated</h2>
 <p>Weights are fixed per model class (fp16, fp8 for the 1T MoE class). The KV cache is <b>bytes per token × context × chats</b> — and bytes per token is the number that architecture decides: a GQA model like the 405B class stores ~504 KB per token, while an MLA model like the 1T MoE class compresses that to ~69 KB. A GPU is "full" at ${SERVING.CAP_GB} GB; anything over spills into another GPU at roughly $${SERVING.COST_K}k each. Speed is memory-bound: a decode step must re-read weights plus the whole cache, so ms/token scales with what's resident.</p>
@@ -57,13 +57,14 @@ function parseRoute(){const p=location.hash.replace(/^#\\/?/,'').split('/');if(p
   const [a,b,c]=p.map(x=>/^\\d+$/.test(x)?parseInt(x,10):NaN);if(!MODELS[a]||!(b>=1&&b<=256)||!(c>=1&&c<=128))return null;return [a,b,c];}
 const r0=parseRoute();if(r0){[m,ctx,bat]=r0;}
 $('ctx').value=ctx;$('bat').value=bat;
-$('mdl').innerHTML=MODELS.map((x,i)=>'<button class="pill" data-i="'+i+'">'+x.n+'</button>').join('');
+$('mdl').innerHTML=MODELS.map((x,i)=>'<button class="pill" data-i="'+i+'" aria-pressed="false">'+x.n+'</button>').join('');
 function kvGB(x,c,b){return (x.kvTok*c*1024*b)/1e9;}
 function fmt$(k){return k<1000?'$'+Math.round(k)+'k':'$'+(k/1000).toFixed(2)+'M';} // identical to the 3D Wall's format
 function render(){
   const x=MODELS[m];const kv=kvGB(x,ctx,bat);const total=x.W+kv;const g=Math.max(1,Math.ceil(total/S.CAP_GB));
   const perChat=kvGB(x,ctx,1);const fits=Math.max(0,Math.floor((S.CAP_GB-total)/Math.max(perChat,1e-9))); // chats of THIS size still fitting in the first GPU
-  document.querySelectorAll('#mdl .pill').forEach(b=>b.classList.toggle('on',+b.dataset.i===m));
+  document.querySelectorAll('#mdl .pill').forEach(b=>{const on=+b.dataset.i===m;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on);});
+  $('ctx').setAttribute('aria-valuetext',ctx+'K tokens');$('bat').setAttribute('aria-valuetext',bat+' chats');
   $('mtip').textContent=x.tip;$('ctxV').textContent=ctx+'K tokens';$('batV').textContent=bat+' chats';
   $('oW').textContent=x.W+' GB';$('oKV').textContent=(kv<10?kv.toFixed(1):Math.round(kv))+' GB';$('oG').textContent=g+' × '+S.GPU;$('oC').textContent=fmt$(g*S.COST_K);
   // first tank: weights + as much cache as fits; a second, dashed tank shows what spilled (as a share of one GPU)
