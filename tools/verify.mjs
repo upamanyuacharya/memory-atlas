@@ -266,6 +266,34 @@ const STATES = [
     },
   },
   {
+    // Behavioral: the router — every state has a URL, and a URL restores its state.
+    // Cold-load deep links are covered separately in tools/dev/routetest.mjs; this
+    // gate covers the in-page contract (hashchange → state, state → hash, share URL).
+    name: 'router',
+    behavioral: true,
+    setup: async p => { await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1200); },
+    dom: async p => {
+      const h = () => p.evaluate(() => location.hash);
+      if (await h() !== '#map') throw `map hash = ${await h()}`;
+      await p.evaluate(() => window.__atlas.route('#node/hbm')); await p.waitForTimeout(900);
+      let s = await p.evaluate(() => ({ hash: location.hash, region: window.__atlas.region, h2: (document.querySelector('#phead h2') || {}).textContent }));
+      if (s.hash !== '#node/hbm' || s.region !== 'hierarchy' || !/HBM/.test(s.h2)) throw `node route: ${JSON.stringify(s)}`;
+      await p.evaluate(() => { location.hash = '#intel/geo'; }); await p.waitForTimeout(500);
+      s = await p.evaluate(() => ({ on: document.getElementById('watchModal').classList.contains('on'), tab: document.querySelector('#wmTabs button.on').dataset.it }));
+      if (!s.on || s.tab !== 'geo') throw `intel route: ${JSON.stringify(s)}`;
+      await p.evaluate(() => { location.hash = '#wall/3/64/32'; }); await p.waitForTimeout(1200);
+      s = await p.evaluate(() => ({ region: window.__atlas.region, gpus: document.getElementById('kvGpus').textContent, hash: location.hash }));
+      if (s.region !== 'ai' || s.hash !== '#wall/3/64/32' || !(parseInt(s.gpus, 10) > 1)) throw `wall route: ${JSON.stringify(s)}`;
+      await p.evaluate(() => window.__atlas.jGo(8)); await p.waitForTimeout(1400);
+      if (await h() !== '#stop/9') throw `journey hash = ${await h()}`;
+      await p.evaluate(() => { location.hash = '#nonsense/xyz'; }); await p.waitForTimeout(300);
+      if (await h() === '#nonsense/xyz') throw 'unknown route was not corrected';
+      await p.evaluate(() => window.__atlas.go('map')); await p.waitForTimeout(1200);
+      const err = await p.evaluate(() => window.__atlas.lastErr());
+      if (err) throw `lastErr: ${err}`;
+    },
+  },
+  {
     // Behavioral: prove the loop renders ZERO frames while idle (the fan fix),
     // and that it WAKES on interaction. This is the regression guard for the
     // rest-state model — a reintroduced continuous loop fails here loudly.

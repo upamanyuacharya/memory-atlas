@@ -1,14 +1,18 @@
-﻿{
+{
   "name": "memory-atlas",
   "private": true,
   "version": "1.9.0",
   "description": "Dev tooling for The Memory Atlas (the site itself is the dependency-free index.html)",
   "scripts": {
-    "verify": "node tools/verify.mjs",
-    "verify:update": "node tools/verify.mjs --update"
+    "build": "node tools/build.mjs",
+    "build:check": "node tools/build.mjs --check",
+    "verify": "node tools/build.mjs --check && node tools/verify.mjs",
+    "verify:update": "node tools/verify.mjs --update",
+    "dev": "python -m http.server 4323"
   },
   "devDependencies": {
     "playwright-core": "^1.54.0",
     "pngjs": "^7.0.0"
-  }
+  },
+  "type": "module"
 }
